@@ -88,7 +88,7 @@ from . import t1
 from .growth import clear_densification_rows, restored_session_settings
 from .label_table import LabelTable
 from . import t1 as _t1
-from .snapshots import WIDTH as SNAP_WIDTH, SnapshotLog, keep_session, map_at
+from .snapshots import WIDTH as SNAP_WIDTH, SnapshotLog, map_at
 
 GAME = Path("/home/jixian/Desktop/FT/baselines/GaME")
 if str(GAME) not in sys.path:
@@ -329,7 +329,7 @@ class _View:
 
 def end_map_from_checkpoint(run_dir: Path, session: str):
     """[4D] A session's end map from its checkpoint (run_dir/checkpoint_<s>.pt; session 'synthetic_a' -> 'a'): the rows
-    alive at its final stamp, as snapshots.map_at reads a map."""
+    alive at its final stamp, as a round of the snapshots holds a map (the check that its last round equals it)."""
     ck = torch.load(Path(run_dir) / f"checkpoint_{session.split('_')[-1]}.pt", map_location="cpu", weights_only=False, mmap=True)
     b = ck["backend"]
     alive = (_t1.alive_at(int(ck["prev_final"]), b["identity"], b["created"], b["state_birth"], b["death_state"],
@@ -341,16 +341,11 @@ def end_map_from_checkpoint(run_dir: Path, session: str):
             {"identity": b["identity"][alive].numpy(), "created": b["created"][alive].numpy(), "state_birth": b["state_birth"][alive].numpy()})
 
 
-def view_at_time(run_dir: Path, t: int, gm, end_maps: dict, checkpoints: Optional[Path] = None):
-    """[4D] The map of time t (snapshots.map_at) as a renderable stand-in (_View, with gm's activations and SH degree)
-    and its identities; None outside the run's sessions. run_dir holds snapshots/; a session's end map is the
-    checkpoint_<s>.pt of `checkpoints` (default run_dir: the map as mapped; a post_ref view: its last session's refined
-    map). end_maps (a dict the caller keeps) caches the end maps and the maps map_at reads."""
-    def end_map(session):
-        if session not in end_maps:
-            end_maps[session] = end_map_from_checkpoint(checkpoints or run_dir, session)
-        return end_maps[session]
-    st = map_at(Path(run_dir), int(t), end_map, end_maps)
+def view_at_time(run_dir: Path, t: int, gm, cache: dict):
+    """[4D] The map of time t (snapshots.map_at: the live map of the first round at or after t) as a renderable stand-in
+    (_View, with gm's activations and SH degree) and its identities; None after the run's last round. cache: a dict the
+    caller keeps (map_at's replay)."""
+    st = map_at(Path(run_dir), int(t), cache)
     if st is None:
         return None
     _, uid, p, ident = st
@@ -1016,9 +1011,8 @@ class GameBackend(Backend):
                "I1 Gaussian identity = FlashSplat optimal assignment of the instance masks, accumulated per keyframe",
                "T1 time-indexed maps: each keyframe renders/trains only the Gaussians alive at its stamp; an earlier "
                "session's Gaussian that leaves the map is ended, not deleted",
-               "4D snapshots: the map of the last round before each state end is kept (OUT/snapshots/<session>/kept, "
-               "lossless changes); the map of time t is the kept map of the first state end after t (else the session's "
-               "end map), objects born after t taken out (own-time rendering metric). The mapping only reads its rows",
+               "4D snapshots: every round's live map (OUT/snapshots/<session>/rounds, lossless changes); the map of time t "
+               "is the map of the first round at or after t. The mapping only reads its rows",
                "R2 snapshot readout = first echo (T first <= 0.5: median depth and its Gaussian's identity)",
                "A1 GaME's addition handling as published in every row (removals: own update / the layer)",
                "Z2 when the layer drives the map, the depth term asks its two requirements apart: A |D / A - d| (A held fixed) + "
@@ -1051,8 +1045,6 @@ class GameBackend(Backend):
         self.game: Optional[TrackedGaME] = None
         self.semantic_of: Dict[int, int] = {}
         self._snaplog: Optional[SnapshotLog] = None   # [4D] this session's rounds (work_dir/snapshots/<session>)
-        self._intervals: dict = {}                     # [4D] the layer's state intervals as last set (the session's state ends)
-        self._refined = False
 
     # -- session --------------------------------------------------------------------------------------------------
     def start_session(self, spec: SessionSpec, prior: Optional[TrackedGaME]) -> None:
@@ -1072,15 +1064,13 @@ class GameBackend(Backend):
         self.spec_name = spec.name
         self.game.begin_session(self.session_start, self.tolerance * self.scale)
         self._snaplog = SnapshotLog(Path(self.work_dir) / "snapshots" / spec.name) if self.work_dir is not None else None
-        self._intervals = {}
         self.kf_index: Dict[int, int] = {}
 
     def end_session(self) -> TrackedGaME:
-        if self._snaplog is not None and not self._refined:
-            # [4D] keep the map of the last round before each state end of this session, with the session's final state
-            # intervals (the map of a time between rounds takes them); the end map is the checkpoint
-            info = keep_session(self._snaplog.dir, self._intervals, int(self.session_start), int(self.game.now))
-            print(f"4D snapshots {self.spec_name}: {info['rounds']} rounds, {info['kept']} kept, {info['bytes'] / 1e6:.0f} MB", flush=True)
+        if self._snaplog is not None:
+            # [4D] the session's rounds are complete; later snapshots (the refined map's) are not maps of its time
+            idx = self._snaplog.rounds.index
+            print(f"4D snapshots {self.spec_name}: {len(idx)} rounds, {sum(r['bytes'] for r in idx) / 1e6:.0f} MB", flush=True)
             self._snaplog = None
         return self.game
 
@@ -1091,7 +1081,6 @@ class GameBackend(Backend):
         (rebuild_evidence): the same from a checkpoint."""
         g = self.game
         g.now = stamp
-        self._refined = True                      # [4D] the refined map is not a map of the session's time
         iters = int(self.config.get("refinement_iters", 0))
         if iters and g.keyframes:
             if g.timed and g.session_start is None:
@@ -1313,7 +1302,6 @@ class GameBackend(Backend):
     @torch.no_grad()
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
         """Reconcile this session's states without rewriting the inherited map's earlier history."""
-        self._intervals = {int(i): [(int(b), None if d is None else int(d)) for b, d in lst] for i, lst in intervals.items()}
         g = self.game
         g.state_birth, g.death_state = t1.state_membership(
             g.identity, g.created, intervals, g.session_start,

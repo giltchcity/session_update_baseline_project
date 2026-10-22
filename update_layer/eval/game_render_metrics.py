@@ -44,7 +44,7 @@ def main():
     held = set(int(x) for x in hold["stamps"])
     from pytorch_msssim import ms_ssim
     from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-    from update_layer.backends.game.game import Crop, GameBackend, flashsplat_render, gu, view_at_time
+    from update_layer.backends.game.game import Crop, GameBackend, flashsplat_render, gu
     from update_layer.eval.tsdf_export import wait_for_gpu
     from update_layer.frames import FlatSession
     from update_layer.run import dataset_config
@@ -65,8 +65,6 @@ def main():
     g, gm = be.game, be.game.gaussian_model
     t_final = int(ck_final)
     final_alive = g.alive_at(t_final)                     # None without T1: every Gaussian (GaME's final model)
-    snaps = next((d for d in (run, run.parent) if (d / "snapshots").is_dir()), None)     # [4D] the run with the snapshots
-    end_maps: dict = {}
     modes = {"final": None} if final_alive is None else {"final": None, "own_time": None}
     be.session = FlatSession(spec, pixel_step=1)                     # as GameBackend.start_session
     be.crop = Crop(be.session.K, be.step)
@@ -89,13 +87,9 @@ def main():
             view = gu.flashsplat_cam(color, depth, None, sample["intrinsics"], pose.cpu(), i)
             m = depth > 0
             for mode in modes:
-                snap = view_at_time(snaps, t, gm, end_maps, run) if mode == "own_time" and snaps is not None else None
-                if snap is not None:                                    # [4D] the map of the frame's stamp as it was then
-                    pkg = flashsplat_render(view, snap[0], pipe, bg, obj_num=1)
-                else:
-                    gm.alive = final_alive if mode == "final" else g.alive_at(t)
-                    pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
-                    gm.alive = None
+                gm.alive = final_alive if mode == "final" else g.alive_at(t)
+                pkg = flashsplat_render(view, gm, pipe, bg, obj_num=1)
+                gm.alive = None
                 rc = torch.clamp(pkg["render"], 0.0, 1.0)
                 rd = pkg["depth"].reshape(depth.shape)
                 a = acc[mode][split]
@@ -105,7 +99,7 @@ def main():
                 a["l1"].append(torch.abs(rd - depth)[m].mean().item() if m.any() else float("nan"))
     res = {"run": str(run), "session": s, "checkpoint": str(ck_path.resolve()), "scale": be.scale, "final_stamp": t_final,
            "protocol": "GaME mapping_eval.evaluate_all_rendering with the final model (train/test); own_time: each frame "
-                       "with the map of its stamp (the run's 4D snapshots: the kept map of the first state end after it, else the session's end map, objects born later taken out; without snapshots, T1's alive rows); "
+                       "with the map of its stamp (T1 only); "
                        "depth L1 over measured pixels"}
 
     def summary(a):
