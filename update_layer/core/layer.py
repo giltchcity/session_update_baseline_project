@@ -133,9 +133,6 @@ class LayerConfig:
     # session-level majority has no online form in this rule yet; the 401 strict old-site residues (188 in the
     # band's set) stay a recorded open item.
     band_evidence: bool = False
-    # [S1] the present's own clean at the session end: the seen-through vote of step 5 (through > hit,
-    # session_refusion.cpp:1269-1294) over this session's evidence frames on the present's elements
-    clean_present: bool = False
     # object reconstruction voxel of the TSDF runs: the session-end present TSDF (voxel, truncation 2 voxels)
     object_voxel: float = 0.02
     # depthScale's pixel stride (16 px of the TSDF archive's frames = 8 of the layer's evidence frames)
@@ -502,25 +499,11 @@ class UpdateLayer:
                     gone[m] = False
                     n_guard += int(m.sum())
         out = el.ids[idx[gone]]
-        n_clean = 0
-        if self.cfg.clean_present:
-            # [S1] the present's own clean: step 5's seen-through vote (through > hit, the fork's footprint test,
-            # session_refusion.cpp:1269-1294) over this session's evidence frames on the elements built in this
-            # session, so what its own frames see through (floaters, fringes) does not become memory
-            pidx = torch.nonzero(el.created >= start).squeeze(1)
-            if len(pidx):
-                ph, pt = self._fork_bands(ident[pidx])
-                evp = session_end.memory_test(self.store, el.xyz[pidx], ph, pt, sigma, self.rejected)
-                through = evp["through"] > evp["hit"]
-                out = torch.cat([out, el.ids[pidx[through]]])
-                n_clean = int(through.sum())
-                self.log.append(f"PRESENT_CLEAN tested={len(pidx)} any_hit={int((evp['hit'] > 0).sum())}"
-                                f" any_through={int((evp['through'] > 0).sum())} seen_through={n_clean}")
         self.log.append(f"MEMORY_TEST start={start} tested={len(idx)} object_state={n_object_state}"
                         f" any_hit={int((ev['hit'] > 0).sum())} any_through={int((ev['through'] > 0).sum())}"
                         f" seen_through={int(seen.sum())} hidden={int(hidden.sum())} displaced={int(displaced.sum())}"
                         f" inside={(n_inside if render is not None else 'n/a (no renderer)') if self.cfg.inside else 'off'}"
-                        f" guard_kept={n_guard} present_clean={n_clean}"
+                        f" guard_kept={n_guard}"
                         f" half_cm={100 * float(half.min()) if len(half) else 0:.2f}-{100 * float(half.max()) if len(half) else 0:.2f}"
                         f" error_per_metre={error_per_metre:.4g}")
         return out, start
