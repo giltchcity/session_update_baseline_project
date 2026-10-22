@@ -181,8 +181,8 @@ class FlatSession:
                 semantic = np.asarray(Image.open(p)).astype(np.int32)
         if s > 1:
             # Nearest subsampling at the pixel centres the scaled intrinsics describe.
-            depth, instance = depth[::s, ::s], instance[::s, ::s]
-            semantic = semantic[::s, ::s] if semantic is not None else None
+            depth, instance = depth[::s, ::s], np.ascontiguousarray(instance[::s, ::s])
+            semantic = np.ascontiguousarray(semantic[::s, ::s]) if semantic is not None else None
         depth = depth.copy()
         lo, hi = self.spec.depth_range
         depth[~np.isfinite(depth) | (depth < lo) | (depth > hi)] = np.nan

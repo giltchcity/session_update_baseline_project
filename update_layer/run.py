@@ -213,6 +213,7 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
         round_start = session.stamp_ns(indices[0])
         retired = {}
         measurement_update = None
+        tm = dict.fromkeys(("d1", "integrate", "observe", "elements", "decide", "retire", "session_end", "snapshot"), 0.0)
         # [G8] GaME's test split (datasets.py:432, run2: every 10th frame except the first is held out): in the chain's
         # last session these frames are kept out of mapping (backend, layer evidence, D1 front end) and only rendered
         # for GaME's novel-view metrics (eval/game_render_metrics.py); round boundaries stay on the same stamps
@@ -231,47 +232,66 @@ def run_chain(backend_name: str, row: int, dataset: str, out: Path, sessions: st
                     ahead.append(pool.submit(load, indices[n + 16]))
                 if n not in held:
                     if layer is not None:
+                        c0 = time.perf_counter()
                         motion = layer.motion(frame)             # D1 front end, every frame (l2 core)
+                        tm["d1"] += time.perf_counter() - c0
                         if motion is not None:
                             MOTION[frame.stamp_ns] = motion
                             while len(MOTION) > 64:
                                 MOTION.pop(next(iter(MOTION)))
+                    c0 = time.perf_counter()
                     backend.integrate(frame)
+                    tm["integrate"] += time.perf_counter() - c0
                     if layer_frame is not None:
+                        c0 = time.perf_counter()
                         layer.observe(layer_frame)
+                        tm["observe"] += time.perf_counter() - c0
                 last = n == len(indices) - 1
                 if frame.stamp_ns - round_start < cfg.round_s * 1e9 and not last:
                     continue
                 stamp = frame.stamp_ns
                 if layer is not None:
-                    decided = layer.decide(stamp, last, backend.elements(),
-                                           object_support=not backend.consumes_state_intervals)
+                    c0 = time.perf_counter()
+                    el_now = backend.elements()
+                    tm["elements"] += time.perf_counter() - c0
+                    c0 = time.perf_counter()
+                    decided = layer.decide(stamp, last, el_now, object_support=not backend.consumes_state_intervals)
+                    del el_now
+                    tm["decide"] += time.perf_counter() - c0
                     for k, v in decided.items():
                         retired[k] = retired.get(k, 0) + len(v)
                     if backend.consumes_state_intervals:
                         backend.set_state_intervals(layer.state_intervals(), stamp)
                     ids = torch.unique(torch.cat(list(decided.values())))
+                    c0 = time.perf_counter()
                     backend.retire(ids, stamp)
+                    tm["retire"] += time.perf_counter() - c0
                 if last and layer is not None and cfg.g5:
+                    c0 = time.perf_counter()
                     # session-end memory test, then the backend's session-end step (GaME: refinement)
                     mem, start = layer.session_end_memory(backend.elements(), getattr(backend, "render_identity", None),
                                                           getattr(backend, "render_map", None))
                     if len(mem):
                         backend.retire(mem, start)
                     retired["memory"] = retired.get("memory", 0) + len(mem)
+                    tm["session_end"] += time.perf_counter() - c0
                     if split:
                         # [S2] the session-end measurement update (present + surviving memory, GaME's refinement on
                         # this session's keyframes)
                         measurement_update = normalize_refinement_report(backend.measurement_update(stamp))
                         print(f"measurement update: {measurement_update}", flush=True)
+                c0 = time.perf_counter()
                 backend.snapshot(stamp)
+                tm["snapshot"] += time.perf_counter() - c0
                 round_start = stamp
                 gpu_gb = torch.cuda.max_memory_reserved() / 1e9 if torch.cuda.is_available() else 0.0   # what the driver holds
                 gpu_alloc_gb = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0.0
                 if verbose:
                     print(f"{spec.name} t={(stamp - session.stamp_ns(indices[0])) / 1e9:7.1f}s "
                           f"frames={n + 1}/{len(indices)} elements={len(backend.elements())} "
-                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s", flush=True)
+                          f"retired={retired} gpu={gpu_alloc_gb:.1f}/{gpu_gb:.1f}GB {time.time() - t0:6.1f}s "
+                          f"[{' '.join(f'{k} {v:.2f}' for k, v in tm.items())}]", flush=True)
+                tm = dict.fromkeys(tm, 0.0)
                 # GPU guard (10-09: two synthetic B runs died in the WSL driver near the card's limit instead of raising
                 # a CUDA OOM): stop cleanly before that point; GPU_GUARD_GB (default 13.5 of 16.3; the driver failed between 13.2 GB used and the card's limit) is a run limit, not a
                 # model parameter.

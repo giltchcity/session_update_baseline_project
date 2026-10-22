@@ -31,6 +31,7 @@ import numpy as np
 import torch
 
 from .evidence import DEV
+from .l2.state import _pack
 
 # SessionRefusion::Config defaults (session_refusion.h @192c1cf:64-66)
 RANGE_BIN = 0.5
@@ -157,7 +158,7 @@ def rendered_surface(store, render, rejected=None, cell: float = 0.02):
     P = torch.cat(pts) if pts else torch.zeros((0, 3), device=DEV)
     if len(P):
         keys = torch.floor(P / cell).to(torch.int64)
-        _, first = np.unique(keys.cpu().numpy(), axis=0, return_index=True)
+        _, first = np.unique(_pack(keys.cpu().numpy()), return_index=True)
         P = P[torch.as_tensor(np.sort(first), device=DEV)]
     return ranges, P
 

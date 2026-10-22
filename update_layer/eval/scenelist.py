@@ -160,9 +160,8 @@ class SnapshotRecorder:
             order = np.argsort(ids[new][fresh], kind="stable")
             new_ids, new_rows = ids[new][fresh][order], new_rows_all[fresh][order]
             if len(new_ids) and len(self.ids) and new_ids[0] < self.ids[-1]:
-                all_ids = np.concatenate([self.ids, new_ids])
-                o = np.argsort(all_ids, kind="stable")
-                self.ids, self.row = all_ids[o], np.concatenate([self.row, new_rows])[o]
+                at = np.searchsorted(self.ids, new_ids)             # both sorted, no common id: a merge
+                self.ids, self.row = np.insert(self.ids, at, new_ids), np.insert(self.row, at, new_rows)
             elif len(new_ids):
                 self.ids = np.concatenate([self.ids, new_ids])
                 self.row = np.concatenate([self.row, new_rows])

@@ -25,6 +25,7 @@ import torch
 
 from ..evidence import BACKGROUND, DEV, INVALID, PHYSICAL, UNAVAILABLE, UNIDENTIFIED
 from . import ieee
+from .state import _pack
 
 LOG99 = ieee.log(99.0)
 
@@ -134,6 +135,9 @@ class ObjectAbsenceState:
         self.last_seen_through_sp = np.zeros(n, np.int64)
         self.last_identity = np.zeros(n, np.int64)
         self.last_look = np.zeros(n, np.int64)
+        # (points, normals, cell size, absence_queries of them) of the last call: a fragment's geometry is replaced by a
+        # merge, never edited, so the same tensors give the same samples
+        self.queries = None
 
     def rows(self, cells: List[Tuple[int, int, int]]) -> np.ndarray:
         """Row of every cell, creating missing ones (samples.try_emplace)."""
@@ -262,6 +266,7 @@ class AbsenceModel:
         self.store = store
         self.config = config or EvidenceConfig()
         self.states: Dict[Tuple[int, int], ObjectAbsenceState] = {}
+        self._projected: Dict[int, dict] = {}          # count_projected_surface caches, one per state key
         self.pooled_n = 0.0
         self.pooled_sum = 0.0
         self.pooled_sp_n = 0.0               # pooled in-place see-through share under the single-pixel verdict:
@@ -428,7 +433,7 @@ class AbsenceModel:
         finite = np.isfinite(P).all(1)
         P, N = P[finite], N[finite]
         cells = np.floor(P / cell_size).astype(np.int64)
-        _, first = np.unique(cells, axis=0, return_index=True)
+        _, first = np.unique(_pack(cells), return_index=True)
         first = np.sort(first)                                   # insertion order of the first point per cell
         P, N, cells = P[first], N[first], cells[first]
         if len(P) > K_MAX_ABSENCE_SAMPLES:
@@ -497,54 +502,73 @@ class AbsenceModel:
 
     # --- countProjectedPhysicalSurface [751-821]
     def count_projected_surface(self, physical_id: int, points: torch.Tensor, map_resolution: float,
-                                earliest: int, latest: int) -> SurfaceEvidenceCounts:
+                                earliest: int, latest: int, cache: Optional[dict] = None) -> SurfaceEvidenceCounts:
+        """With `cache` (one dict per state), a call with the previous call's window start and samples projects only
+        the frames stored since: every count is a sum, maximum or union over frames (as the t2 port's
+        count_projected_surface)."""
         res = SurfaceEvidenceCounts()
         if not (math.isfinite(map_resolution) and map_resolution > 0):
             return res
-        P = points.detach().cpu().numpy().astype(np.float64)
-        P = P[np.isfinite(P).all(1)]
-        cells = np.floor(P / map_resolution).astype(np.int64)
-        _, first = np.unique(cells, axis=0, return_index=True)
-        P = P[np.sort(first)]
+        if cache is not None and cache.get("src") is points and cache.get("res") == map_resolution:
+            P, psum = cache["P"], cache["psum"]           # the same fragment geometry: the same samples
+        else:
+            P = points.detach().cpu().numpy().astype(np.float64)
+            P = P[np.isfinite(P).all(1)]
+            _, first = np.unique(_pack(np.floor(P / map_resolution).astype(np.int64)), return_index=True)
+            P = P[np.sort(first)]
+            psum = float(P.sum())
+            if cache is not None:
+                cache.update(src=points, res=map_resolution, P=P, psum=psum)
         res.surface_samples = len(P)
         lo, hi = self.store.window(earliest, latest)
         if hi <= lo or not len(P):
             res.unobserved_samples = len(P)
             return res
+        key = (physical_id, lo, len(P), psum)
+        a = cache.get("agg") if cache is not None and cache.get("key") == key and cache.get("hi", hi + 1) <= hi else None
+        if a is None:
+            n = len(P)
+            a = dict(pts=torch.as_tensor(P, dtype=torch.float32, device=DEV),
+                     coverage=torch.zeros(n, dtype=torch.bool, device=DEV),
+                     s_sup=torch.zeros(n, dtype=torch.int64, device=DEV), s_abs=torch.zeros(n, dtype=torch.int64, device=DEV),
+                     supported_votes=0, free_space_votes=0, replaced_by_background_votes=0, replaced_by_other_votes=0,
+                     occluded_votes=0, latest_support_stamp=0, support_rays=0, contradiction_rays=0)
+            start = lo
+        else:
+            start = cache["hi"]
         stamps = self.store.stamp_tensor(lo, hi)
-        pts = torch.as_tensor(P, dtype=torch.float32, device=DEV)
-        coverage = torch.zeros(len(P), dtype=torch.bool, device=DEV)
-        s_sup = torch.zeros(len(P), dtype=torch.int64, device=DEV)
-        s_abs = torch.zeros(len(P), dtype=torch.int64, device=DEV)
-        sup_keys, con_keys = [], []
-        for f0 in range(lo, hi, 64):
+        for f0 in range(start, hi, 64):
             f1 = min(hi, f0 + 64)
-            p = self.store.project(f0, f1, pts)
+            p = self.store.project(f0, f1, a["pts"])
             vote = classify_measurements(p, physical_id, self.config.depth_tolerance)
             st = stamps[f0 - lo:f1 - lo][:, None].expand_as(vote)
             fr = torch.arange(f0 - lo, f1 - lo, device=DEV)[:, None].expand_as(vote)
-            coverage |= (vote != V_UNAVAILABLE).any(0)
+            a["coverage"] |= (vote != V_UNAVAILABLE).any(0)
             sup = vote == V_SUPPORTED
             con = (vote == V_FREE) | (vote == V_BACKGROUND) | (vote == V_OTHER)
             # latest frame of each kind per sample (frames ascend)
-            s_sup = torch.maximum(s_sup, torch.where(sup, st, torch.zeros_like(st)).amax(0))
-            s_abs = torch.maximum(s_abs, torch.where(con, st, torch.zeros_like(st)).amax(0))
+            a["s_sup"] = torch.maximum(a["s_sup"], torch.where(sup, st, torch.zeros_like(st)).amax(0))
+            a["s_abs"] = torch.maximum(a["s_abs"], torch.where(con, st, torch.zeros_like(st)).amax(0))
+            # distinct (frame, pixel) rays; a key holds its frame
             key = (fr << 32) | p["pixel"].clamp(min=0)
-            sup_keys.append(key[sup])
-            con_keys.append(key[con])
-            res.supported_votes += int(sup.sum())
-            res.free_space_votes += int((vote == V_FREE).sum())
-            res.replaced_by_background_votes += int((vote == V_BACKGROUND).sum())
-            res.replaced_by_other_votes += int((vote == V_OTHER).sum())
-            res.occluded_votes += int((vote == V_OCCLUDED).sum())
+            a["support_rays"] += int(torch.unique(key[sup]).numel())
+            a["contradiction_rays"] += int(torch.unique(key[con]).numel())
+            a["supported_votes"] += int(sup.sum())
+            a["free_space_votes"] += int((vote == V_FREE).sum())
+            a["replaced_by_background_votes"] += int((vote == V_BACKGROUND).sum())
+            a["replaced_by_other_votes"] += int((vote == V_OTHER).sum())
+            a["occluded_votes"] += int((vote == V_OCCLUDED).sum())
             if sup.any():
-                res.latest_support_stamp = max(res.latest_support_stamp, int(st[sup].max()))
-        res.unobserved_samples = int((~coverage).sum())
-        res.contradicted_surface_samples = int((s_abs > s_sup).sum())
+                a["latest_support_stamp"] = max(a["latest_support_stamp"], int(st[sup].max()))
+        if cache is not None:
+            cache.update(key=key, hi=hi, agg=a)
+        for k in ("supported_votes", "free_space_votes", "replaced_by_background_votes", "replaced_by_other_votes",
+                  "occluded_votes", "latest_support_stamp", "support_rays", "contradiction_rays"):
+            setattr(res, k, a[k])
+        res.unobserved_samples = int((~a["coverage"]).sum())
+        res.contradicted_surface_samples = int((a["s_abs"] > a["s_sup"]).sum())
         res.absence_coverage_sufficient = res.surface_samples > 0 and res.contradicted_surface_samples > 0 and \
             res.contradicted_surface_samples / res.surface_samples >= self.config.min_absent_surface_fraction
-        res.support_rays = int(torch.unique(torch.cat(sup_keys)).numel()) if sup_keys else 0
-        res.contradiction_rays = int(torch.unique(torch.cat(con_keys)).numel()) if con_keys else 0
         return res
 
     # --- applyObservedAbsence [823-963]
@@ -555,13 +579,16 @@ class AbsenceModel:
         counts.absence_coverage_sufficient = False
         tolerance = cfg.surface_match_tolerance
         min_cos = math.cos(cfg.max_absence_incidence_deg * math.pi / 180.0)
-        P, N, has_normal, cells = self.absence_queries(points, normals, 0.5 * tolerance)
         key = (physical_id, state_key)
         st = self.states.get(key)
         if st is None:
             st = self.states[key] = ObjectAbsenceState()
             if state_birth > 0:
                 st.processed = state_birth - 1
+        q = st.queries
+        if q is None or q[0] is not points or q[1] is not normals or q[2] != 0.5 * tolerance:
+            q = st.queries = (points, normals, 0.5 * tolerance, self.absence_queries(points, normals, 0.5 * tolerance))
+        P, N, has_normal, cells = q[3]
         st.likelihood_stamp = latest
         st.likelihood = (0.0, False, True)
         if latest < st.processed:                         # a new session restarts time
@@ -641,7 +668,8 @@ class AbsenceModel:
             self.apply_observed_absence(physical_id, points, normals, latest, none, state_birth, 0.0, state_key)
             none.absence_coverage_sufficient = False
             return none
-        measured = self.count_projected_surface(physical_id, points, map_resolution, last_support + 1, latest)
+        measured = self.count_projected_surface(physical_id, points, map_resolution, last_support + 1, latest,
+                                                cache=self._projected.setdefault(state_key, {}))
         self.apply_observed_absence(physical_id, points, normals, latest, measured, state_birth, prior_log_odds,
                                     state_key)
         return measured

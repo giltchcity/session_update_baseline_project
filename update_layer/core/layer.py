@@ -21,10 +21,10 @@ site; the frames in which an object is seen moving never enter a state (static-f
 (Marking an observation "moved" when its frames conflict was tried and dropped: on real depth the
 conflict also fires on static objects, and closing their state removed them.)
 Object support: t2 shows an object as the surface extracted from its selected static frames. A
-backend integrates every frame, so an identity's elements are kept only within the sensor
-tolerance (+ the element's extent) of that identity's live states (current, in-session and
-pending ones); the rest -- the old sites of closed states and what was integrated while the
-object moved -- is retired.
+backend integrates every frame, so an identity's elements are kept when last measured since the
+birth of one of that identity's live states (current, in-session and pending ones; [O2] ownership)
+or within the sensor tolerance (+ the element's extent) of one; the rest -- the old sites of
+closed states and what was integrated while the object moved -- is retired.
 
 Element size: every test of a measured surface against an element allows the sensor tolerance
 plus the element's extent (interface.Elements.extent: 0 for points, a surfel's radius, a
@@ -1024,8 +1024,8 @@ class UpdateLayer:
         return out
 
     def _support(self, el: Elements, alive: torch.Tensor) -> torch.Tensor:
-        """Object support (module notes): elements of a tracked identity farther than the sensor
-        tolerance from every live state of that identity."""
+        """Object support (module notes): elements of a tracked identity last measured before every live state of
+        that identity was born and farther than the sensor tolerance from all of them."""
         from scipy.spatial import cKDTree
         reg = self.registry
         tol = self.absence.config.surface_match_tolerance
@@ -1038,11 +1038,14 @@ class UpdateLayer:
             if state is None:
                 continue                                  # never observed by the layer: no belief
             rows = torch.nonzero(obj & (el.identity == i)).squeeze(1)
-            live = [f.points for f in self._open_fragments(state) if f.num_vertices]
+            live = [f for f in self._open_fragments(state) if f.num_vertices]
             if not live:
                 out.append(el.ids[rows])                  # the identity shows nothing now
                 continue
-            pts = torch.cat(live)
+            rows = rows[el.last_update[rows] < self._owned_from(min(f.birth_time for f in live))]
+            if not len(rows):
+                continue
+            pts = torch.cat([f.points for f in live])
             pts = pts[torch.isfinite(pts).all(dim=1)]
             reach = tol + el.extent[rows].cpu().numpy()
             d, _ = cKDTree(pts.cpu().numpy()).query(el.xyz[rows].cpu().numpy(), k=1,

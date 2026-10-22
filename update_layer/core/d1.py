@@ -85,9 +85,19 @@ def _pack(k: torch.Tensor) -> torch.Tensor:
     return (k[..., 0] << 42) | (k[..., 1] << 21) | k[..., 2]
 
 
+def _unpack(p: torch.Tensor) -> torch.Tensor:
+    m = (1 << 21) - 1
+    return torch.stack([p >> 42, (p >> 21) & m, p & m], dim=-1) - _BIG
+
+
 _N26 = torch.tensor([(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)
                      if (dx, dy, dz) != (0, 0, 0)], dtype=torch.int64)
 _N18 = torch.tensor([o for o in _N26.tolist() if sum(abs(x) for x in o) <= 2], dtype=torch.int64)
+_N27 = torch.tensor([(0, 0, 0)] + _N26.tolist(), dtype=torch.int64)
+_N27_LIST, _N18_LIST = [tuple(o) for o in _N27.tolist()], [tuple(o) for o in _N18.tolist()]
+# a neighbour block's slab that pads a block along one axis, by offset: (source slice, padded slice)
+_CUT = {V: {-1: (slice(V - 1, V), slice(0, 1)), 0: (slice(0, V), slice(1, V + 1)), 1: (slice(0, 1), slice(V + 1, V + 2))}
+        for V in (8, 16, 32)}
 
 
 def _sec(ns: torch.Tensor) -> torch.Tensor:
@@ -137,6 +147,7 @@ class D1:
         self.pending: Dict[int, dict] = {}                     # identity -> motion episode not yet handed over
         self.live: List[dict] = []                             # per frame: the tracks observed (live_tracks.jsonl)
         self.motion_frames = 0
+        self._ray_key, self._ray_grid = None, None             # per pixel x / z and y / z, the same every frame
 
     # -- block pool -------------------------------------------------------------------------
     def _alloc(self, cap: int) -> None:
@@ -235,18 +246,20 @@ class D1:
         depth = torch.as_tensor(frame.depth, dtype=torch.float32, device=DEV)
         H, W = depth.shape
         T = torch.as_tensor(frame.T_world_cam, dtype=torch.float32, device=DEV)
-        uu = torch.arange(W, device=DEV, dtype=torch.float32)[None, :].expand(H, W)
-        vv = torch.arange(H, device=DEV, dtype=torch.float32)[:, None].expand(H, W)
-        xr = (uu + K.offset - K.cx) / K.fx
-        yr = (vv + K.offset - K.cy) / K.fy
+        key = (H, W, K.fx, K.fy, K.cx, K.cy, K.offset)
+        if self._ray_key != key:
+            uu = torch.arange(W, device=DEV, dtype=torch.float32)[None, :].expand(H, W)
+            vv = torch.arange(H, device=DEV, dtype=torch.float32)[:, None].expand(H, W)
+            self._ray_key, self._ray_grid = key, ((uu + K.offset - K.cx) / K.fx, (vv + K.offset - K.cy) / K.fy)
+        xr, yr = self._ray_grid
         valid_depth = torch.isfinite(depth) & (depth > 0)
         z = torch.where(valid_depth, depth, torch.zeros_like(depth))
         cam = torch.stack([xr * z, yr * z, z], dim=-1)
         rng = torch.linalg.norm(cam, dim=-1)                   # Hydra range image (0 where invalid)
         world = cam @ T[:3, :3].T + T[:3, 3]
-        label = torch.as_tensor(frame.semantic, dtype=torch.int64, device=DEV) if frame.semantic is not None \
+        label = torch.as_tensor(frame.semantic, device=DEV).to(torch.int64) if frame.semantic is not None \
             else torch.zeros((H, W), dtype=torch.int64, device=DEV)
-        inst = torch.as_tensor(frame.instance, dtype=torch.int64, device=DEV)
+        inst = torch.as_tensor(frame.instance, device=DEV).to(torch.int64)
         dyn_label = torch.zeros_like(label, dtype=torch.bool)
         for d in cfg.dynamic_labels:
             dyn_label |= label == d
@@ -333,17 +346,11 @@ class D1:
         graph = coo_matrix((np.ones(len(src), dtype=np.int8), (src.cpu().numpy(), dst.cpu().numpy())), shape=(nv, nv))
         _, comp = connected_components(graph, directed=False)
         label = torch.as_tensor(comp, device=DEV, dtype=torch.int64)
-        clusters = []
         pt_label = label[vinv]
         in_cluster = node[vinv]
-        ids = torch.unique(pt_label[in_cluster])
-        for cid in ids.tolist():
-            sel = in_cluster & (pt_label == cid)
-            n = int(sel.sum())
-            if n < cfg.motion_min_cluster or n > cfg.motion_max_cluster:
-                continue
-            clusters.append(dict(pix=pix[sel], semantics=None))
-        return clusters
+        n = torch.bincount(pt_label[in_cluster], minlength=nv)
+        ids = torch.nonzero((n >= cfg.motion_min_cluster) & (n <= cfg.motion_max_cluster)).squeeze(1)
+        return [dict(pix=pix[in_cluster & (pt_label == cid)], semantics=None) for cid in ids.tolist()]
 
     # -- 2. InstanceForwarding ---------------------------------------------------------------
     def _instance_clusters(self, inst, label, valid) -> List[dict]:
@@ -382,14 +389,18 @@ class D1:
             kept.append(c)
         if cfg.dynamic_labels:
             from scipy.ndimage import label as cc
-            lab_np = label.cpu().numpy()
-            valid_np = valid.cpu().numpy()
+            valid_np = None
             for d in cfg.dynamic_labels:
-                comp, n = cc(lab_np == d, structure=np.ones((3, 3), dtype=bool))
+                is_d = label == d
+                if not bool(is_d.any()):
+                    continue
+                valid_np = valid.cpu().numpy() if valid_np is None else valid_np
+                comp, n = cc(is_d.cpu().numpy(), structure=np.ones((3, 3), dtype=bool))
                 if not n:
                     continue
                 comp = np.where(valid_np, comp, 0).ravel()
-                order = np.argsort(comp, kind="stable")
+                order = np.flatnonzero(comp)
+                order = order[np.argsort(comp[order], kind="stable")]
                 cs = comp[order]
                 starts = np.searchsorted(cs, np.arange(1, n + 1))
                 ends = np.searchsorted(cs, np.arange(1, n + 1), side="right")
@@ -579,8 +590,8 @@ class D1:
             pts = d[..., None, :] * t0[None, None, :, None]
             ok = t0[None, None, :] <= far[..., None]
             pw = pts[ok] @ T[:3, :3].T + T[:3, 3]
-            keys.append(torch.unique(torch.floor(pw / bs).to(torch.int64), dim=0))
-        return torch.unique(torch.cat(keys), dim=0)
+            keys.append(torch.unique(_pack(torch.floor(pw / bs).to(torch.int64))))
+        return _unpack(torch.unique(torch.cat(keys)))
 
     def _integrate(self, stamp, T, K, rng, mask, H, W) -> None:
         cfg = self.cfg
@@ -673,19 +684,9 @@ class D1:
         # ever-free for the blocks updated by this frame (neighbours read the state before this pass)
         if len(updated_slots):
             us = torch.unique(updated_slots)
-            free = self._is_free(us, t)
-            cand = free & ~self.ever_free[us]
+            cand = self._is_free(us, t) & ~self.ever_free[us]
             if cand.any():
-                rows, cols = torch.nonzero(cand, as_tuple=True)
-                g = self.block_key[us[rows]] * cfg.voxels_per_side + self.local[cols]
-                ok = torch.ones(len(g), dtype=torch.bool, device=DEV)
-                for o in _N18.to(DEV):
-                    s2, l2 = self._voxel(g + o)
-                    exists = s2 >= 0
-                    s2c, l2c = s2.clamp(min=0), l2
-                    nfree = (_sec(self.last_occ[s2c, l2c]) < t - cfg.temporal_buffer) & (self.last_obs[s2c, l2c] != 0)
-                    ok &= exists & (self.ever_free[s2c, l2c] | nfree)
-                self.ever_free[us[rows[ok]], cols[ok]] = True
+                self.ever_free[us] |= cand & self._free_neighbourhood(us, t)
         # resetInactive: blocks without active voxels, or whose voxels are all to be removed
         has_active = active.any(dim=1)
         all_removed = self.to_remove[alive].all(dim=1)
@@ -694,6 +695,26 @@ class D1:
             inv = {s: k for k, s in self.slots.items()}
             for s in alive[drop].tolist():
                 self._remove_block(inv[s])
+
+    def _free_neighbourhood(self, us: torch.Tensor, t: float) -> torch.Tensor:
+        """Per voxel of the blocks `us` (U, V3): each of its 18 neighbours exists and is ever-free or free, in the state
+        before this pass; each block padded by one voxel of its 26 neighbour blocks, the neighbours read as shifts."""
+        V, U = self.cfg.voxels_per_side, len(us)
+        lk, ls = self._lookup_table()
+        pk = _pack(self.block_key[us][None] + _N27.to(DEV)[:, None])                  # (27, U)
+        pos = torch.searchsorted(lk, pk).clamp(max=len(lk) - 1)
+        hit = lk[pos] == pk
+        sl = torch.where(hit, ls[pos], torch.zeros_like(pos))
+        v = (self.ever_free[sl] | self._is_free(sl, t)) & hit[..., None]              # (27, U, V3)
+        v = v.view(27, U, V, V, V)
+        pad = torch.zeros((U, V + 2, V + 2, V + 2), dtype=torch.bool, device=DEV)
+        for k, d in enumerate(_N27_LIST):
+            (xs, xd), (ys, yd), (zs, zd) = (_CUT[V][c] for c in d)
+            pad[:, zd, yd, xd] = v[k][:, zs, ys, xs]
+        ok = torch.ones((U, V, V, V), dtype=torch.bool, device=DEV)
+        for dx, dy, dz in _N18_LIST:
+            ok &= pad[:, 1 + dz:1 + dz + V, 1 + dy:1 + dy + V, 1 + dx:1 + dx + V]
+        return ok.view(U, -1)
 
     def _is_free(self, slots: torch.Tensor, t: float) -> torch.Tensor:
         return (_sec(self.last_occ[slots]) < t - self.cfg.temporal_buffer) & (self.last_obs[slots] != 0)
