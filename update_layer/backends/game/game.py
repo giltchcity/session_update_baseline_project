@@ -343,12 +343,13 @@ def end_map_from_checkpoint(run_dir: Path, session: str):
 
 def view_at_time(run_dir: Path, t: int, gm, end_maps: dict):
     """[4D] The map of time t (snapshots.map_at) as a renderable stand-in (_View, with gm's activations and SH degree)
-    and its identities; None outside the run's sessions. end_maps caches each session's end map."""
+    and its identities; None outside the run's sessions. end_maps (a dict the caller keeps) caches each session's end
+    map and the maps map_at reads."""
     def end_map(session):
         if session not in end_maps:
             end_maps[session] = end_map_from_checkpoint(run_dir, session)
         return end_maps[session]
-    st = map_at(Path(run_dir), int(t), end_map)
+    st = map_at(Path(run_dir), int(t), end_map, end_maps)
     if st is None:
         return None
     _, uid, p, ident = st
@@ -1075,9 +1076,9 @@ class GameBackend(Backend):
 
     def end_session(self) -> TrackedGaME:
         if self._snaplog is not None and not self._refined:
-            # [4D] keep the map of the last round before each state end of this session; the end map is the checkpoint
-            ends = [d for lst in self._intervals.values() for _, d in lst if d is not None]
-            info = keep_session(self._snaplog.dir, ends, int(self.session_start), int(self.game.now))
+            # [4D] keep the map of the last round before each state end of this session, with the session's final state
+            # intervals (the map of a time between rounds takes them); the end map is the checkpoint
+            info = keep_session(self._snaplog.dir, self._intervals, int(self.session_start), int(self.game.now))
             print(f"4D snapshots {self.spec_name}: {info['rounds']} rounds, {info['kept']} kept, {info['bytes'] / 1e6:.0f} MB", flush=True)
             self._snaplog = None
         return self.game

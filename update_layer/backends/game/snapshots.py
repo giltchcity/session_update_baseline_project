@@ -4,14 +4,21 @@ ends the state). During a session every round's map (the Gaussians the readout d
 identity, creation stamp, state birth) is written as its change since the previous round (rounds/, temporary). When the
 session ends, the map of the last round before each state end of the session is kept (kept/: the first in full, each
 later one as its change since the one before; changed rows as the bitwise XOR of their float bits, byte-shuffled,
-zlib: lossless) and the rounds are removed. The map at a session's end is its checkpoint.
+zlib: lossless) and the rounds are removed, and the session's final state intervals are kept with them (the layer's
+intervals as the backend last received them: they say which state ended when). The map at a session's end is its
+checkpoint.
 
-The map of time t (map_at): the kept map of the first state end after t within t's session (the map just before that
-change: from t to it nothing left, so it shows t's scene as fully as the session saw it), else the session's end map;
-objects born after t taken out (T1's birth; background stays).
-  SnapshotLog(dir).record(stamp, uid, params, identity, created, state_birth, base)    (mapping: the rows only read)
-  keep_session(session_dir, ends, start, end)                                          (session end)
-  map_at(run_dir, t, end_maps) -> (stamp, uid, params, identity) | None                (any time t)"""
+The map of time t (map_at): the rows alive at t by T1 under the session's final intervals (t1.state_membership,
+t1.alive_at: born at or before t, their state not ended by t), each state taken from one map:
+  - an object state standing at the session's end: from the end map (its latest, most complete version);
+  - an object state that ended after t: from the map kept just before its end (the last round with it);
+  - the background and any other row: from the nearest map at or after t (a kept map, else the end map), which holds
+    everything observed up to t.
+Rounds are 10.8 s apart and the layer may close a state rounds after its end, so the round maps alone do not separate
+the states of a time between rounds; the intervals do. Not represented: a state born and ended between two rounds.
+  SnapshotLog(dir).record(stamp, uid, params, identity, created, state_birth)          (mapping: the rows only read)
+  keep_session(session_dir, intervals, start, end)                                     (session end)
+  map_at(run_dir, t, end_map, cache) -> (stamp, uid, params, identity) | None          (any time t)"""
 from __future__ import annotations
 
 import io
@@ -137,13 +144,15 @@ class SnapshotLog:
         return self.rounds.write(stamp, u, b, ints, {})
 
 
-def keep_session(session_dir: Path, ends: List[int], start: int, end: int) -> dict:
+def keep_session(session_dir: Path, intervals: Dict[int, List[Tuple[int, Optional[int]]]], start: int, end: int) -> dict:
     """At a session's end: the map of the last round before each state end in (start, end] is kept (kept/, a chain of
-    its own), the rounds are removed. Writes kept/index.json even when nothing is kept (the session's range)."""
+    its own), the rounds are removed. kept/session.json holds the session's range and its final state intervals
+    {identity: [(birth, end or None)]}, written even when nothing is kept."""
     session_dir = Path(session_dir)
     rounds = session_dir / "rounds"
     index = json.loads((rounds / "index.json").read_text()) if (rounds / "index.json").exists() else []
     stamps = [r["stamp"] for r in index]
+    ends = [d for lst in intervals.values() for _, d in lst if d is not None]
     pick: Dict[int, List[int]] = {}
     for d in sorted({int(d) for d in ends if start < int(d) <= end}):
         before = [k for k, s in enumerate(stamps) if s < d]
@@ -157,35 +166,69 @@ def keep_session(session_dir: Path, ends: List[int], start: int, end: int) -> di
         stamp, uid, bits, ints = _replay(rounds, k)
         chain.write(stamp, uid, bits, ints, {"before_ends": pick[k]})
     (kept / "session.json").write_text(json.dumps({"start": int(start), "end": int(end), "rounds_seen": len(index),
-                                                   "kept": len(pick)}, indent=0))
+                                                   "kept": len(pick),
+                                                   "intervals": {str(int(i)): [[int(b), None if d is None else int(d)]
+                                                                               for b, d in lst]
+                                                                 for i, lst in intervals.items()}}, indent=0))
     if rounds.exists():
         shutil.rmtree(rounds)
     return {"rounds": len(index), "kept": len(pick), "bytes": sum(r["bytes"] for r in chain.index)}
 
 
-def _births(identity: np.ndarray, created: np.ndarray, state_birth: np.ndarray) -> np.ndarray:
-    """T1's birth (t1.birth, the one definition): background -inf, an object its state's birth when known, else its creation."""
+def _lifetimes(ints: Dict[str, np.ndarray], intervals: Dict[int, List[Tuple[int, Optional[int]]]], start: int):
+    """(birth, end) of each row of a map of the session by T1 under the session's final intervals, as the backend
+    assigns them (t1.state_membership: rows of this session by their creation, rows of earlier sessions keep their
+    state's birth and take the end of the state continuing at the session's start; t1.birth)."""
     import torch
     from . import t1
-    return t1.birth(torch.from_numpy(identity), torch.from_numpy(created), torch.from_numpy(state_birth)).numpy()
+    ident, created, sb0 = (torch.from_numpy(np.ascontiguousarray(ints[k])) for k in INTS)
+    none = torch.full_like(created, INT64_MAX)
+    sb, ds = t1.state_membership(ident, created, intervals, start, prior=(sb0, none, none))
+    return t1.birth(ident, created, sb).numpy(), ds.numpy()
 
 
-def map_at(run_dir: Path, t: int, end_map: Callable[[str], Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]]):
-    """(stamp of the map used, uid, params (n, WIDTH) float32, identity) of the map of time t; None outside every session.
-    end_map(session_name) -> (uid, params, ints) of that session's end map (its checkpoint's rows alive at its end)."""
+def map_at(run_dir: Path, t: int, end_map: Callable[[str], Tuple[np.ndarray, np.ndarray, Dict[str, np.ndarray]]],
+           cache: Optional[dict] = None):
+    """(stamp of the nearest map at or after t, uid, params (n, WIDTH) float32, identity) of the map of time t; None
+    outside every session. end_map(session_name) -> (uid, params, ints) of that session's end map (its checkpoint's rows
+    alive at its end). cache (a dict kept by the caller) holds the maps read, with their rows' lifetimes."""
+    cache = {} if cache is None else cache
     root = Path(run_dir) / "snapshots"
     for sdir in sorted(p for p in root.iterdir() if (p / "kept" / "session.json").exists()):
         ses = json.loads((sdir / "kept" / "session.json").read_text())
         if not ses["start"] <= t <= ses["end"]:
             continue
+        intervals = {int(i): [(int(b), None if d is None else int(d)) for b, d in lst] for i, lst in ses["intervals"].items()}
         index = json.loads((sdir / "kept" / "index.json").read_text()) if (sdir / "kept" / "index.json").exists() else []
-        after = [(min(d for d in r["before_ends"] if d > t), k) for k, r in enumerate(index) if any(d > t for d in r["before_ends"])]
-        if after:
-            stamp, uid, bits, ints = _replay(sdir / "kept", min(after)[1])
-        else:
-            uid, params, ints = end_map(sdir.name)
-            stamp, uid, bits, ints = ses["end"], *_sorted(uid, params, ints)
-        born = _births(ints["identity"], ints["created"], ints["state_birth"])
-        keep = born <= t
-        return stamp, uid[keep], bits[keep].view(np.float32), ints["identity"][keep]
+
+        def load(k):          # map k of the session (kept record k, or the end map: k == len(index)) and its lifetimes
+            if (str(sdir), k) not in cache:
+                if k < len(index):
+                    stamp, uid, bits, ints = _replay(sdir / "kept", k)
+                else:
+                    stamp, (uid, bits, ints) = ses["end"], _sorted(*end_map(sdir.name))
+                born, end = _lifetimes(ints, intervals, ses["start"])
+                cache[(str(sdir), k)] = (stamp, uid, bits, ints["identity"], born, end)
+            return cache[(str(sdir), k)]
+
+        later = [k for k, r in enumerate(index) if r["stamp"] >= t]
+        near = later[0] if later else len(index)                     # the nearest map at or after t
+        kept_ends = {d: k for k, r in enumerate(index) for d in r["before_ends"]}
+        ends_after = [d for d in kept_ends if d > t]
+        parts = []
+        for k in sorted({near, len(index)} | {kept_ends[d] for d in ends_after}):
+            stamp, uid, bits, ident, born, end = load(k)
+            alive, obj = (born <= t) & (t < end), ident != 0
+            standing = end > ses["end"]                              # the state stands at the session's end
+            if k == len(index):
+                take = alive & obj & standing
+            else:
+                take = alive & obj & np.isin(end, [d for d in index[k]["before_ends"] if d > t])
+            if k == near:
+                take |= alive & ~(obj & (standing | np.isin(end, list(kept_ends))))
+            parts.append((uid[take], bits[take], ident[take]))
+        uid = np.concatenate([p[0] for p in parts])
+        o = np.argsort(uid, kind="stable")
+        return (load(near)[0], uid[o], np.concatenate([p[1] for p in parts])[o].view(np.float32),
+                np.concatenate([p[2] for p in parts])[o])
     return None
