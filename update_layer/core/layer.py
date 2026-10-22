@@ -772,6 +772,7 @@ class UpdateLayer:
                 c = self.absence.count_current_surface(
                     i, frag.points, frag.normals, cfg.map_resolution,
                     max(frag.last_support_time, frag.last_confirmed_support), stamp, frag.birth_time, prior, key)
+                frag.first_absence = c.first_contradiction_stamp        # read by state_intervals only
                 ratio, measured, calibrated = self.absence.look_likelihood(i, key, stamp)
                 ev[slot] = l2_state.SurfaceEvidence(
                     support_rays=c.support_rays, contradiction_rays=c.contradiction_rays,
@@ -1054,16 +1055,21 @@ class UpdateLayer:
         return torch.cat(out) if out else _empty_ids()
 
     def state_intervals(self) -> Dict[int, list]:
-        """(birth, death) of every object state, for backends whose map is estimated per state
-        (interface.Backend.consumes_state_intervals), on the backend's clock: the birth from _owned_from; an identity is
-        one object, so a state that has ended ended no later than the birth of its identity's next state. The layer
-        closes a state at a round, after the next one was born (synthetic B, adc9720: the TV cabinet seen at its new
-        place from 51.8 s, its earlier state closed at 64.8 s; that state's 15.8 k rows stood in for the cabinet in the
-        keyframes of 51.8-64.8 s, and the final map showed 12-20 % of it see-through where they had been)."""
+        """(birth, end) of every object state, for backends whose map is estimated per state
+        (interface.Backend.consumes_state_intervals) and the 4D map, on the backend's clock: the birth from _owned_from,
+        the end when the state ended as observed (the registry's: its surface first seen gone, else its close). An
+        identity is one object, so a state that has ended ended no later than the birth of its successor, a state of the
+        identity born after this one was last seen (synthetic B, adc9720: the TV cabinet seen at its new place from
+        51.8 s, its earlier state closed at 64.8 s; that state's 15.8 k rows stood in for the cabinet in the keyframes of
+        51.8-64.8 s, and the final map showed 12-20 % of it see-through where they had been). A state born while this
+        one was still seen is another hypothesis of the same object, not its successor (synthetic B 517293c: the range
+        hood's session state, born 3.8 s, cut its inherited state, seen until 46.6 s, to 3.8 s, and the map of 17 s
+        drew the hood from the session's few rows)."""
         out = {}
         for i, lst in self.registry.state_intervals().items():
-            iv = sorted((self._owned_from(b), d) for b, d in lst)
-            out[i] = [(b, d if d is None or k + 1 == len(iv) else min(d, iv[k + 1][0])) for k, (b, d) in enumerate(iv)]
+            iv = sorted((self._owned_from(x[0]), x[1], x[2] if len(x) > 2 else -1) for x in lst)
+            out[i] = [(b, d if d is None or k + 1 == len(iv) or iv[k + 1][0] <= seen else min(d, iv[k + 1][0]))
+                      for k, (b, d, seen) in enumerate(iv)]
         return out
 
     def _owned_from(self, t: int) -> int:

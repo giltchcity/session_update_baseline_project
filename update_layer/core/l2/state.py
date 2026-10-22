@@ -106,6 +106,9 @@ class Fragment:
     death_time: Optional[int] = None
     reconstruction_frames: int = 0
     looks: List[Look] = field(default_factory=list)
+    # the first frame after its last support that saw its surface gone (0: none yet); set each round while it is
+    # checked (layer._verify_l2), frozen once it is closed: when the state ended, as observed (state_intervals)
+    first_absence: int = 0
 
     @property
     def num_vertices(self) -> int:
@@ -1046,9 +1049,12 @@ class PersistentObjectState:
         o = self.observed_new(physical_instance_id)
         return [] if o is None else [o]
 
-    def state_intervals(self) -> Dict[int, List[Tuple[int, Optional[int]]]]:
-        """Read-only view for representation backends (layer addition, no decision reads it): (birth,
-        death) of every state of every identity, committed or pending; death None = still open."""
+    def state_intervals(self) -> Dict[int, List[Tuple[int, Optional[int], int]]]:
+        """Read-only view for representation backends (layer addition, no decision reads it): (birth, end,
+        last seen) of every state of every identity, committed or pending; end None = still open. The end is when
+        the state ended as observed: the first frame after its last support that saw its surface gone, when that
+        precedes the round that closed it (death_time: an upper bound, the decision); else death_time (closed
+        without seeing it gone: the tracker watched it leave, it was seen elsewhere)."""
         def frags(state: PhysicalState) -> List[Fragment]:
             out = list(state.fragments)
             if state.observed_new is not None:
@@ -1060,4 +1066,10 @@ class PersistentObjectState:
         # sighting of the track that formed it, backend_session.cpp:303-316), never later than the fragment's birth
         def t_l(f: Fragment) -> int:
             return min(f.birth_time, f.track_first_seen) if f.track_first_seen > 0 else f.birth_time
-        return {i: [(t_l(f), f.death_time) for f in frags(s)] for i, s in self.states.items()}
+
+        def end(f: Fragment) -> Optional[int]:
+            if f.death_time is None:
+                return None
+            return f.first_absence if 0 < f.first_absence < f.death_time else f.death_time
+        return {i: [(t_l(f), end(f), max(f.last_support_time, f.last_confirmed_support)) for f in frags(s)]
+                for i, s in self.states.items()}

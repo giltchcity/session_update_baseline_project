@@ -247,6 +247,7 @@ class SurfaceEvidenceCounts:
     support_rays: int = 0
     contradiction_rays: int = 0
     latest_support_stamp: int = 0
+    first_contradiction_stamp: int = 0          # first frame after the window's last support that saw the surface gone
     absence_coverage_sufficient: bool = False
     reliable_samples: int = 0
     reliable_in_view: int = 0
@@ -516,7 +517,7 @@ class AbsenceModel:
         coverage = torch.zeros(len(P), dtype=torch.bool, device=DEV)
         s_sup = torch.zeros(len(P), dtype=torch.int64, device=DEV)
         s_abs = torch.zeros(len(P), dtype=torch.int64, device=DEV)
-        sup_keys, con_keys = [], []
+        sup_keys, con_keys, con_frames = [], [], []
         for f0 in range(lo, hi, 64):
             f1 = min(hi, f0 + 64)
             p = self.store.project(f0, f1, pts)
@@ -539,6 +540,10 @@ class AbsenceModel:
             res.occluded_votes += int((vote == V_OCCLUDED).sum())
             if sup.any():
                 res.latest_support_stamp = max(res.latest_support_stamp, int(st[sup].max()))
+            con_frames.append(stamps[f0 - lo:f1 - lo][con.any(1)])
+        con_frames = torch.cat(con_frames)
+        con_frames = con_frames[con_frames > res.latest_support_stamp]
+        res.first_contradiction_stamp = int(con_frames.min()) if len(con_frames) else 0
         res.unobserved_samples = int((~coverage).sum())
         res.contradicted_surface_samples = int((s_abs > s_sup).sum())
         res.absence_coverage_sufficient = res.surface_samples > 0 and res.contradicted_surface_samples > 0 and \
