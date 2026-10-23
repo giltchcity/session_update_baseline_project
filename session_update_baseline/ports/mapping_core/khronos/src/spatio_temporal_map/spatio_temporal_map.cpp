@@ -46,6 +46,7 @@
 #include <iomanip>
 #include <sstream>
 #include <fstream>
+#include <map>
 #include <mutex>
 #include <numeric>
 #include <set>
@@ -66,6 +67,7 @@
 #include <spark_dsg/serialization/graph_binary_serialization.h>
 #include <spark_dsg/serialization/versioning.h>
 
+#include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace khronos {
@@ -576,6 +578,67 @@ void trimTrajectoryHistory(KhronosObjectAttributes& attrs, TimeStamp target_time
   }
 }
 
+// A snapshot as the query view reads it: its 4D history (kHistoryPartition) unfolded into the objects
+// layer. A history node is a place an identity left, present over the identity's intervals there; the
+// identity keeps the rest of its intervals, so at any time an object is in one place.
+DynamicSceneGraph::Ptr unfoldHistory(const DynamicSceneGraph& snapshot) {
+  auto view = snapshot.clone();
+  const auto objects = view->getLayerKey(DsgLayers::OBJECTS);
+  const auto* history =
+      objects ? view->findLayer(objects->layer, SpatioTemporalMap::kHistoryPartition) : nullptr;
+  if (!history) {
+    return view;
+  }
+  std::map<size_t, std::vector<std::pair<TimeStamp, TimeStamp>>> left;
+  std::vector<std::pair<NodeId, spark_dsg::NodeAttributes::Ptr>> places;
+  for (const auto& [id, node] : history->nodes()) {
+    const auto& attrs = node->attributes<KhronosObjectAttributes>();
+    if (const auto physical = UpdateKhronosObjectsFunctor::physicalInstanceId(attrs)) {
+      for (size_t k = 0; k < attrs.first_observed_ns.size() && k < attrs.last_observed_ns.size(); ++k) {
+        left[*physical].emplace_back(attrs.first_observed_ns[k], attrs.last_observed_ns[k]);
+      }
+    }
+    places.emplace_back(id, attrs.clone());
+  }
+  view->removeLayer(objects->layer, SpatioTemporalMap::kHistoryPartition);
+  for (auto& [physical, intervals] : left) {
+    std::sort(intervals.begin(), intervals.end());
+  }
+  for (const auto& [id, node] : view->getLayer(DsgLayers::OBJECTS).nodes()) {
+    auto& attrs = node->attributes<KhronosObjectAttributes>();
+    const auto physical = UpdateKhronosObjectsFunctor::physicalInstanceId(attrs);
+    const auto elsewhere = physical ? left.find(*physical) : left.end();
+    if (elsewhere == left.end()) {
+      continue;
+    }
+    std::vector<TimeStamp> first, last;
+    for (size_t k = 0; k < attrs.first_observed_ns.size() && k < attrs.last_observed_ns.size(); ++k) {
+      TimeStamp begin = attrs.first_observed_ns[k];
+      const TimeStamp end = attrs.last_observed_ns[k];
+      for (const auto& [left_begin, left_end] : elsewhere->second) {
+        if (left_end <= begin || left_begin >= end) {
+          continue;
+        }
+        if (left_begin > begin) {
+          first.push_back(begin);
+          last.push_back(left_begin);
+        }
+        begin = left_end;
+      }
+      if (begin < end) {
+        first.push_back(begin);
+        last.push_back(end);
+      }
+    }
+    attrs.first_observed_ns = std::move(first);
+    attrs.last_observed_ns = std::move(last);
+  }
+  for (auto& [id, attrs] : places) {
+    view->emplaceNode(objects->layer, id, std::move(attrs));
+  }
+  return view;
+}
+
 }  // namespace
 
 void declare_config(SpatioTemporalMap::Config& config) {
@@ -624,6 +687,7 @@ void SpatioTemporalMap::moveMembers(SpatioTemporalMap&& other) {
   previous_time_ = other.previous_time_;
   current_dsg_idx_ = other.current_dsg_idx_;
   current_dsg_ = std::move(other.current_dsg_);
+  view_source_ = std::move(other.view_source_);
   finalized_ = other.finalized_;
 }
 
@@ -719,6 +783,7 @@ void SpatioTemporalMap::resetQueryCache() {
   previous_time_ = 0;
   current_dsg_idx_ = std::numeric_limits<size_t>::max();
   current_dsg_.reset();
+  view_source_.reset();
 }
 
 uintmax_t SpatioTemporalMap::snapshotStorageBytes() const {
@@ -818,7 +883,8 @@ DynamicSceneGraph::Ptr SpatioTemporalMap::getDsgPtr(TimeStamp robot_time) {
   // If the source changes we need to reset the DSG.
   if (current_dsg_idx_ != new_dsg_idx) {
     current_dsg_idx_ = new_dsg_idx;
-    current_dsg_ = sourceDsg(current_dsg_idx_)->clone();
+    view_source_ = unfoldHistory(*sourceDsg(current_dsg_idx_));
+    current_dsg_ = view_source_->clone();
 
     // Trim mesh and other components
     trimDsgToTime(previous_time_);
@@ -855,7 +921,7 @@ void SpatioTemporalMap::moveMeshForward() {
   }
 
   auto& mesh = *current_dsg_->mesh();
-  const auto source = sourceDsg(current_dsg_idx_);
+  const auto& source = view_source_;
   const auto& src_mesh = *source->mesh();
 
   if (src_mesh.first_seen_stamps.empty()) {
@@ -899,7 +965,7 @@ void SpatioTemporalMap::moveMeshForward() {
 
 void SpatioTemporalMap::moveAgentForward() {
   // Add nodes starting from the current one.
-  const auto source = sourceDsg(current_dsg_idx_);
+  const auto& source = view_source_;
   const auto src_layer = source->findLayer(
       source->getLayerKey(DsgLayers::AGENTS)->layer, robot_prefix_.key);
   if (!src_layer) {
@@ -925,7 +991,7 @@ void SpatioTemporalMap::moveObjects() {
     return;
   }
 
-  const auto source = sourceDsg(current_dsg_idx_);
+  const auto& source = view_source_;
   const auto& src_layer = source->getLayer(DsgLayers::OBJECTS);
 
   // Get source mesh for timing information
@@ -972,7 +1038,7 @@ void SpatioTemporalMap::moveDynamicObjectAttributesForward() {
     return;
   }
 
-  const auto source = sourceDsg(current_dsg_idx_);
+  const auto& source = view_source_;
   for (const auto& [id, node] : current_dsg_->getLayer(DsgLayers::OBJECTS).nodes()) {
     auto& attrs = node->attributes<KhronosObjectAttributes>();
     const auto& src_attrs =
@@ -1021,7 +1087,7 @@ void SpatioTemporalMap::moveMeshBackward() {
   }
 
   auto& mesh = *current_dsg_->mesh();
-  const auto source = sourceDsg(current_dsg_idx_);
+  const auto& source = view_source_;
   const auto& src_mesh = *source->mesh();
   
   if (mesh.first_seen_stamps.empty()) {
@@ -1079,7 +1145,7 @@ void SpatioTemporalMap::trimDsgToTime(TimeStamp target_time) {
 
   if (current_dsg_->hasMesh()) {
     auto& mesh = *current_dsg_->mesh();
-    const auto source = sourceDsg(current_dsg_idx_);
+    const auto& source = view_source_;
     const auto& src_mesh = *source->mesh();
     
     if (!src_mesh.first_seen_stamps.empty()) {

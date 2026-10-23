@@ -38,6 +38,8 @@
 #include "khronos/backend/backend.h"
 #include "session_core/surface/closed_object_background.h"
 #include "session_core/surface/triangle_grid.h"
+#include "khronos/backend/update_khronos_objects_functor.h"
+#include <spark_dsg/node_symbol.h>
 #include <algorithm>
 #include <string>
 #include <cmath>
@@ -344,23 +346,109 @@ void Backend::sessionAfterReconcile(
   }
   refusion_report_ = std::move(round.report_json);
 }
+
+// The 4D history, a partition of its own (SpatioTemporalMap::kHistoryPartition): the places a physical
+// identity left, moved or taken away. Its states at one place (overlapping surface boxes) are one place;
+// following states there are one stay. A place whose last state there was closed is one history node: the
+// surface last observed there, present over the identity's intervals within its stays there, each from its
+// first sighting there (the identity's first state: from the start) until it was closed there. The objects
+// layer is not touched; the query view shows the identity outside these intervals. Snapshot only: the
+// working graph holds no history.
+void Backend::sessionWriteHistory(DynamicSceneGraph& snapshot) const {
+  if (!snapshot.hasLayer(DsgLayers::OBJECTS)) return;
+  const auto box = [](const BoundingBox& bbox) {
+    Eigen::AlignedBox3f world;
+    for (const auto& corner : bbox.corners()) world.extend(corner);
+    return world;
+  };
+  std::vector<std::pair<NodeId, size_t>> identities;
+  for (const auto& [id, node] : snapshot.getLayer(DsgLayers::OBJECTS).nodes()) {
+    const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    const auto physical = attrs ? UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs) : std::nullopt;
+    if (physical && !attrs->first_observed_ns.empty()) identities.emplace_back(id, *physical);
+  }
+  for (const auto& [node_id, physical] : identities) {
+    const auto& current = snapshot.getNode(node_id).attributes<KhronosObjectAttributes>();
+    const auto& first = current.first_observed_ns;
+    const auto& last = current.last_observed_ns;
+    if (last.size() != first.size()) continue;
+    const auto states = persistent_objects_.historyFragments(physical);
+    // Places: the last state at each place, and the stays there [first sighting, closure).
+    std::vector<std::pair<size_t, std::vector<std::pair<TimeStamp, TimeStamp>>>> places;
+    size_t previous = 0;
+    for (size_t i = 0; i < states.size(); ++i) {
+      if (!states[i].bbox) continue;
+      const TimeStamp closure = states[i].death_time.value_or(std::numeric_limits<TimeStamp>::max());
+      const auto place = static_cast<size_t>(
+          std::find_if(places.begin(), places.end(), [&](const auto& candidate) {
+            return box(*states[candidate.first].bbox).intersects(box(*states[i].bbox));
+          }) - places.begin());
+      if (place < places.size() && place == previous) {
+        places[place].second.back().second = closure;
+      } else {
+        const TimeStamp sighting = places.empty() ? 0
+            : states[i].track_first_seen > 0 ? states[i].track_first_seen : states[i].birth_time;
+        if (place == places.size()) places.emplace_back();
+        places[place].second.emplace_back(sighting, closure);
+      }
+      places[place].first = i;
+      previous = place;
+    }
+    for (auto& [index, stays] : places) {
+      const auto& state = states[index];
+      if (!state.death_time || !state.geometry || state.geometry->numVertices() == 0) continue;
+      std::sort(stays.begin(), stays.end());
+      std::vector<TimeStamp> place_first, place_last;
+      for (size_t k = 0; k < first.size(); ++k) {
+        for (const auto& [sighting, closure] : stays) {
+          const TimeStamp begin = std::max(first[k], sighting);
+          const TimeStamp end = std::min(last[k], closure);
+          if (begin >= end) continue;
+          if (!place_last.empty() && begin <= place_last.back()) {
+            place_last.back() = std::max(place_last.back(), end);
+          } else {
+            place_first.push_back(begin);
+            place_last.push_back(end);
+          }
+        }
+      }
+      if (place_first.empty()) continue;
+      auto left = std::make_unique<KhronosObjectAttributes>(current);
+      left->mesh = *state.geometry;
+      left->bounding_box = *state.bbox;
+      left->position = state.position;
+      left->trajectory_timestamps.clear();
+      left->trajectory_positions.clear();
+      left->dynamic_object_points.clear();
+      left->first_observed_ns = place_first;
+      left->last_observed_ns = place_last;
+      snapshot.emplaceNode(snapshot.getLayerKey(DsgLayers::OBJECTS)->layer, NodeSymbol('E', state.uid),
+                           std::move(left), SpatioTemporalMap::kHistoryPartition);
+    }
+  }
+}
+
 void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
   const auto path = log_setup.path();
   saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
     if (map_.numTimeSteps() > 0) {
       // One boundary surface: the consolidated final map is what the next
-      // session reasons on and what it shows.
+      // session reasons on and what it shows. It is the map without its 4D
+      // history, so the history never enters the next session's mapping.
       const size_t final_index = map_.numTimeSteps() - 1;
+      auto final_map = map_.rawDsg(final_index)->clone();
+      if (const auto objects = final_map->getLayerKey(DsgLayers::OBJECTS)) {
+        final_map->removeLayer(objects->layer, SpatioTemporalMap::kHistoryPartition);
+      }
       SpatioTemporalMap chain(config.spatio_temporal_map);
-      chain.update(map_.rawDsg(final_index)->clone(), map_.stamps()[final_index]);
+      chain.update(final_map->clone(), map_.stamps()[final_index]);
       if (!chain.save(path / "chain_state.4dmap.zpk")) {
         LOG(ERROR) << "Failed to save the chain state to '" << path << "'.";
       }
       {
         // What this session's final map shows: the next session's memory.
-        const size_t last = map_.numTimeSteps() - 1;
         SpatioTemporalMap shown(config.spatio_temporal_map);
-        shown.update(map_.rawDsg(last)->clone(), map_.stamps()[last]);
+        shown.update(final_map, map_.stamps()[final_index]);
         if (!shown.save(path / "shown_state.4dmap.zpk")) {
           LOG(ERROR) << "Failed to save the shown state to '" << path << "'.";
         }

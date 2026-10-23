@@ -11,6 +11,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -508,7 +509,54 @@ void testBoundedFileDescriptors() {
 
 }  // namespace
 
+// The 4D history partition holds a place the identity left. The snapshot's objects layer, the map, stays as
+// it is; the query view reads the place as an object node with its own surface and interval, and the
+// identity outside that interval, so at any time the object is in one place.
+void testHistoryPartition() {
+  const TimeStamp stamp = 6 * kBaseStamp;
+  auto snapshot = makeRichSnapshot(5);
+  for (size_t i = 0; i < snapshot->mesh()->numVertices(); ++i) {  // the map begins at the first stamp
+    snapshot->mesh()->setFirstSeenTimestamp(i, kBaseStamp);
+  }
+  const auto identity = spark_dsg::NodeSymbol('O', 10), place = spark_dsg::NodeSymbol('E', 1);
+  auto left = std::make_unique<ObjectAttrs>(snapshot->getNode(identity).attributes<ObjectAttrs>());
+  left->position = Eigen::Vector3d(-2.0, 0.25, 1.0);
+  left->bounding_box.world_P_center = Eigen::Vector3f(-2.0f, 0.25f, 1.0f);
+  left->trajectory_timestamps.clear();
+  left->trajectory_positions.clear();
+  left->dynamic_object_points.clear();
+  left->first_observed_ns = {kBaseStamp};
+  left->last_observed_ns = {3 * kBaseStamp};
+  const auto objects_layer = snapshot->getLayerKey(spark_dsg::DsgLayers::OBJECTS)->layer;
+  require(snapshot->emplaceNode(objects_layer, place, std::move(left), SpatioTemporalMap::kHistoryPartition),
+          "history node insertion succeeds");
+  SpatioTemporalMap map(SpatioTemporalMap::Config{});
+  map.update(snapshot, stamp);
+  const auto raw = map.rawDsg(0);
+  require(raw->getLayer(objects_layer, SpatioTemporalMap::kHistoryPartition).hasNode(place) &&
+              raw->getNode(identity).attributes<ObjectAttrs>().first_observed_ns ==
+                  std::vector<TimeStamp>{kBaseStamp},
+          "the snapshot keeps its history partition and the map its identity");
+  // Whether a node is in the query view at a time, and present then.
+  const auto shown = [&](TimeStamp time, spark_dsg::NodeId id) -> std::optional<bool> {
+    const auto& objects = map.getDsgPtr(time)->getLayer(spark_dsg::DsgLayers::OBJECTS);
+    if (!objects.hasNode(id)) return std::nullopt;
+    return khronos::isPresent(objects.getNode(id).attributes<ObjectAttrs>(), time);
+  };
+  require(shown(2 * kBaseStamp, place) == true && !shown(2 * kBaseStamp, identity),
+          "while the identity was at the place it left, it is there");
+  require(shown(4 * kBaseStamp, identity) == true && shown(4 * kBaseStamp, place) == false,
+          "after it left, it is where it is now; the place keeps its surface, not present");
+  require(shown(stamp, identity) == true && shown(stamp, place) == false, "the same at the snapshot");
+  const auto& now = map.getDsgPtr(stamp)->getLayer(spark_dsg::DsgLayers::OBJECTS).getNode(identity)
+                        .attributes<ObjectAttrs>();
+  require(now.first_observed_ns == std::vector<TimeStamp>{3 * kBaseStamp} &&
+              now.last_observed_ns == std::vector<TimeStamp>{std::numeric_limits<uint64_t>::max()},
+          "the identity is shown outside the interval of the place it left");
+}
+
 int main() {
+  testHistoryPartition();
   testExactTimelineAndLegacyCompatibility();
   testBoundedResidentMemory();
   testBoundedFileDescriptors();

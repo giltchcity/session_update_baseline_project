@@ -59,6 +59,14 @@ struct SnapshotBlob;
  */
 class SpatioTemporalMap {
  public:
+  /**
+   * @brief Partition of a snapshot's objects layer holding its 4D history: the places a physical
+   * identity left, each a node with the surface last observed there, present over the identity's
+   * intervals there. The objects layer itself is the map (what the next session inherits); the query
+   * view (getDsgPtr) reads the history as object nodes and the identity outside those intervals.
+   */
+  static constexpr spark_dsg::PartitionId kHistoryPartition = 'E';
+
   // Config.
   struct Config {
     int verbosity = hydra::GlobalInfo::instance().getConfig().default_verbosity;
@@ -181,8 +189,10 @@ class SpatioTemporalMap {
   TimeStamp previous_time_ = 0;
   size_t current_dsg_idx_ = std::numeric_limits<size_t>::max();
 
-  // State of the DSG for the given query and robot time.
+  // State of the DSG for the given query and robot time, and the snapshot it is taken from with its
+  // 4D history unfolded.
   DynamicSceneGraph::Ptr current_dsg_;
+  DynamicSceneGraph::Ptr view_source_;
 
   // Whether all data is finalized.
   bool finalized_;

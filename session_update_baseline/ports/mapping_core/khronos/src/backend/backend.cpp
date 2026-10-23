@@ -282,6 +282,7 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   reconciler_->reconcile(*dsg, changes, stamp);
 
   if (session_extensions_enabled_) sessionAfterReconcile(dsg, stamp, finalize_pending);
+  if (session_extensions_enabled_) sessionWriteHistory(*dsg);
   map_.update(dsg, stamp);
 
   ChangeSink::callAll(change_sinks_, stamp, changes);

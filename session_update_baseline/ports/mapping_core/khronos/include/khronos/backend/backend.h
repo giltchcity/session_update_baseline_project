@@ -208,6 +208,7 @@ class Backend : public hydra::BackendModule {
                               TimeStamp stamp, bool finalize_pending);
   void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,
                              bool finalize_pending);
+  void sessionWriteHistory(DynamicSceneGraph& snapshot) const;
   void saveSessionState(const hydra::DataDirectory& log_setup);
 
   // Members.

@@ -105,8 +105,11 @@ Json summarizeDsg(const khronos::DynamicSceneGraph::Ptr& dsg) {
       result["current_trajectory_objects"] =
           result["current_trajectory_objects"].get<std::size_t>() + 1;
     }
+    // A 4D-history place (kHistoryPartition, unfolded into the objects layer by
+    // the query view) is where an identity was, not a current object.
+    const bool history_place = spark_dsg::NodeSymbol(node->id).category() == 'E';
     const auto instance_id = physicalInstanceId(*attrs);
-    if (instance_id) {
+    if (instance_id && !history_place) {
       ++physical_counts[*instance_id];
       physical_semantics[*instance_id].insert(attrs->semantic_label);
       physical_mesh_vertices[*instance_id] += attrs->mesh.numVertices();
