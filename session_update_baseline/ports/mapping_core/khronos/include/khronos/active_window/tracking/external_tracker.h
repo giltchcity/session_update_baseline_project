@@ -92,7 +92,8 @@ class ExternalTracker : public Tracker {
   void associatePhysicalTracks(const FrameData& data,
                                const Observations& measured,
                                std::unordered_set<int>& used_dynamic_clusters);
-  void associateDynamicTracks(const FrameData& data,
+  void associateDynamicTracks(const VolumetricMap& map,
+                              const FrameData& data,
                               const Observations& measured,
                               std::unordered_set<int>& used_dynamic_clusters);
   void updateTrackingDuration();

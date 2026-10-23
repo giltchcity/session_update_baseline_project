@@ -74,6 +74,12 @@ struct Observation {
   Point dynamic_centroid = Point::Zero();
   BoundingBox dynamic_bounding_box;
   Points dynamic_points;
+
+  // Whether the FrameDataBuffer keeps this observation's frame. False for motion
+  // the map integrates as static (FrameData::side_motion_clusters): its sample is
+  // the measurement above, and it must not change which frames static
+  // reconstruction finds in the buffer.
+  bool holds_frame = true;
 };
 using Observations = std::vector<Observation>;
 

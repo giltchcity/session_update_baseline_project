@@ -85,7 +85,7 @@ void FrameDataBuffer::trimBuffer(const Tracks& tracks) {
         oldest_buffered,
         [](const Observation& observation, TimeStamp stamp) { return observation.stamp < stamp; });
     for (auto iter = first_relevant; iter != track.observations.end(); ++iter) {
-      if (buffered_stamps.count(iter->stamp)) {
+      if (iter->holds_frame && buffered_stamps.count(iter->stamp)) {
         referenced_stamps.insert(iter->stamp);
       }
     }

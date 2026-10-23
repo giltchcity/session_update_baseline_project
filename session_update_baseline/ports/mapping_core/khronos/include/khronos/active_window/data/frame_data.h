@@ -70,6 +70,13 @@ struct FrameData {
   Image dynamic_image;
   using DynamicImageType = int;
 
+  // Motion clusters that mostly cover a static class and no physical instance
+  // (e.g. a ball labelled as an office object). They are neither in
+  // dynamic_clusters nor in dynamic_image, so the map integrates their pixels
+  // exactly as before; the tracker follows them only to export a motion-only
+  // trajectory, which the extractor keeps only above min_dynamic_displacement.
+  std::vector<MeasurementCluster> side_motion_clusters;
+
   // Semantic clusters in this frame.
   std::vector<MeasurementCluster> semantic_clusters;
 

@@ -88,6 +88,10 @@ void ExternalTracker::processInput(const VolumetricMap& map, FrameData& data) {
     cluster.bounding_box =
         BoundingBox(utils::VertexMapAdaptor(cluster.pixels, data.input.vertex_map));
   }
+  for (auto& cluster : data.side_motion_clusters) {
+    cluster.bounding_box =
+        BoundingBox(utils::VertexMapAdaptor(cluster.pixels, data.input.vertex_map));
+  }
 
   // Associate current objects to existing tracks and create new tracks for
   // unassociated objects.
@@ -106,7 +110,7 @@ void ExternalTracker::associateTracks(const VolumetricMap& map, const FrameData&
   }
   std::unordered_set<int> used_dynamic_clusters;
   associatePhysicalTracks(data, measured, used_dynamic_clusters);
-  associateDynamicTracks(data, measured, used_dynamic_clusters);
+  associateDynamicTracks(map, data, measured, used_dynamic_clusters);
 }
 
 void ExternalTracker::associatePhysicalTracks(
@@ -147,38 +151,58 @@ void ExternalTracker::associatePhysicalTracks(
 }
 
 void ExternalTracker::associateDynamicTracks(
+    const VolumetricMap& map,
     const FrameData& data,
     const Observations& measured,
     std::unordered_set<int>& used_dynamic_clusters) {
   // Associate dynamic-only tracks by centroid distance. Physical tracks are
   // handled above even after they become dynamic, because their ID remains the
-  // authoritative external identity.
+  // authoritative external identity. The candidates are the motion clusters no
+  // physical track took and the motion the map integrates as static
+  // (data.side_motion_clusters): one pool, one association, one displacement
+  // rule at extraction.
+  struct Candidate {
+    const MeasurementCluster* cluster;
+    Observation measured;
+    bool used = false;
+  };
+  std::vector<Candidate> candidates;
+  for (size_t i = 0; i < data.dynamic_clusters.size(); ++i) {
+    if (!used_dynamic_clusters.count(data.dynamic_clusters[i].id)) {
+      candidates.push_back({&data.dynamic_clusters[i], measured[i]});
+    }
+  }
+  for (const auto& side : data.side_motion_clusters) {
+    Observation observation = observe(map, data, -1, &side);
+    observation.holds_frame = false;
+    candidates.push_back({&side, std::move(observation)});
+  }
+
   for (Track& track : tracks_) {
     if (!track.is_dynamic || track.id < kFirstGeneratedDynamicTrackId) {
       continue;
     }
-
-    size_t best_index = data.dynamic_clusters.size();
+    Candidate* best = nullptr;
     float best_distance = config.max_dynamic_distance;
-    for (size_t i = 0; i < data.dynamic_clusters.size(); ++i) {
-      if (used_dynamic_clusters.count(data.dynamic_clusters[i].id)) {
+    for (Candidate& candidate : candidates) {
+      if (candidate.used) {
         continue;
       }
-      const float distance = (measured[i].dynamic_centroid - track.last_centroid).norm();
+      const float distance = (candidate.measured.dynamic_centroid - track.last_centroid).norm();
       if (distance <= best_distance) {
         best_distance = distance;
-        best_index = i;
+        best = &candidate;
       }
     }
-    if (best_index < data.dynamic_clusters.size()) {
-      updateDynamicTrack(data.dynamic_clusters[best_index], measured[best_index], track);
-      used_dynamic_clusters.insert(data.dynamic_clusters[best_index].id);
+    if (best) {
+      updateDynamicTrack(*best->cluster, best->measured, track);
+      best->used = true;
     }
   }
 
-  for (size_t i = 0; i < data.dynamic_clusters.size(); ++i) {
-    if (used_dynamic_clusters.insert(data.dynamic_clusters[i].id).second) {
-      addDynamicTrack(data.dynamic_clusters[i], measured[i]);
+  for (Candidate& candidate : candidates) {
+    if (!candidate.used) {
+      addDynamicTrack(*candidate.cluster, candidate.measured);
     }
   }
 }

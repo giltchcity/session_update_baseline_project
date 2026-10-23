@@ -10,6 +10,9 @@ import math
 import os
 import re
 import time
+
+RESEND_S = 10.0
+MAX_RESENDS = 3  # an unacknowledged frame is sent again every RESEND_S, then skipped
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -454,6 +457,14 @@ class NssFlatPlayer(Node):
     def finish_ack_callback(self, _message: Empty) -> None:
         self.finish_acknowledged = True
 
+    def wait_for_processed_or_timeout(self, stamp_ns: int, timeout_s: float) -> bool:
+        deadline = time.monotonic() + timeout_s
+        while rclpy.ok() and self.last_processed_stamp_ns != stamp_ns:
+            if time.monotonic() >= deadline:
+                return False
+            rclpy.spin_once(self, timeout_sec=0.001)
+        return True
+
     def wait_for_processed(self, stamp_ns: int) -> None:
         deadline = time.monotonic() + self.args.ack_timeout_s
         while rclpy.ok() and self.last_processed_stamp_ns != stamp_ns:
@@ -774,7 +785,31 @@ class NssFlatPlayer(Node):
             last_published_stamp_ns = stamp_ns
             _t_pub = time.perf_counter()
             if self.args.flow_control == "ack":
-                self.wait_for_processed(stamp_ns)
+                # A frame the mapper's input drops (e.g. its TF lookup gives up
+                # under CPU load) is never acknowledged. Send the same frame again
+                # every RESEND_S until it is; a copy of an accepted frame has the
+                # same stamp and is skipped by the receiver's input separation.
+                # A frame dropped after the receiver took it (its stamp is then
+                # recorded, so an identical copy is skipped) can never be
+                # acknowledged: after MAX_RESENDS the player moves on, exactly as if
+                # the mapper had dropped that one frame.
+                resends = 0
+                while not self.wait_for_processed_or_timeout(stamp_ns, RESEND_S):
+                    if resends == MAX_RESENDS:
+                        print(f"PLAYBACK_SKIP stamp={stamp_ns} last_ack={self.last_processed_stamp_ns}", flush=True)
+                        break
+                    resends += 1
+                    print(f"PLAYBACK_RESEND stamp={stamp_ns} last_ack={self.last_processed_stamp_ns}", flush=True)
+                    self.tf_pub.sendTransform(
+                        transform_message(self.args.odom_frame, self.args.robot_frame, pose, stamp)
+                    )
+                    settle_deadline = time.monotonic() + self.args.tf_settle_s
+                    while rclpy.ok() and time.monotonic() < settle_deadline:
+                        rclpy.spin_once(self, timeout_sec=min(0.005, settle_deadline - time.monotonic()))
+                    self.info_pub.publish(info)
+                    self.color_pub.publish(color_msg)
+                    self.depth_pub.publish(depth_msg)
+                    self.label_pub.publish(label_msg)
             _ack_wait_total += time.perf_counter() - _t_pub
             if published == 1 or published % 100 == 0 or published == len(frames):
                 print(

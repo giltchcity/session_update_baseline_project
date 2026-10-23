@@ -223,7 +223,59 @@ void testMotionOnStaticClassIsRejected() {
   require(cv::countNonZero(data.dynamic_image.row(0)) == 0 &&
               cv::countNonZero(data.dynamic_image.row(1)) == 3,
           "the dynamic raster masks only the kept cluster");
+  require(data.side_motion_clusters.size() == 1 &&
+              data.side_motion_clusters.front().pixels.front().v == 0,
+          "the static-class motion without a physical instance is kept on the side");
+
+  // The same frame with a physical instance under the static-class motion: dropped as before.
+  khronos::FrameData on_instance(input);
+  on_instance.dynamic_image = cv::Mat::zeros(2, 3, CV_32SC1);
+  on_instance.instance_image = cv::Mat::zeros(2, 3, CV_32SC1);
+  on_instance.instance_image.at<std::int32_t>(0, 1) = 5;
+  on_instance.dynamic_clusters.push_back(makeCluster(1, {{0, 0}, {1, 0}, {2, 0}}));
+  on_instance.dynamic_clusters.push_back(makeCluster(2, {{0, 1}, {1, 1}, {2, 1}}));
+  forwarding.promoteDynamicSemanticClusters(on_instance);
+  require(on_instance.dynamic_clusters.size() == 1 && on_instance.side_motion_clusters.empty(),
+          "static-class motion on a physical instance is dropped, not kept on the side");
   hydra::GlobalInfo::reset();
+}
+
+// Motion the map integrates as static joins the one dynamic-only pool: same association, and its
+// observations hold no frame in the buffer.
+void testSideMotionJoinsDynamicPool() {
+  khronos::ExternalTracker::Config config;
+  config.min_num_observations = 1;
+  config.max_dynamic_distance = 1.5f;
+  khronos::ExternalTracker tracker(config);
+  {
+    auto input = makeInput(10'000'000'000ULL);
+    khronos::FrameData data(input);
+    data.side_motion_clusters.push_back(makeCluster(1, {{2, 1}}));
+    tracker.processInput(trackerMap(), data);
+  }
+  require(tracker.getTracks().size() == 1 && tracker.getTracks().front().is_dynamic &&
+              tracker.getTracks().front().id == (1 << 16) &&
+              !tracker.getTracks().front().observations.front().holds_frame,
+          "a side cluster opens a dynamic-only track whose observation holds no frame");
+  {
+    auto input = makeInput(11'000'000'000ULL);
+    khronos::FrameData data(input);
+    data.dynamic_clusters.push_back(makeCluster(1, {{2, 1}}, 12));
+    tracker.processInput(trackerMap(), data);
+  }
+  require(tracker.getTracks().size() == 1 && tracker.getTracks().front().observations.size() == 2 &&
+              tracker.getTracks().front().observations.back().holds_frame,
+          "a regular dynamic cluster at the same place continues the same track");
+
+  khronos::FrameDataBuffer::Config buffer_config;
+  buffer_config.max_buffer_size = 10;
+  buffer_config.store_every_n_frames = 1;
+  khronos::FrameDataBuffer buffer(buffer_config);
+  buffer.storeData(std::make_shared<khronos::FrameData>(makeInput(10'000'000'000ULL)));
+  buffer.storeData(std::make_shared<khronos::FrameData>(makeInput(11'000'000'000ULL)));
+  buffer.trimBuffer(tracker.getTracks());
+  require(buffer.size() == 1 && buffer.getData(11'000'000'000ULL) && !buffer.getData(10'000'000'000ULL),
+          "only the regular observation's frame stays in the buffer");
 }
 
 void testInvalidDepthPixelsCannotInflatePhysicalObject() {
@@ -870,6 +922,7 @@ void testDynamicTrajectoryHasEveryTrackedFrame() {
 int main() {
   testExplicitLabelProtocol();
   testMotionOnStaticClassIsRejected();
+  testSideMotionJoinsDynamicPool();
   testInvalidDepthPixelsCannotInflatePhysicalObject();
   testUnifiedExternalTracker();
   testDynamicTrajectoryHasEveryTrackedFrame();

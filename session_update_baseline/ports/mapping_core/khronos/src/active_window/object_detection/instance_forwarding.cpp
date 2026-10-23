@@ -230,34 +230,58 @@ void InstanceForwarding::promoteDynamicSemanticClusters(FrameData& data) const {
   // static reconstruction out of the TSDF. A static class is any label the
   // label space neither marks dynamic nor invalid; id 0 is a class like any
   // other (the wall in the ADE20K room space).
-  data.dynamic_clusters.erase(
-      std::remove_if(data.dynamic_clusters.begin(),
-                     data.dynamic_clusters.end(),
-                     [&](const MeasurementCluster& cluster) {
-                       if (cluster.pixels.empty()) {
-                         return false;
-                       }
-                       std::size_t dynamic_pixels = 0;
-                       std::size_t static_pixels = 0;
-                       for (const Pixel& pixel : cluster.pixels) {
-                         if (!pixel.isInImage(data.input.label_image)) {
-                           continue;
-                         }
-                         const int semantic_id =
-                             data.input.label_image.at<InputData::LabelType>(pixel.v, pixel.u);
-                         if (label_space.isDynamic(semantic_id)) {
-                           ++dynamic_pixels;
-                         } else if (!label_space.invalid_labels.count(semantic_id)) {
-                           ++static_pixels;
-                         }
-                       }
-                       const float total = static_cast<float>(cluster.pixels.size());
-                       return (static_cast<float>(dynamic_pixels) / total >=
-                               config.dynamic_semantic_overlap_threshold) ||
-                              (static_cast<float>(static_pixels) / total >=
-                               config.dynamic_semantic_overlap_threshold);
-                     }),
-      data.dynamic_clusters.end());
+  // Such a static-class fragment is still rejected as motion of the map: it
+  // stays out of dynamic_clusters and dynamic_image, so the TSDF integrates its
+  // pixels as before. When it covers no physical instance, it is kept on the
+  // side (data.side_motion_clusters) for a motion-only trajectory: a real moving
+  // thing of a static class (a dropped ball) translates in the world, parallax
+  // at an occluding edge does not, and the extractor exports the trajectory only
+  // above min_dynamic_displacement. Fragments on a physical instance are dropped
+  // as before (the physical track owns that object's motion).
+  data.side_motion_clusters.clear();
+  std::vector<MeasurementCluster> kept;
+  kept.reserve(data.dynamic_clusters.size());
+  for (MeasurementCluster& cluster : data.dynamic_clusters) {
+    if (cluster.pixels.empty()) {
+      kept.emplace_back(std::move(cluster));
+      continue;
+    }
+    std::size_t dynamic_pixels = 0;
+    std::size_t static_pixels = 0;
+    bool on_instance = false;
+    for (const Pixel& pixel : cluster.pixels) {
+      if (!data.instance_image.empty() && pixel.isInImage(data.instance_image) &&
+          data.instance_image.at<FrameData::InstanceImageType>(pixel.v, pixel.u) != 0) {
+        on_instance = true;
+      }
+      if (!pixel.isInImage(data.input.label_image)) {
+        continue;
+      }
+      const int semantic_id =
+          data.input.label_image.at<InputData::LabelType>(pixel.v, pixel.u);
+      if (label_space.isDynamic(semantic_id)) {
+        ++dynamic_pixels;
+      } else if (!label_space.invalid_labels.count(semantic_id)) {
+        ++static_pixels;
+      }
+    }
+    const float total = static_cast<float>(cluster.pixels.size());
+    if (static_cast<float>(dynamic_pixels) / total >= config.dynamic_semantic_overlap_threshold) {
+      continue;  // replaced by the full dynamic semantic component below
+    }
+    if (static_cast<float>(static_pixels) / total >= config.dynamic_semantic_overlap_threshold) {
+      if (!on_instance) {
+        data.side_motion_clusters.emplace_back(std::move(cluster));
+      }
+      continue;
+    }
+    kept.emplace_back(std::move(cluster));
+  }
+  data.dynamic_clusters = std::move(kept);
+  int side_id = 1;
+  for (MeasurementCluster& cluster : data.side_motion_clusters) {
+    cluster.id = side_id++;
+  }
 
   for (const int semantic_id : label_space.dynamic_labels) {
     cv::Mat mask;
