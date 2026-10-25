@@ -143,7 +143,11 @@ from ...eval.scene import EvaluationScene, SceneObject
 from ...eval.scenelist import UINT64_MAX, SceneListTimeline
 from ...frames import FlatSession, Frame, Intrinsics, SessionSpec, dynamic_mask, motion_mask
 from ...interface import Backend, DatasetInfo, Elements
+from ...refinement import RefinementProgress
 from . import t1
+from .growth import (clear_densification_rows, eligible_densification_mask, merge_seed_masks,
+                     restored_session_settings)
+from .lifecycle import DEFAULT_HISTORY_BYTES, SuppressionHistory, apply_surface_weights, recoverable_lifetime
 from .label_table import LabelTable
 
 GAME = Path("/home/jixian/Desktop/FT/baselines/GaME")
@@ -417,6 +421,7 @@ class _TimedGaussianModel(GaussianModel):
     # appended, so that a clone or split child inherits its parent's creation, end and identity.
     parents = None
     prune_policy = None   # [P1] set by TrackedGaME: how the refinement's prune mask is applied
+    densify_policy = None  # [F3] explicit eligibility, also when a checkpoint contains old statistics
 
     def densify_and_prune(self, max_grad, min_opacity, extent, max_screen_size, limit_num=-1):
         """GaussianModel.densify_and_prune (flashsplat/scene/gaussian_model.py:579-599) unchanged except that the
@@ -441,8 +446,10 @@ class _TimedGaussianModel(GaussianModel):
         selected_pts_mask = torch.where(padded_grad >= grad_threshold, True, False)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(self.get_scaling, dim=1).values > self.percent_dense * scene_extent)
+        if self.densify_policy is not None:
+            selected_pts_mask = self.densify_policy(selected_pts_mask)
         if limit_num > 0:
-            idx = padded_grad.argsort(dim=0, descending=True)
+            idx = padded_grad.masked_fill(~selected_pts_mask, -torch.inf).argsort(dim=0, descending=True)
             sorted_pts_mask = torch.zeros(padded_grad.size(0), dtype=torch.bool, device=grads.device)
             inc_num = limit_num - self.get_num_pts
             if inc_num <= 0:
@@ -469,8 +476,10 @@ class _TimedGaussianModel(GaussianModel):
         selected_pts_mask = torch.where(torch.norm(grads, dim=-1) >= grad_threshold, True, False)
         selected_pts_mask = torch.logical_and(selected_pts_mask,
                                               torch.max(self.get_scaling, dim=1).values <= self.percent_dense * scene_extent)
+        if self.densify_policy is not None:
+            selected_pts_mask = self.densify_policy(selected_pts_mask)
         if limit_num > 0:
-            idx = grads.argsort(dim=0, descending=True)
+            idx = torch.norm(grads, dim=-1).masked_fill(~selected_pts_mask, -torch.inf).argsort(descending=True)
             sorted_pts_mask = torch.zeros(grads.size(0), dtype=torch.bool, device=grads.device)
             inc_num = limit_num - self.get_num_pts
             if inc_num <= 0:
@@ -501,6 +510,8 @@ class TrackedGaME(GaME):
         self.uid = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.identity = torch.zeros(0, dtype=torch.int64, device="cuda")
         self.last_update = torch.zeros(0, dtype=torch.int64, device="cuda")
+        # Canonical surface confidence: one float per Gaussian, inherited by clone/split children.
+        self.surface_weight = torch.ones(0, dtype=torch.float32, device="cuda")
         # I1: accumulated FlashSplat label weights, column j = physical identity label_ids[j] (0 = background)
         self.label_ids = [0]
         self.label_weight = LabelTable(0, 1)
@@ -516,6 +527,9 @@ class TrackedGaME(GaME):
         # Gaussians of object states born in earlier sessions (Khronos' archived object nodes; fork step 1: the
         # present builds an object only from this session's frames) and every ended Gaussian
         self.frozen = torch.zeros(0, dtype=torch.bool, device="cuda")
+        # Reversible element evidence changes visibility over time, independently of permanent ends.
+        self.suppression = SuppressionHistory(device="cuda")
+        self.history_capacity_guard = None
         self.session_start: Optional[int] = None            # first stamp of the session being mapped
         self.support_tol = 0.0                              # [A2] the layer's on band (5 cm x scale), set per session
         self.tracked_labels: Optional[torch.Tensor] = None  # [O2] labels the layer has had a state for
@@ -542,11 +556,18 @@ class TrackedGaME(GaME):
         def densification_postfix(new_xyz, *rest):
             n = new_xyz.shape[0]
             par, gm.parents = gm.parents, None                    # T1: rows of the parents (densify) or None (seeding)
+            new_uids = torch.arange(self.next_uid, self.next_uid + n, device="cuda")
+            inherited = (self.suppression.prepare_inheritance(self.uid[par], new_uids)
+                         if par is not None and len(par) == n else None)
+            if inherited is not None and self.history_capacity_guard is not None:
+                self.history_capacity_guard(len(inherited[0]))
+            # Capacity is checked before the Gaussian model or per-row bookkeeping changes.
             post(new_xyz, *rest)
             if par is not None and len(par) == n:
-                self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
+                self.uid = torch.cat([self.uid, new_uids])
                 self.identity = torch.cat([self.identity, self.identity[par]])
                 self.last_update = torch.cat([self.last_update, self.last_update[par]])
+                self.surface_weight = torch.cat([self.surface_weight, self.surface_weight[par]])
                 self.label_weight = self.label_weight.append_rows(self.label_weight[par])
                 self.created = torch.cat([self.created, self.created[par]])
                 self.state_birth = torch.cat([self.state_birth, self.state_birth[par]])
@@ -556,12 +577,14 @@ class TrackedGaME(GaME):
                 self.frozen = torch.cat([self.frozen, self.frozen[par]])
                 if torch.is_tensor(self.bg_birth):
                     self.bg_birth = torch.cat([self.bg_birth, self.bg_birth[par]])
+                self.suppression.append_events(inherited)
                 self.next_uid += n
                 return
-            self.uid = torch.cat([self.uid, torch.arange(self.next_uid, self.next_uid + n, device="cuda")])
+            self.uid = torch.cat([self.uid, new_uids])
             self.identity = torch.cat([self.identity, torch.full((n,), -1, dtype=torch.int64, device="cuda")])
             self.last_update = torch.cat([self.last_update, torch.full((n,), self.now, dtype=torch.int64,
                                                                        device="cuda")])
+            self.surface_weight = torch.cat([self.surface_weight, torch.ones(n, dtype=torch.float32, device="cuda")])
             self.label_weight = self.label_weight.append_empty_rows(n)
             self.created = torch.cat([self.created, torch.full((n,), self.now, dtype=torch.int64, device="cuda")])
             self.state_birth = torch.cat([self.state_birth, torch.full((n,), INT64_MAX, dtype=torch.int64,
@@ -582,11 +605,14 @@ class TrackedGaME(GaME):
             if not force:
                 mask = mask & ~self.frozen          # [A2] a frozen row leaves only through _prune_unrenderable
                 mask = mask & ~self.carried()       # [F3] a carried row leaves only by the layer's evidence
+                mask = mask & ~self.dormant()       # uncertain evidence must not become an optimizer deletion
             if not mask.any():
                 return
+            dropped_uids = self.uid[mask]
             keep = ~mask
             prune(mask)
             self.uid, self.identity, self.last_update = self.uid[keep], self.identity[keep], self.last_update[keep]
+            self.surface_weight = self.surface_weight[keep]
             self.label_weight = self.label_weight[keep]
             self.created, self.death_state, self.death_evidence = (self.created[keep], self.death_state[keep],
                                                                    self.death_evidence[keep])
@@ -594,12 +620,13 @@ class TrackedGaME(GaME):
             self.death_prune, self.frozen = self.death_prune[keep], self.frozen[keep]
             if torch.is_tensor(self.bg_birth):
                 self.bg_birth = self.bg_birth[keep]
+            self.suppression.drop_uids(dropped_uids)
 
         reset = gm.reset_opacity
 
         def reset_opacity():
             """[A2] GaME's opacity reset (refinement) leaves the frozen rows as they are."""
-            keep = self.frozen | self.carried()   # [A2][F3]
+            keep = self.frozen | self.carried() | self.dormant()   # [A2][F3]
             old = gm._opacity.detach().clone()
             reset()
             if keep.any():
@@ -609,6 +636,7 @@ class TrackedGaME(GaME):
         gm.prune_points = prune_points
         gm.reset_opacity = reset_opacity
         gm.prune_policy = self._prune_policy                  # [P1]
+        gm.densify_policy = self._densify_policy              # [F3]
 
     timed = False         # T1 is on once the layer drives this map (state intervals / retirements); rows 1-3: off
 
@@ -618,8 +646,19 @@ class TrackedGaME(GaME):
         drives this map."""
         if t is None or not self.timed:
             return None
-        return t1.alive_at(t, self.identity, self.created, self.state_birth, self.death_state, self.death_evidence,
-                           self.bg_birth, self.death_prune)
+        live = self.base_alive_at(t)
+        if len(self.suppression.uids):
+            live &= ~self.suppression.mask_at(self.uid, t)
+        return live
+
+    def base_alive_at(self, stamp: int) -> torch.Tensor:
+        """Permanent T1 lifetime only: uncertain suppression never changes these endpoints."""
+        return t1.alive_at(stamp, self.identity, self.created, self.state_birth, self.death_state,
+                           self.death_evidence, self.bg_birth, self.death_prune)
+
+    def dormant(self) -> torch.Tensor:
+        """Current suppression protection; kept separate from the irreversible frozen flag."""
+        return self.suppression.current_mask(self.uid)
 
     def ended(self) -> torch.Tensor:
         """Per Gaussian its end (t1.end: state end, evidence end, [P1] prune end)."""
@@ -633,15 +672,21 @@ class TrackedGaME(GaME):
             return
         self.frozen = self.frozen | new
         self.reset_adam_rows(new)
+        clear_densification_rows(self.gaussian_model, new)
 
-    def reset_adam_rows(self, rows: torch.Tensor) -> None:
+    def reset_adam_rows(self, rows: torch.Tensor, names=None) -> None:
         """Adam's moments of these rows set to zero (a restored checkpoint carries the moments of its frozen rows)."""
         opt = self.gaussian_model.optimizer
         for group in opt.param_groups:
+            if names is not None and group.get("name") not in names:
+                continue
             st = opt.state.get(group["params"][0])
             if st is not None and "exp_avg" in st:
                 st["exp_avg"][rows] = 0
                 st["exp_avg_sq"][rows] = 0
+
+    def _densify_policy(self, candidates: torch.Tensor) -> torch.Tensor:
+        return eligible_densification_mask(candidates, self.frozen | self.dormant(), self.carried())
 
     def carried(self) -> torch.Tensor:
         """[F3 10-09] Gaussians created in an earlier session (the loaded prior). On a layer-driven map they change only
@@ -688,13 +733,14 @@ class TrackedGaME(GaME):
     def _add_gaussians(self, color, depth, segmentation, pose, intrinsics):
         """GaME's seeding as published, except [F3d] that no Gaussian is seeded at a pixel whose reading is explained by
         a carried echo within the on band (the TSDF integrates an in-band reading into the existing cell, it never
-        creates a second one); then [F3b] the observed surface in front of a carried echo."""
+        creates a second one), plus [F3b] the observed surface in front of a carried echo. Both requests are computed
+        before insertion and merged: a newly seeded, still-translucent row cannot request the same pixel again."""
         explained = self._explained_by_carried(color, depth, pose, intrinsics)
         if explained is None:
             super()._add_gaussians(color, depth, segmentation, pose, intrinsics)
         else:
-            self._add_gaussians_except(color, depth, segmentation, pose, intrinsics, explained)
-        self._seed_in_front_of_carried(color, depth, pose, intrinsics, explained)
+            front = self._front_of_carried_mask(color, depth, pose, intrinsics)
+            self._add_gaussians_except(color, depth, segmentation, pose, intrinsics, explained, front)
 
     @torch.no_grad()
     def _explained_by_carried(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
@@ -737,14 +783,14 @@ class TrackedGaME(GaME):
         return explained
 
     def _seed_log(self, kind: str, raw: int, excluded: int, seeded_px: int, **extra) -> None:
-        """[diag 10-10] one line per seeding call: pixels GaME wanted (raw), excluded by F3d, seeded; rows before."""
+        """[diag 10-10] one line per seeding call: requested union, excluded by F3d, seeded; rows before."""
         n = self.gaussian_model.get_xyz.shape[0]
         ex = " ".join(f"{k}={v}" for k, v in extra.items())
         print(f"SEED {kind} now={self.now} rows={n} raw_px={raw} excluded_px={excluded} seeded_px={seeded_px} {ex}", flush=True)
 
-    def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded):
+    def _add_gaussians_except(self, color, depth, segmentation, pose, intrinsics, excluded, front=None):
         """GaME._add_gaussians (game.py:545-591) as published, with the seeding mask cleared at `excluded` pixels
-        ([F3d]) before the pixels are lifted to 3D. Every other line is GaME's."""
+        ([F3d]) and unioned with F3b's front-surface request before one lift/downsample/append."""
         if self.gaussian_model.get_xyz.shape[0] == 0:
             seeding_mask = torch.ones_like(depth)
         else:
@@ -768,13 +814,17 @@ class TrackedGaME(GaME):
             newly_added = threshed_color > og_seeding_img
             seeding_mask = newly_added[:, :, 0].bool() | seeding_mask[0]
         raw = seeding_mask.reshape(depth.shape[-2:]).bool()
-        seeding_mask = raw & ~excluded.reshape(depth.shape[-2:])   # [F3d]
+        excluded = excluded.reshape(depth.shape[-2:])
+        requested = raw if front is None else (raw | front)
+        seeding_mask = merge_seed_masks(raw, front, excluded)   # [F3d] one insertion per pixel
         fe_cls = getattr(self, "_last_first_echo_class", None)      # [diag] 0 none, 1 carried, 2 this session
         cls = {}
         if fe_cls is not None and fe_cls.shape == seeding_mask.shape:
             cls = dict(none=int((seeding_mask & (fe_cls == 0)).sum()), carried=int((seeding_mask & (fe_cls == 1)).sum()),
                        session=int((seeding_mask & (fe_cls == 2)).sum()))
-        self._seed_log("game", int(raw.sum()), int((raw & excluded.reshape(depth.shape[-2:])).sum()), int(seeding_mask.sum()),
+        self._seed_log("game", int(requested.sum()), int((requested & excluded).sum()), int(seeding_mask.sum()),
+                       game_px=int(raw.sum()), front_px=int(front.sum()) if front is not None else 0,
+                       overlap_px=int((raw & front).sum()) if front is not None else 0,
                        alpha=int(alpha_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
                        depth=int(depth_error_mask.reshape(depth.shape[-2:]).sum()) if self.gaussian_model.get_xyz.shape[0] else -1,
                        dmean=float(depth.reshape(depth.shape[-2:])[seeding_mask].mean()) if seeding_mask.any() else 0.0, **cls)
@@ -790,10 +840,11 @@ class TrackedGaME(GaME):
         gu.add_points(self.gaussian_model, cloud_to_add)
 
     @torch.no_grad()
-    def _seed_in_front_of_carried(self, color, depth, pose, intrinsics, explained=None) -> None:
+    def _front_of_carried_mask(self, color, depth, pose, intrinsics) -> Optional[torch.Tensor]:
         """[F3b 10-09] TSDF re-integration for a carried surface the frame observes in front of: where the first echo of
         the map is a carried row and the reading lies closer than it by more than the on band (support_tol + the
-        echo's extent, the element rule's band), the observed surface is seeded now from this frame. GaME's own
+        echo's extent, the element rule's band), request a seed from this frame. The caller merges this request with
+        GaME's request before appending any rows. GaME's own
         seeding reacts to uncovered pixels (alpha < min_opacity) and to depth errors above 40x the frame's median,
         which a surface 5-20 cm behind the observation does not reach; before F3 such carried rows faded under the
         depth loss and the alpha seeding replaced them, now they keep their opacity, so the observed surface must be
@@ -803,12 +854,15 @@ class TrackedGaME(GaME):
         gm = self.gaussian_model
         c = self.carried()
         if not c.any() or gm.get_xyz.shape[0] == 0:
-            return
+            return None
         view = gu.flashsplat_cam(color, depth, None, intrinsics, pose.clone().detach().cpu(), None)
-        # the map of now, over the rows as they are after GaME's own seeding (the caller's alive mask predates it)
-        gm.alive = self.alive_at(self.now) if self.timed else None
-        fe = probe_render_fe(view, gm)
-        gm.alive = None
+        # The same pre-insertion map as the other requests. Preserve the caller's rendering context.
+        previous_alive = gm.alive
+        try:
+            gm.alive = self.alive_at(self.now) if self.timed else None
+            fe = probe_render_fe(view, gm)
+        finally:
+            gm.alive = previous_alive
         h, w = depth.shape[-2:]
         mi = fe["median_index"].reshape(h, w).long()
         med = fe["median"].reshape(h, w)
@@ -817,23 +871,11 @@ class TrackedGaME(GaME):
         d = depth.reshape(h, w)
         band = self.support_tol + ext[idx]
         front = (mi >= 0) & c[idx] & (d > 0) & (med > d + band)
-        if explained is not None:
-            front &= ~explained.reshape(h, w)          # [F3d] held by this session's rows already: seeded once
-        self._seed_log("front", int(front.sum()), 0, int(front.sum()))
-        if not front.any():
-            return
-        seed = gu.torch2np(front).astype(np.uint8)
-        col = gu.torch2np(color.clone().permute(1, 2, 0) * 255).astype(np.uint8)
-        col[seed == 0] = 0
-        fd = gu.torch2np(depth.clone())
-        fd[seed == 0] = 0
-        cloud = gu.rgbd2ptcloud(col, fd, intrinsics, gu.torch2np(pose))
-        cloud = cloud.uniform_down_sample(2)
-        gu.add_points(gm, cloud)
+        return front
 
     def _mask_frozen_grads(self, viewspace_point_tensor) -> None:
         """[A2] No gradient reaches a frozen row: its parameters and its densification statistics."""
-        f = self.frozen
+        f = self.frozen | self.dormant()
         gm = self.gaussian_model
         if f.any():
             for prm in (gm._xyz, gm._features_dc, gm._features_rest, gm._scaling, gm._rotation, gm._opacity):
@@ -854,7 +896,7 @@ class TrackedGaME(GaME):
         refinement) on a layer-driven map: a Gaussian of this session is pruned as published; a Gaussian of an earlier
         session is ended at now instead (the keyframes of its time keep it in their map) and frozen. Frozen rows are
         never pruned."""
-        mask = mask.to("cuda").bool() & ~self.frozen & ~self.carried()   # [F3] carried rows: evidence only
+        mask = mask.to("cuda").bool() & ~self.frozen & ~self.carried() & ~self.dormant()
         if not mask.any():
             return
         if self.timed and self.session_start is not None:
@@ -909,13 +951,8 @@ class TrackedGaME(GaME):
             # carried rows; _mask_frozen_grads blocks their geometry and opacity gradients instead.
             c = self.carried()                                                   # [F3]
             if c.any():
-                opt = self.gaussian_model.optimizer
-                for group in opt.param_groups:
-                    if group.get("name") in ("opacity", "xyz", "scaling", "rotation"):   # [F3c'] geometry too
-                        st = opt.state.get(group["params"][0])
-                        if st is not None and "exp_avg" in st:
-                            st["exp_avg"][c] = 0
-                            st["exp_avg_sq"][c] = 0
+                self.reset_adam_rows(c, names=("opacity", "xyz", "scaling", "rotation"))  # [F3c'] colour trains
+                clear_densification_rows(self.gaussian_model, c)
 
     def _new_pose_params(self):
         trans = torch.nn.Parameter(torch.zeros(3, device="cuda"))
@@ -1047,6 +1084,11 @@ class TrackedGaME(GaME):
         [J1] a keyframe of an earlier session trains through its pose correction, optimised jointly with the
         Gaussians (MonoGS §3.3.3) and folded into its stored pose after every step;
         [A2] frozen rows receive no gradient; [P1] the prune ends Gaussians of earlier sessions instead of deleting."""
+        progress = RefinementProgress(int(iterations))
+        if refinement:
+            self.refinement_progress = progress  # callers can report completed steps after a CUDA failure
+        if iterations == 0:
+            return progress.as_dict()
         selected_frames = list(self.keyframes.keys())
         if self.timed and self.session_start is not None and not refinement and self.train_from != "all":
             # [S3] a layer-driven map is trained by this session's keyframes: the earlier sessions' keyframes only
@@ -1059,7 +1101,8 @@ class TrackedGaME(GaME):
             selected_frames = [k for k in selected_frames if self.kf_stamp.get(k, -1) >= self.train_from]   # proxies
         if len(selected_frames) == 0 or len(self.ignored_frames) == len(self.keyframes):
             print("no frames available")
-            return
+            progress.stop("no_usable_frames")
+            return progress.as_dict()
         background = torch.zeros(3).cuda()
         pipe = gu.flashsplat_pipe()
         guard_gb = float(os.environ.get("GPU_GUARD_GB", "13.5")) if refinement and torch.cuda.is_available() else None
@@ -1074,12 +1117,14 @@ class TrackedGaME(GaME):
                 if res_gb > guard_gb:
                     print(f"REFINEMENT GUARD: reserved {res_gb:.2f} GB > {guard_gb} GB at iteration {iteration}/{iterations}: "
                           f"refinement stopped here (post_ref = the model refined so far)", flush=True)
+                    progress.stop("gpu_guard")
                     break
             try:
                 keyframe_id = self._sample_valid_keyframe(selected_frames, only_frame_id)
             except _NoFrames:                                                       # C3
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
                 print("no frames available")
+                progress.stop("no_usable_frames")
                 break
             keyframe = self.keyframes[keyframe_id]
             gt_color, gt_depth = keyframe["color"].cuda().clone(), keyframe["depth"].cuda().clone()
@@ -1132,11 +1177,13 @@ class TrackedGaME(GaME):
                     self._densification_step(iteration, total_loss, visibility_filter, radii,
                                              viewspace_point_tensor)
                 self.gaussian_model.optimizer.step()
+                progress.advance()
                 self.gaussian_model.optimizer.zero_grad(set_to_none=True)
             if corr:
                 self._pose_step(keyframe_id, delta, sess)                           # [J1]
             self.gaussian_model.alive = None
         torch.cuda.empty_cache()
+        return progress.as_dict()
 
     @torch.no_grad()
     def _find_added_geometry_masks(self, keyframe) -> list:
@@ -1165,6 +1212,7 @@ class TrackedGaME(GaME):
 class GameBackend(Backend):
     name = "game"
     consumes_state_intervals = True                                                 # T1
+    supports_reversible_elements = True
     CHANGES = ("C1 keyframe test uses the true relative pose (published: origin-dependent)",
                "C2 keyframe rotation threshold in degrees (published: radians vs 50, never true)",
                "C3 keyframe sampler without endless loop",
@@ -1191,7 +1239,13 @@ class GameBackend(Backend):
                "keyframes' times keep it); this session's Gaussians are pruned as published",
                "O2 a Gaussian labelled with an object before its label's first state lives until that state is born "
                "(fork step 1 / R15: a leaked label is not the object); labels the layer never tracked are background "
-               "to the layer")
+               "to the layer",
+               "F3 seeding requests share one insertion; frozen/carried rows cannot densify; checkpoint restore "
+               "keeps the recorded session boundary and support band",
+               "Element lifecycle candidate: sampled signed surface weights are carried by Gaussian rows; "
+               "uncertain removals open reversible UID visibility gaps, strong same-identity support restores "
+               "before keyframe seeding; physical state/evidence/prune ends remain permanent",
+               "Refinement reports completed optimizer steps; a guard stop is partial rather than success")
     SPLIT = ("S1 split (layer rows, --split): each session's present is a fresh GaME model built and trained only from "
              "that session's frames (as row 1); the memory = the earlier sessions' Gaussians, frozen (never trained, "
              "densified or pruned), ended only by the layer (element rule, closed background, object state ends, "
@@ -1233,9 +1287,25 @@ class GameBackend(Backend):
         self.min_mask_px = max(1, min_mask_px_full // (self.step * self.step))
         self.game: Optional[TrackedGaME] = None
         self.semantic_of: Dict[int, int] = {}
+        self._lifecycle_counts = dict(suppressed=0, reactivated=0, positive_reactivations=0)
+
+    @property
+    def lifecycle_stats(self) -> dict:
+        containers = [g for g in self._containers() if g is not None]
+        return dict(self._lifecycle_counts, history_intervals=sum(len(g.suppression.uids) for g in containers),
+                    history_bytes=sum(g.suppression.nbytes for g in containers),
+                    active_suppressed=sum(int((g.dormant() & g.base_alive_at(g.now)).sum()) for g in containers))
+
+    def _check_history_budget(self, additional_events: int = 0) -> None:
+        used = sum(g.suppression.nbytes for g in self._containers() if g is not None)
+        required = used + int(additional_events) * 24
+        if required > DEFAULT_HISTORY_BYTES:
+            raise RuntimeError(f"suppression history budget exceeded: {required} bytes required across containers, "
+                               f"limit {DEFAULT_HISTORY_BYTES}; no history was discarded")
 
     # -- session ------------------------------------------------------------------------------
     def start_session(self, spec: SessionSpec, prior: Optional[TrackedGaME]) -> None:
+        self._lifecycle_counts = dict(suppressed=0, reactivated=0, positive_reactivations=0)
         if prior is None or self.split:
             if self.game is not None:
                 del self.game                   # the model and its patched methods form a cycle
@@ -1250,6 +1320,7 @@ class GameBackend(Backend):
         if prior is None:
             prior = TrackedGaME(dict(self.config))
         self.game = prior
+        self.game.history_capacity_guard = self._check_history_budget
         self.session = FlatSession(spec, pixel_step=1)
         self.crop = Crop(self.session.K, self.step)
         self.stamps, self.scenes = [], []
@@ -1282,6 +1353,10 @@ class GameBackend(Backend):
             surv = m.alive_at(stamp)
             idx = torch.nonzero(surv).squeeze(1) if surv is not None else torch.arange(len(m.uid), device="cuda")
             if len(idx):
+                transferred = m.suppression.selected_events(m.uid[idx])
+                g.suppression.ensure_capacity(len(transferred[0]))
+                if bool(torch.isin(g.uid, m.uid[idx]).any()):
+                    raise RuntimeError("cannot relocate memory rows whose stable UIDs already exist in the present")
                 if not torch.is_tensor(g.bg_birth):
                     g.bg_birth = torch.full_like(g.created, t1.INT64_MIN if g.bg_birth is None else int(g.bg_birth))
                 n0 = len(g.uid)
@@ -1290,21 +1365,24 @@ class GameBackend(Backend):
                 g.gaussian_model.densification_postfix(
                     mg._xyz.detach()[idx], mg._features_dc.detach()[idx], mg._features_rest.detach()[idx],
                     mg._opacity.detach()[idx], mg._scaling.detach()[idx], mg._rotation.detach()[idx])
-                for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence",
+                for name in ("uid", "identity", "last_update", "surface_weight", "created", "state_birth", "death_state", "death_evidence",
                              "death_prune", "frozen"):
                     getattr(g, name)[n0:] = getattr(m, name)[idx]
                 g.bg_birth[n0:] = (m.bg_birth[idx] if torch.is_tensor(m.bg_birth)
                                    else torch.full_like(idx, t1.INT64_MIN if m.bg_birth is None else int(m.bg_birth)))
+                g.suppression.append_events(transferred)
                 drop = torch.zeros(len(m.uid), dtype=torch.bool, device="cuda")
                 drop[idx] = True
-                m.gaussian_model.prune_points(drop)
+                # These same UIDs now live in g; this is relocation, not an optimizer deletion.
+                m.gaussian_model.prune_points(drop, force=True)
                 moved = len(idx)
         iters = int(self.config.get("refinement_iters", 0))
         g.now = stamp
         if iters and g.keyframes:
             g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))                  # M3
-            g.optimize_model(iterations=iters, refinement=True)
-        return dict(memory_joined=int(moved), gaussians=int(len(g.uid)), iterations=iters)
+        refinement = g.optimize_model(iterations=iters, refinement=True)
+        return dict(memory_joined=int(moved), gaussians=int(len(g.uid)),
+                    iterations=refinement["completed_iterations"], **refinement)
 
     def end_session(self) -> TrackedGaME:
         """The map that the next session starts from (and checkpoint_<s>.pt holds). [S1] split: the memory plus this
@@ -1342,6 +1420,13 @@ class GameBackend(Backend):
         birth of each Gaussian's session, views). Its optimizer holds no state; it is never trained."""
         g, mem = self.game, self.memory
         parts = [p for p in (mem, g) if p is not None]
+        history_bytes = sum(p.suppression.nbytes for p in parts)
+        if history_bytes > DEFAULT_HISTORY_BYTES:
+            raise RuntimeError(f"merged suppression history needs {history_bytes} bytes, "
+                               f"limit {DEFAULT_HISTORY_BYTES}; no model was copied")
+        all_uids = torch.cat([p.uid for p in parts])
+        if len(torch.unique(all_uids)) != len(all_uids):
+            raise RuntimeError("cannot merge Gaussian containers with duplicate stable UIDs")
         m = TrackedGaME(dict(self.config))
         gm = m.gaussian_model
         for name in ("_xyz", "_features_dc", "_features_rest", "_scaling", "_rotation", "_opacity"):
@@ -1351,7 +1436,7 @@ class GameBackend(Backend):
         n = gm.get_xyz.shape[0]
         gm.max_radii2D = torch.zeros(n, device="cuda")
         gm.training_setup(m.opt_params)
-        for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence",
+        for name in ("uid", "identity", "last_update", "surface_weight", "created", "state_birth", "death_state", "death_evidence",
                      "death_prune", "frozen"):
             setattr(m, name, torch.cat([getattr(p, name) for p in parts]))
         bb = [mem.bg_birth] if mem is not None else []
@@ -1365,6 +1450,10 @@ class GameBackend(Backend):
         m.keyframes.update(views)
         m.kf_stamp.update(stamps)
         m.next_uid, m.now, m.timed = g.next_uid, g.now, True
+        m.session_start, m.support_tol = g.session_start, g.support_tol
+        m.session_starts, m.kf_session = list(g.session_starts), dict(g.kf_session)
+        for part in parts:
+            m.suppression.append_events((part.suppression.uids, part.suppression.starts, part.suppression.ends))
         return m
 
     def prior_state(self, g: TrackedGaME) -> dict:
@@ -1376,10 +1465,13 @@ class GameBackend(Backend):
                     ignored_frames=g.ignored_frames, last_keyframe_id=g._last_keyframe_id,
                     next_uid=g.next_uid, frame_counter=g.frame_counter, uid=g.uid.cpu(),
                     identity=g.identity.cpu(), last_update=g.last_update.cpu(), now=g.now,
+                    surface_weight=g.surface_weight.cpu(),
                     label_ids=list(g.label_ids), label_weight=_label_weight_store(g.label_weight),
                     created=g.created.cpu(), death_state=g.death_state.cpu(), death_evidence=g.death_evidence.cpu(),
                     state_birth=g.state_birth.cpu(), death_prune=g.death_prune.cpu(), frozen=g.frozen.cpu(),
                     tracked_labels=g.tracked_labels.cpu() if g.tracked_labels is not None else None,
+                    session_start=g.session_start, support_tol=g.support_tol,
+                    suppression=g.suppression.state_dict(), lifecycle_counts=dict(self._lifecycle_counts),
                     session_starts=list(g.session_starts), kf_session=dict(g.kf_session),
                     kf_stamp=dict(g.kf_stamp), timed=g.timed,
                     semantic_of=dict(self.semantic_of),
@@ -1398,6 +1490,13 @@ class GameBackend(Backend):
                                                                   s["frame_counter"], s["now"])
         g.uid, g.identity, g.last_update = s["uid"].cuda(), s["identity"].cuda(), s["last_update"].cuda()
         n = len(g.uid)
+        saved_weight = s.get("surface_weight")
+        if saved_weight is not None and (not torch.is_tensor(saved_weight) or saved_weight.ndim != 1 or
+                len(saved_weight) != n or not bool(torch.isfinite(saved_weight).all()) or
+                not bool(((saved_weight >= -1) & (saved_weight <= 8)).all())):
+            raise ValueError("checkpoint surface weights must match Gaussian rows and be finite within [-1, 8]")
+        g.surface_weight = (saved_weight.to(device="cuda", dtype=torch.float32)
+                            if saved_weight is not None else torch.ones(n, dtype=torch.float32, device="cuda"))
         if "created" in s:                                                          # T1
             g.created, g.death_state, g.death_evidence = (s["created"].cuda(), s["death_state"].cuda(),
                                                           s["death_evidence"].cuda())
@@ -1415,12 +1514,20 @@ class GameBackend(Backend):
         g.death_prune = (s["death_prune"].cuda() if "death_prune" in s
                          else torch.full((n,), INT64_MAX, dtype=torch.int64, device="cuda"))        # [P1]
         g.frozen = s["frozen"].cuda() if "frozen" in s else (g.ended() < INT64_MAX)               # [A2]
-        if g.frozen.any():
-            g.reset_adam_rows(g.frozen)
+        g.suppression = SuppressionHistory.from_state(s.get("suppression", {}), device="cuda")
+        protected = g.frozen | g.dormant()
+        if protected.any():
+            g.reset_adam_rows(protected)
+            clear_densification_rows(g.gaussian_model, protected)
         tl = s.get("tracked_labels")
         g.tracked_labels = tl.cuda() if tl is not None else None                                  # [O2]
         g.session_starts = list(s.get("session_starts", []))                                      # [J1]
         g.kf_session = dict(s.get("kf_session", {}))
+        g.session_start, g.support_tol = restored_session_settings(s, self.tolerance * self.scale)
+        c = g.carried()
+        if c.any():
+            g.reset_adam_rows(c, names=("opacity", "xyz", "scaling", "rotation"))
+            clear_densification_rows(g.gaussian_model, c)
         if "label_weight" in s:                                                     # I1
             lw = s["label_weight"]
             g.label_ids = list(s["label_ids"])
@@ -1430,6 +1537,10 @@ class GameBackend(Backend):
         bb = s.get("bg_birth")                                                      # S1
         g.bg_birth = bb.cuda() if torch.is_tensor(bb) else bb
         self.semantic_of = dict(s["semantic_of"])
+        saved_counts = s.get("lifecycle_counts", {})
+        self._lifecycle_counts = {name: int(saved_counts.get(name, 0))
+                                  for name in ("suppressed", "reactivated", "positive_reactivations")}
+        g.history_capacity_guard = self._check_history_budget
         return g
 
     # -- frames -------------------------------------------------------------------------------
@@ -1484,6 +1595,7 @@ class GameBackend(Backend):
         g.estimated_poses[frame_id] = pose
         if not g.is_keyframe(pose):
             return
+        self._recover_before_seeding(frame)
         sample, instance, dyn = self._sample(frame.index)
         kf = {"color": gu.np2torch(sample["color"], device="cuda").permute(2, 0, 1) / 255.0,
               "depth": gu.np2torch(sample["depth"], device="cuda"),
@@ -1612,33 +1724,135 @@ class GameBackend(Backend):
         el = self._elements_of(self.game)
         return Elements(torch.cat([el.ids, me.ids]), torch.cat([el.xyz, me.xyz]), torch.cat([el.normal, me.normal]),
                         torch.cat([el.identity, me.identity]), torch.cat([el.last_update, me.last_update]),
-                        torch.cat([el.extent, me.extent]), torch.cat([el.created, me.created]))
+                        torch.cat([el.extent, me.extent]), torch.cat([el.created, me.created]),
+                        suppressed=torch.cat([el.suppressed, me.suppressed]),
+                        state_birth=torch.cat([el.state_birth, me.state_birth]),
+                        surface_weight=torch.cat([el.surface_weight, me.surface_weight]))
 
-    def _elements_of(self, g: TrackedGaME, now: Optional[int] = None) -> Elements:
+    @staticmethod
+    def _join_elements(parts) -> Elements:
+        if len(parts) == 1:
+            return parts[0]
+        return Elements(*(torch.cat([getattr(part, name) for part in parts]) for name in
+                          ("ids", "xyz", "normal", "identity", "last_update", "extent", "created")),
+                        suppressed=torch.cat([part.suppressed for part in parts]),
+                        state_birth=torch.cat([part.state_birth for part in parts]),
+                        surface_weight=torch.cat([part.surface_weight for part in parts]))
+
+    @torch.no_grad()
+    def evidence_elements(self) -> Elements:
+        """Live plus recoverable dormant geometry, retaining raw physical identity for evidence."""
+        return self._join_elements([self._elements_of(g, self.game.now, include_suppressed=True, raw_identity=True)
+                                    for g in self._containers()])
+
+    @torch.no_grad()
+    def decision_elements(self) -> Elements:
+        """Permanent layer decisions include dormant rows and keep the established O2 identity mapping."""
+        return self._join_elements([self._elements_of(g, self.game.now, include_suppressed=True)
+                                    for g in self._containers()])
+
+    @torch.no_grad()
+    def update_surface_weights(self, ids: torch.Tensor, weights: torch.Tensor) -> None:
+        for g in self._containers():
+            apply_surface_weights(g.uid, g.surface_weight, ids, weights)
+
+    @torch.no_grad()
+    def _recover_before_seeding(self, frame: Frame) -> None:
+        if not any(g.suppression.open_count for g in self._containers()):
+            return
+        from ...core.element_lifecycle import classify_elements
+        dormant = self._join_elements([
+            self._elements_of(g, frame.stamp_ns, include_suppressed=True, only_suppressed=True, raw_identity=True)
+            for g in self._containers()])
+        if not len(dormant):
+            return
+        evidence = classify_elements(frame, dormant, tolerance=self.tolerance,
+                                     max_range=self.info.depth_range[1],
+                                     dynamic_semantics=self.info.dynamic_semantics, positive_only=True)
+        restored = self.reactivate(dormant.ids[evidence["hit"]], frame.stamp_ns)
+        self._lifecycle_counts["positive_reactivations"] += restored
+
+    def _elements_of(self, g: TrackedGaME, now: Optional[int] = None, *, include_suppressed=False,
+                     only_suppressed=False, raw_identity=False) -> Elements:
         if now is not None:
             g.now = now
         n_all = g.gaussian_model.get_xyz.shape[0]
-        for name in ("uid", "identity", "last_update", "created", "state_birth", "death_state", "death_evidence",
+        for name in ("uid", "identity", "last_update", "surface_weight", "created", "state_birth", "death_state", "death_evidence",
                      "death_prune", "frozen", "label_weight"):
             assert len(getattr(g, name)) == n_all, f"per-Gaussian {name}: {len(getattr(g, name))} != {n_all}"
-        live = g.alive_at(g.now)
+        live = g.base_alive_at(g.now) if include_suppressed and g.timed else g.alive_at(g.now)
         if live is None:                                   # T1 off (no layer yet / rows 1-3): every Gaussian
             live = torch.ones(n_all, dtype=torch.bool, device="cuda")
+        suppressed = g.dormant()
+        if only_suppressed:
+            live &= suppressed
         xyz = g.gaussian_model.get_xyz.detach()[live] / self.scale
         n = len(xyz)
         sigma = g.gaussian_model.get_scaling.detach()[live].max(dim=1).values / self.scale
         nrm = torch.full((n, 3), float("nan"), device="cuda")        # Gaussians carry no normal: no facing test
         ident = g.identity[live].clamp(min=0)
-        if g.session_start is not None and g.tracked_labels is not None:
+        if not raw_identity and g.session_start is not None and g.tracked_labels is not None:
             # [O2] a label the layer never had a state for is no object to it: such Gaussians of earlier sessions
             # are background to the layer (tested like any background element)
             untracked = (ident > 0) & (g.created[live] < g.session_start) & ~torch.isin(ident, g.tracked_labels)
             ident = torch.where(untracked, torch.zeros_like(ident), ident)
         return Elements(g.uid[live].clone(), xyz.float(), nrm,
                         ident, g.last_update[live].clone(), (3.0 * sigma).float(),
-                        g.created[live].clone())
+                        g.created[live].clone(), suppressed=suppressed[live].clone(),
+                        state_birth=g.state_birth[live].clone(), surface_weight=g.surface_weight[live].clone())
 
-    def finish_session(self, stamp: int) -> None:
+    @staticmethod
+    def _recoverable_lifetime(g: TrackedGaME, stamp: int) -> torch.Tensor:
+        # A pending/untracked identity has no recorded closure. A known closed state is never reopened here.
+        return recoverable_lifetime(g.base_alive_at(stamp), g.identity, g.death_state,
+                                    g.death_evidence, g.death_prune)
+
+    @torch.no_grad()
+    def suppress(self, ids: torch.Tensor, stamp: int) -> int:
+        plans = []
+        for g in self._containers():
+            g.now, g.timed = int(stamp), True
+            mask = (torch.isin(g.uid, ids.to(g.uid.device)) & self._recoverable_lifetime(g, stamp)
+                    & ~g.dormant())
+            count = int(mask.sum())
+            g.suppression.ensure_capacity(count)
+            g.suppression._stamp(stamp)  # validate every container before changing any of them
+            plans.append((g, mask, count))
+        self._check_history_budget(sum(count for _, _, count in plans))
+        changed = 0
+        for g, mask, count in plans:
+            if not count:
+                continue
+            changed += g.suppression.suppress(g.uid[mask], stamp)
+            g.surface_weight[mask] = -1.0
+            g.reset_adam_rows(mask)
+            clear_densification_rows(g.gaussian_model, mask)
+        self._lifecycle_counts["suppressed"] += changed
+        return changed
+
+    @torch.no_grad()
+    def reactivate(self, ids: torch.Tensor, stamp: int) -> int:
+        plans = []
+        for g in self._containers():
+            g.now, g.timed = int(stamp), True
+            mask = (torch.isin(g.uid, ids.to(g.uid.device)) & self._recoverable_lifetime(g, stamp)
+                    & g.dormant())
+            g.suppression._stamp(stamp)
+            plans.append((g, mask))
+        changed = 0
+        for g, mask in plans:
+            if not bool(mask.any()):
+                continue
+            changed += g.suppression.reactivate(g.uid[mask], stamp)
+            # Permanent frozen flags and carried geometry restrictions are intentionally untouched.
+            g.reset_adam_rows(mask)
+            clear_densification_rows(g.gaussian_model, mask)
+            g.last_update[mask] = int(stamp)
+            g.surface_weight[mask] = 1.0
+        self._lifecycle_counts["reactivated"] += changed
+        return changed
+
+    def finish_session(self, stamp: int) -> dict:
         """[F2] GaME's published end-of-run refinement (run.py:36-37 of GaME: optimize_model(refinement_iters,
         refinement=True) over all keyframes, with densification), once after the last session of the chain, as
         GaME does after all its runs (run.py calls this then; since 2026-10-06, before: F1 after every session).
@@ -1648,13 +1862,16 @@ class GameBackend(Backend):
         g.now = stamp
         iters = int(self.config.get("refinement_iters", 0))
         if iters and g.keyframes:
+            if g.timed and g.session_start is None:
+                raise RuntimeError("Cannot refine a timed checkpoint without its recorded session boundary; "
+                                   "restore session_start/session_starts or establish the session before refinement")
             # [M3] the I1 label sums are not used any more: identities are voted only when a keyframe is inserted
             # (_assign_identity), never in the refinement, each Gaussian keeps its identity (densified children copy
             # their parent's), and the refinement runs once after the chain's last session (F2: nothing votes after
             # it). The table (N x labels floats, copied at every densification) is replaced by an N x 0 table, which
             # keeps densify/prune and elements()' length check as they are. No value changes.
             g.label_weight = g.label_weight.new_zeros((len(g.label_weight), 0))
-            g.optimize_model(iterations=iters, refinement=True)
+        return g.optimize_model(iterations=iters, refinement=True)
 
     @torch.no_grad()
     def set_state_intervals(self, intervals: dict, stamp: int) -> None:
@@ -1673,7 +1890,13 @@ class GameBackend(Backend):
     def _freeze_ended(self, stamp: int) -> None:
         """[A2] Gaussians that have ended by `stamp` are frozen: the keyframes of their time still render them."""
         for g in self._containers():
-            g.freeze_rows(g.ended() <= stamp)
+            ended = g.ended() <= stamp
+            g.freeze_rows(ended)
+            if g.suppression.open_count:
+                closed = ended & g.dormant()
+                if bool(closed.any()):
+                    # Closing an interval at a permanent end does not reactivate the base lifetime.
+                    g.suppression.close_for_permanent_end(g.uid[closed], max(int(g.now), int(stamp)))
 
     def _containers(self):
         return [self.game] + ([self.memory] if self.split and self.memory is not None else [])
