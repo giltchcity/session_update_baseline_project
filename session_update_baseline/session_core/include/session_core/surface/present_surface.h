@@ -31,7 +31,8 @@ struct FrameData;
  * integrator, including its capped weights. Tracking keeps its short active
  * window and does not inherit the persistent volume's observation history.
  * Previous-session mesh memory is retained under the existing evidence rules.
- * Thread-safe: frames arrive from the active window, rounds from the backend.
+ * Thread-safe: frames arrive from the active window, rounds from the backend; an
+ * arriving frame never waits for a round.
  */
 class PresentSurface {
  public:
@@ -79,7 +80,7 @@ class PresentSurface {
     std::string report_json;
   };
 
-  /** Enqueue a processed frame; compose consumes only frames through its stamp. */
+  /** Enqueue a processed frame (packed by the caller); compose consumes only frames through its stamp. */
   void integrate(const FrameData& data);
 
   /** Test/replay input: enqueue one archived frame through the same production path. */
@@ -125,6 +126,7 @@ class PresentSurface {
     bool restricts(TimeStamp t) const { return current && t < start; }
     /** The latest frame stamp the state can restrict. */
     TimeStamp horizon() const { return current ? start : TimeStamp(0); }
+    /** The same state for the volume: current, from the same t_l (its surface may have grown). */
     bool operator==(const State& other) const;
   };
   using States = std::map<uint16_t, State>;
@@ -155,15 +157,6 @@ class PresentSurface {
    * is in its image no farther than the readings there (bounded per tile) and its farthest reading.
    */
   bool reaches(size_t index, const Eigen::AlignedBox3f& box, float beyond) const;
-  /** The triangles (3 world vertices each) and measured voxels one of two surfaces has and the other lacks. */
-  struct Changed {
-    Eigen::AlignedBox3f box;
-    std::vector<Eigen::Vector3f> triangles;
-    std::vector<uint64_t> voxels;
-  };
-  Changed changedPart(const State& before, const State& after) const;
-  /** Mark in `mask` (and extend `touched` over) the pixels of kept frame `index` the `changed` primitives cover. */
-  void markChanged(size_t index, const Changed& changed, std::vector<uint8_t>& mask, Window& touched) const;
   /**
    * Min into `limit` (+inf where none) the first hit of every valid pixel's ray
    * of the prepared frame, within `window` (only where `mask` is set, if given),
@@ -206,6 +199,9 @@ class PresentSurface {
   const double truncation_;  // two voxels
   const int num_threads_;
   mutable std::mutex mutex_;
+  // Frames packed since the round last took them (in arrival order), with their own lock.
+  mutable std::mutex arrivals_mutex_;
+  std::vector<std::pair<FrameArchive::Camera, FrameArchive::Frame>> arrivals_;
   FrameArchive frames_;
   PresentTsdf tsdf_;
   PresentTsdf::Camera camera_;
@@ -213,6 +209,46 @@ class PresentSurface {
   std::vector<Eigen::Vector3f> ray_dir_;  // unit ray of every pixel centre (camera frame)
   // The states every kept frame's contribution reflects.
   States states_;
+  // What every kept frame read, each frame read once (frames [0, voted_)): the votes each decided
+  // element (an earlier session's face by its index, a fill face by its vertices) has, sorted by
+  // key; how many frames read each memory object point (by its position); the residuals of every
+  // frame on the present as it stood before the frame (range bin x residual cell). The previous
+  // round's present, which this round's frames are measured on: its positions (each once), their
+  // vertices' normals (position g: at[g] .. at[g + 1]).
+  struct Votes {
+    int32_t support = 0, free = 0;
+  };
+  std::vector<std::pair<uint64_t, Votes>> votes_;
+  std::vector<std::pair<uint64_t, int32_t>> read_points_;
+  std::vector<int64_t> residuals_;
+  size_t voted_ = 0;
+  std::vector<Eigen::Vector3f> residual_position_, residual_normal_;
+  std::vector<uint32_t> residual_at_;
+  // The previous round's answers, kept where nothing they read can have changed (sorted by key):
+  // each present face's identity (by its vertices), with the object triangles it was read from (by
+  // vertices and identity, with bounds); each decided element's rival, with the present triangles
+  // (bounds) it was read from; whether a snapshot vertex (by position) copies the loaded state;
+  // which shown faces the closed states' surfaces (by their points) own.
+  struct Rival {
+    uint8_t rival = 0, covered = 0;
+    Eigen::Vector3f point = Eigen::Vector3f::Zero(), normal = Eigen::Vector3f::Zero();
+  };
+  std::vector<std::pair<uint64_t, uint32_t>> face_ids_;
+  std::vector<std::pair<uint64_t, Eigen::AlignedBox3f>> object_triangles_, present_triangles_;
+  std::vector<std::pair<uint64_t, Rival>> rivals_;
+  std::vector<std::pair<uint64_t, uint8_t>> memory_vertices_;
+  uint64_t closed_key_ = 0;
+  std::vector<uint8_t> closed_owned_;
+  // A kept frame (read before) whose domain moved: its pixels whose reading or free limit changed,
+  // with the reading and limit it was read with, and their bounds.
+  struct Moved {
+    size_t index = 0;
+    std::vector<uint32_t> pixel;
+    std::vector<uint16_t> range;
+    std::vector<float> limit;
+    PresentTsdf::Window window;
+  };
+  std::vector<Moved> moved_;
   // Per physical id, the voxels holding an endpoint of its pixels and the
   // latest stamp of one, over the first `recorded_` kept frames.
   std::unordered_map<uint16_t, std::unordered_map<uint64_t, TimeStamp>> endpoints_;

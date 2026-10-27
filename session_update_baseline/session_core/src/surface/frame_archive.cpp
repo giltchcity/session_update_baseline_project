@@ -179,7 +179,7 @@ void FrameArchive::keepLimit(size_t index, std::vector<uint8_t> packed_limit) {
   bytes_ += kept.size();
 }
 
-bool FrameArchive::offer(const FrameData& data) {
+bool FrameArchive::pack(const FrameData& data, Camera& cam, Frame& frame) {
   const auto& input = data.input;
   const cv::Mat& ranges = input.range_image;
   const auto* camera = dynamic_cast<const hydra::Camera*>(&input.getSensor());
@@ -189,7 +189,6 @@ bool FrameArchive::offer(const FrameData& data) {
     return false;
   }
   const auto& cc = camera->getConfig();
-  Camera cam;
   cam.width = static_cast<uint32_t>(ranges.cols);
   cam.height = static_cast<uint32_t>(ranges.rows);
   cam.fx = cc.fx;
@@ -250,7 +249,8 @@ bool FrameArchive::offer(const FrameData& data) {
     }
   }
   if (offset > 0) instances.push_back({offset, previous});
-  return keep(cam, Frame::pack(input.timestamp_ns, input.getSensorPose(), cam.width, range_mm, instances));
+  frame = Frame::pack(input.timestamp_ns, input.getSensorPose(), cam.width, range_mm, instances);
+  return true;
 }
 
 bool FrameArchive::keep(const Camera& camera, Frame frame) {

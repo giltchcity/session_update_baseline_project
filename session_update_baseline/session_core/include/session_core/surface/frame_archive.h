@@ -82,10 +82,10 @@ class FrameArchive {
   static constexpr uint32_t kTile = 16;
 
   /**
-   * Keep a processed frame. False (nothing kept) without a pinhole
-   * camera and range image, or for a camera that differs from the first frame's.
+   * A processed frame packed as the archive keeps it, with its camera; reads no
+   * archive state. False without a pinhole camera and range image.
    */
-  bool offer(const FrameData& data);
+  static bool pack(const FrameData& data, Camera& camera, Frame& frame);
 
   /** Keep an already packed frame of `camera`; false for a camera that differs from the first frame's. */
   bool keep(const Camera& camera, Frame frame);
