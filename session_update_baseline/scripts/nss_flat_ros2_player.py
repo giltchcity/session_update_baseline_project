@@ -29,6 +29,12 @@ from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 from std_msgs.msg import Empty, UInt64
 
 
+def time_left(deadline: float, step: float) -> float:
+    """Seconds to wait for work before `deadline`, at most `step`. Never negative: rclpy waits forever
+    on a negative timeout, and the deadline can pass between the loop's check and this call."""
+    return max(0.0, min(step, deadline - time.monotonic()))
+
+
 SESSION_TIMEZONE = "Asia/Shanghai"
 ROS_TIME_MAX_NS = (2**31 - 1) * 1_000_000_000 + 999_999_999
 _ACQUISITION_STAMP_RE = re.compile(
@@ -658,9 +664,7 @@ class NssFlatPlayer(Node):
                 delta_dataset_s = (dataset_ns - frames[index - 1][1]) * 1.0e-9
                 previous_target += max(0.0, delta_dataset_s / self.args.play_rate)
                 while rclpy.ok() and time.monotonic() < previous_target:
-                    rclpy.spin_once(
-                        self, timeout_sec=min(0.01, previous_target - time.monotonic())
-                    )
+                    rclpy.spin_once(self, timeout_sec=time_left(previous_target, 0.01))
 
             stamp_ns = session_start_ns + (dataset_ns - base_dataset_ns)
             stamp = rclpy.time.Time(nanoseconds=stamp_ns).to_msg()
@@ -753,10 +757,7 @@ class NssFlatPlayer(Node):
             # short head start so the image callback cannot query this stamp first.
             settle_deadline = time.monotonic() + self.args.tf_settle_s
             while rclpy.ok() and time.monotonic() < settle_deadline:
-                rclpy.spin_once(
-                    self,
-                    timeout_sec=min(0.005, settle_deadline - time.monotonic()),
-                )
+                rclpy.spin_once(self, timeout_sec=time_left(settle_deadline, 0.005))
             _tf_settle_total += time.perf_counter() - _t_tf
             require_valid_depth(depth, image_id)
             _t_publish = time.perf_counter()
@@ -805,7 +806,7 @@ class NssFlatPlayer(Node):
                     )
                     settle_deadline = time.monotonic() + self.args.tf_settle_s
                     while rclpy.ok() and time.monotonic() < settle_deadline:
-                        rclpy.spin_once(self, timeout_sec=min(0.005, settle_deadline - time.monotonic()))
+                        rclpy.spin_once(self, timeout_sec=time_left(settle_deadline, 0.005))
                     self.info_pub.publish(info)
                     self.color_pub.publish(color_msg)
                     self.depth_pub.publish(depth_msg)
