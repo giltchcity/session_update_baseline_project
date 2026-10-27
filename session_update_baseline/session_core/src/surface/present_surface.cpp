@@ -1212,11 +1212,11 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   // fill is this session's own background, the window reconstructions the
   // backend archived (the session-end refusion's measured fill, moved online:
   // the present holds one surface per place, the windows keep what each of
-  // them measured). A shown face of an object stays only while the node of its
-  // physical id is current and its state did not begin in this session: the
-  // object reasoning decides where objects are, as in Khronos, and no per-face
-  // vote applies to it. A memory background face on a closed state's old
-  // surface follows that state. Every other face is a surface element
+  // them measured). A shown face of an object is memory only while the node of
+  // its physical id is current and its state did not begin in this session: the
+  // object reasoning decides where objects are, as in Khronos. A memory
+  // background face on a closed state's old surface follows that state. Every
+  // other face, of an object or the background, is a surface element
   // known to within tau = max(h, sigma) (h: half a voxel), decided as the
   // fusion decides a place: at the element's own pixel, each frame the present
   // counts reads it (within tau, and nearer it than any other present layer
@@ -1291,7 +1291,6 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       }
       if (target < 0) continue;
       shown_slot[f] = target;
-      if (p > 0) continue;  // an object follows its state, as in Khronos
       tested.push_back(static_cast<uint32_t>(f));
       addTested(S.vertices[S.faces[f][0]], S.vertices[S.faces[f][1]], S.vertices[S.faces[f][2]]);
     }
@@ -1310,12 +1309,15 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     uint16_t support = 0, free = 0;
   };
   std::vector<Evidence> tested_ev(tested_centroid.size());
-  // An element's rival: the present's other layer near it (farther than one
-  // voxel, within the truncation). A reading belongs to the one surface it
-  // landed on: a reading nearer the rival's crossing of the ray is the
-  // present's, not the element's. And the volume holds one surface per place:
-  // an element behind its rival, facing the same way, lies within that layer's
-  // truncation band (`covered`), where the present's own surface is.
+  // An element's rival: the present's other layer near it, within the
+  // truncation. A reading belongs to the one surface it landed on: a reading
+  // nearer the rival's crossing of the ray is the present's, not the element's.
+  // Memory is an earlier session's surface, so the present's layer is its rival
+  // wherever it lies; fill and the present are this session's readings, so a
+  // fill element's rival is a layer farther than one voxel. And the volume holds
+  // one surface per place: an element behind its rival, farther than a voxel,
+  // facing the same way, lies within that layer's truncation band (`covered`),
+  // where the present's own surface is.
   std::vector<Eigen::Vector3f> rival_point(tested_centroid.size()), rival_normal(tested_centroid.size());
   std::vector<uint8_t> rival(tested_centroid.size(), 0), covered(tested_centroid.size(), 0);
   if (!tested_centroid.empty() && !Fp.empty()) {
@@ -1324,12 +1326,13 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       for (size_t k = b; k < e; ++k) {
         float d;
         uint32_t face;
-        if (!present_grid.closest(tested_centroid[k], T, d, rival_point[k], face) || d <= 2.f * h) continue;
+        if (!present_grid.closest(tested_centroid[k], T, d, rival_point[k], face) ||
+            (k >= tested.size() && d <= 2.f * h)) continue;
         const float length = face_normal[face].norm();
         if (!(length > 0.f)) continue;
         rival_normal[k] = face_normal[face] / length;
         rival[k] = 1;
-        covered[k] = (tested_centroid[k] - rival_point[k]).dot(rival_normal[k]) < 0.f &&
+        covered[k] = d > 2.f * h && (tested_centroid[k] - rival_point[k]).dot(rival_normal[k]) < 0.f &&
                      tested_normal[k].dot(rival_normal[k]) > 0.f;
       }
     });
