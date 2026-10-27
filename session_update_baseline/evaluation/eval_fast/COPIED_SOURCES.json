@@ -1,0 +1,304 @@
+{
+  "purpose": "Copied scorer source and binaries; local path changes confined to eval_fast",
+  "copied_code_and_config": [
+    {
+      "copy": "configs/a.yaml",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_a_latest/official_objects.yaml",
+      "original_sha256": "d62032ba0280ccd63c7b07256bd479085a9ef5e92dc77b7c2e74f81d4dfb546d",
+      "copy_sha256": "d62032ba0280ccd63c7b07256bd479085a9ef5e92dc77b7c2e74f81d4dfb546d",
+      "same_bytes": true,
+      "copy_bytes": 1687
+    },
+    {
+      "copy": "configs/b.yaml",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_b_latest/official_objects.yaml",
+      "original_sha256": "75afb87b8088d7de762fc5aee8172117f201713f2f4b2eaa362e7435f9ab49cc",
+      "copy_sha256": "75afb87b8088d7de762fc5aee8172117f201713f2f4b2eaa362e7435f9ab49cc",
+      "same_bytes": true,
+      "copy_bytes": 1687
+    },
+    {
+      "copy": "configs/c.yaml",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/real_abc/objects/gt_c_latest/official_objects.yaml",
+      "original_sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4",
+      "copy_sha256": "c00ec795cd1378f7a9d12bff0d616f95a628750f6e07b8ca19b65632c2c6b8b4",
+      "same_bytes": true,
+      "copy_bytes": 1687
+    },
+    {
+      "copy": "official/environment.sh",
+      "original": "/home/jixian/Desktop/FT/build_artifacts/official_khronos_63faadde_abc/environment.sh",
+      "original_sha256": "74f52431c4bab6633be20bc2f76615bd056023585297dd9edc04865182ca108e",
+      "copy_sha256": "859d3980c6887f56077b4b6fd9ea2b7adcc06d2e4dd3d67d2dfa21e11feb5d40",
+      "same_bytes": false,
+      "copy_bytes": 504
+    },
+    {
+      "copy": "official/src/khronos_eval/plotting/utils.py",
+      "original": "/home/jixian/Desktop/FT/build_artifacts/official_khronos_63faadde_abc/src/khronos_eval/plotting/utils.py",
+      "original_sha256": "a7c1bed4b97f8d9e27361296d00cf741ed67d18ae4d3f8e21e259fc4213d0763",
+      "copy_sha256": "a7c1bed4b97f8d9e27361296d00cf741ed67d18ae4d3f8e21e259fc4213d0763",
+      "same_bytes": true,
+      "copy_bytes": 27282
+    },
+    {
+      "copy": "official/src/khronos_eval/src/object_evaluator.cpp",
+      "original": "/home/jixian/Desktop/FT/build_artifacts/official_khronos_63faadde_abc/src/khronos_eval/src/object_evaluator.cpp",
+      "original_sha256": "07d9aad2ed289376492cc3a1f0cae8ac68cefa3dd6c4504eddeabc370371ebf3",
+      "copy_sha256": "07d9aad2ed289376492cc3a1f0cae8ac68cefa3dd6c4504eddeabc370371ebf3",
+      "same_bytes": true,
+      "copy_bytes": 24140
+    },
+    {
+      "copy": "official/src/khronos_eval/src/pipeline_evaluator.cpp",
+      "original": "/home/jixian/Desktop/FT/build_artifacts/official_khronos_63faadde_abc/src/khronos_eval/src/pipeline_evaluator.cpp",
+      "original_sha256": "7286feee46955cea18c85acf3b8d156929e6ef1751142eb1ea2c0a5c2db00f56",
+      "copy_sha256": "7286feee46955cea18c85acf3b8d156929e6ef1751142eb1ea2c0a5c2db00f56",
+      "same_bytes": true,
+      "copy_bytes": 10037
+    },
+    {
+      "copy": "reference/evaluate_real_session.sh",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/evaluate_real_session.sh",
+      "original_sha256": "c84d7a537ae63e72a243ee833ed84d0ebac187efd41412024691011f76fe9a92",
+      "copy_sha256": "c84d7a537ae63e72a243ee833ed84d0ebac187efd41412024691011f76fe9a92",
+      "same_bytes": true,
+      "copy_bytes": 13040
+    },
+    {
+      "copy": "reference/run_official_objects.sh",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/run_official_objects.sh",
+      "original_sha256": "2990c2e58232fbdadfd2be431e8889af95f096dbee494bd8339a76a79434838b",
+      "copy_sha256": "2990c2e58232fbdadfd2be431e8889af95f096dbee494bd8339a76a79434838b",
+      "same_bytes": true,
+      "copy_bytes": 833
+    },
+    {
+      "copy": "runtime_khronos_env.sh",
+      "original": "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/scripts/khronos_env.sh",
+      "original_sha256": "8ce5d30d0a7d16a3d67fa2ac42235983648b86e0498cb8d543aec06d41c6738c",
+      "copy_sha256": "15d11596739a1ef5758951695e9a458d64cccd6aa1518fe9247da61c2f5807be",
+      "same_bytes": false,
+      "copy_bytes": 2073
+    },
+    {
+      "copy": "vendor/cleanup/cleanup_binary.py",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_protocol_v1/cleanup_binary.py",
+      "original_sha256": "650c792ea762cf5519d88e5dc6c80cb2acef16861e818b614c6e05882db1e682",
+      "copy_sha256": "650c792ea762cf5519d88e5dc6c80cb2acef16861e818b614c6e05882db1e682",
+      "same_bytes": true,
+      "copy_bytes": 2147
+    },
+    {
+      "copy": "vendor/cleanup/export_cleanup_binary",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_protocol_v1/src/export_cleanup_binary",
+      "original_sha256": "090c8414cc3807a98a952c06599ee4fb49253226c6e8b0deb1872dc8f3e7ec80",
+      "copy_sha256": "090c8414cc3807a98a952c06599ee4fb49253226c6e8b0deb1872dc8f3e7ec80",
+      "same_bytes": true,
+      "copy_bytes": 229960
+    },
+    {
+      "copy": "vendor/cleanup/export_cleanup_binary.cpp",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_protocol_v1/src/export_cleanup_binary.cpp",
+      "original_sha256": "5cdfb54265096a5066bd8fba4b2fb9fb033e9859138fcd2453f34f1b677e8ab5",
+      "copy_sha256": "5cdfb54265096a5066bd8fba4b2fb9fb033e9859138fcd2453f34f1b677e8ab5",
+      "same_bytes": true,
+      "copy_bytes": 8382
+    },
+    {
+      "copy": "vendor/geometry/geometry_export",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export",
+      "original_sha256": "a2d1d89e7c75afd25b840406197b15dd4178eb2742cf18e2cb34c8a59a63ce34",
+      "copy_sha256": "a2d1d89e7c75afd25b840406197b15dd4178eb2742cf18e2cb34c8a59a63ce34",
+      "same_bytes": true,
+      "copy_bytes": 182136
+    },
+    {
+      "copy": "vendor/geometry/geometry_export.cpp",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_export.cpp",
+      "original_sha256": "3a099bb574f0f609c7ddc4c13fae8c0b7c373397e75dda13e7d19838539b8ffd",
+      "copy_sha256": "3a099bb574f0f609c7ddc4c13fae8c0b7c373397e75dda13e7d19838539b8ffd",
+      "same_bytes": true,
+      "copy_bytes": 5607
+    },
+    {
+      "copy": "vendor/geometry/geometry_g1.py",
+      "original": "/home/jixian/Desktop/FT/eval/geometry_g1.py",
+      "original_sha256": "977a234f9f76f52e0f8fb25668c27122595b1878580e6c1f3f9b2c19727eb844",
+      "copy_sha256": "3e9030c0acefe43589f9fa35e2287eace3c05e9d6f9ca19f6d2107155cacd587",
+      "same_bytes": false,
+      "copy_bytes": 3947
+    },
+    {
+      "copy": "vendor/geometry/geometry_score.py",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/geometry_score.py",
+      "original_sha256": "57c01ea8c65f39ab338d6f9e88cee909c0f9f2dcbe3786e7cbf895d186c70cc4",
+      "copy_sha256": "c52072eb759bc9f0f0100ebee753122934d015faf1a12d388c021c287618a8f9",
+      "same_bytes": false,
+      "copy_bytes": 11627
+    },
+    {
+      "copy": "vendor/geometry/score_geometry.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/score_geometry.py",
+      "original_sha256": "9210d2fc7620072b1890784822d92d053771e2ccd8e0e7ca1d7a9b2291d91c33",
+      "copy_sha256": "3867cde1682ad3f680d08c1c1b01cbf5039c825e6ecf7a5e975b01479d0bf31d",
+      "same_bytes": false,
+      "copy_bytes": 2110
+    },
+    {
+      "copy": "vendor/ghost/cleanup_mesh",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/cleanup_mesh",
+      "original_sha256": "24cbabad4958d12963f46fd5420b90459bc9e006d076b2daf238258412dc087c",
+      "copy_sha256": "24cbabad4958d12963f46fd5420b90459bc9e006d076b2daf238258412dc087c",
+      "same_bytes": true,
+      "copy_bytes": 260776
+    },
+    {
+      "copy": "vendor/ghost/cleanup_mesh.cpp",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/cleanup_mesh.cpp",
+      "original_sha256": "e126a5c67900ee52b7ae8d3cacbcb8bd9c747b85c8801c509a9aab3c8e0a3ad8",
+      "copy_sha256": "e126a5c67900ee52b7ae8d3cacbcb8bd9c747b85c8801c509a9aab3c8e0a3ad8",
+      "same_bytes": true,
+      "copy_bytes": 5462
+    },
+    {
+      "copy": "vendor/ghost/depth_surface_check.py",
+      "original": "/home/jixian/Desktop/FT/tools/abc_geometry_check/depth_surface_check.py",
+      "original_sha256": "1e2e45446a9b173abb39571e3294b7abd0e25c6df3243f79d5dce6899533ba26",
+      "copy_sha256": "1e2e45446a9b173abb39571e3294b7abd0e25c6df3243f79d5dce6899533ba26",
+      "same_bytes": true,
+      "copy_bytes": 13160
+    },
+    {
+      "copy": "vendor/harness/cleanup_eval_h.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/cleanup_eval_h.py",
+      "original_sha256": "ae7b716c65ce6565ab156c40c12551ada8a65ae57074a21e078abccd27548443",
+      "copy_sha256": "f5634e420779b362dfb928f94c1008ecd3ebf1cbb9d79a0510bd42670efbea7f",
+      "same_bytes": false,
+      "copy_bytes": 12465
+    },
+    {
+      "copy": "vendor/harness/cleanup_evaluate_h.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/cleanup_evaluate_h.py",
+      "original_sha256": "24038a19708845ccf81d5a9de5f2ecd6a34d34db45c93cc7964e8c8385f9fc83",
+      "copy_sha256": "55c9e582e256b56ec255f30c5ba16bc853c886d82efdaa17f7728d01625ada62",
+      "same_bytes": false,
+      "copy_bytes": 17060
+    },
+    {
+      "copy": "vendor/harness/eval_state_change_h.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/eval_state_change_h.py",
+      "original_sha256": "06a51b6299bb7d33d6c0245a5b19945cf092edb8f79570078341fceb75db8460",
+      "copy_sha256": "06a51b6299bb7d33d6c0245a5b19945cf092edb8f79570078341fceb75db8460",
+      "same_bytes": true,
+      "copy_bytes": 15902
+    },
+    {
+      "copy": "vendor/harness/ghost_cohort.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/ghost_cohort.py",
+      "original_sha256": "06d45723f34a15f0212dd8b373f08fa2fcf2eec1a7feaf662dd649bc369ec566",
+      "copy_sha256": "06d45723f34a15f0212dd8b373f08fa2fcf2eec1a7feaf662dd649bc369ec566",
+      "same_bytes": true,
+      "copy_bytes": 3245
+    },
+    {
+      "copy": "vendor/harness/object_weighted_nr.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/object_weighted_nr.py",
+      "original_sha256": "f3e45fa1710434d83728e3a4fb3ef13572c9f9b54c254aeba86f0c0a907f7857",
+      "copy_sha256": "f3e45fa1710434d83728e3a4fb3ef13572c9f9b54c254aeba86f0c0a907f7857",
+      "same_bytes": true,
+      "copy_bytes": 6113
+    },
+    {
+      "copy": "vendor/harness/protocol_common_h.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/protocol_common_h.py",
+      "original_sha256": "ae0e7bd0ed48a6459e54dc7cd6e5347cc9a60668689a70f07968d48a2a105e9b",
+      "copy_sha256": "ae0e7bd0ed48a6459e54dc7cd6e5347cc9a60668689a70f07968d48a2a105e9b",
+      "same_bytes": true,
+      "copy_bytes": 7996
+    },
+    {
+      "copy": "vendor/harness/summarize_session.py",
+      "original": "/home/jixian/Desktop/FT/results/current_version_20260921/tools/harness_real/summarize_session.py",
+      "original_sha256": "8eb6a780db2b4a0be006745886619c93048718ea08a08cf219007516e7f25e80",
+      "copy_sha256": "30137f3de4d407d8032e7ce9e6ab5c51c5d4b32c2e83f6ad87878e884b0170f7",
+      "same_bytes": false,
+      "copy_bytes": 15875,
+      "modified": "2026-10-20: report text only. SUMMARY prints G1 (geometry_viewer_G1.json, eval/geometry_g1.py) as the primary geometry line and marks the 1 cm policy line \"[diagnostic, not G1]\"; SUMMARY.json gains geometry_G1. No metric or score computation changed."
+    },
+    {
+      "copy": "vendor/object/official_native_eval_postprocess.py",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/official_native_eval_postprocess.py",
+      "original_sha256": "35eab5e0caa17f503e65a7f6e9fd3e338f289dcf1b4eb5617e911dd433a56203",
+      "copy_sha256": "cd4a005420b22ea96452004dcda087b6c15293935aa6542085c7d468b47a77ee",
+      "same_bytes": false,
+      "copy_bytes": 4068
+    },
+    {
+      "copy": "vendor/object/official_native_eval_run.py",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_v2/official_native_eval_run.py",
+      "original_sha256": "833f7545a29764d648414f6ee9403377709a5ed0672e9e654c3f8e703a28dd33",
+      "copy_sha256": "65685dc24559d805c24ad70837771510875479b35045ddc9f70d55a7c3fb00ff",
+      "same_bytes": false,
+      "copy_bytes": 2998
+    },
+    {
+      "copy": "vendor/pack/map4d_pack.py",
+      "original": "/home/jixian/Desktop/FT/tools/map4d_pack.py",
+      "original_sha256": "33467584559f4d3b8ca10ca60c6d3c9398adea6fb557cab7b8a9906efe22a408",
+      "copy_sha256": "33467584559f4d3b8ca10ca60c6d3c9398adea6fb557cab7b8a9906efe22a408",
+      "same_bytes": true,
+      "copy_bytes": 12614
+    },
+    {
+      "copy": "vendor/pack/zpk_snapshot.py",
+      "original": "/home/jixian/Desktop/FT/tools/zpk_snapshot.py",
+      "original_sha256": "f73589c584e6fb314f12bf895346de278002d978584bf1a7ce8ff1bfe4f8b9cb",
+      "copy_sha256": "f73589c584e6fb314f12bf895346de278002d978584bf1a7ce8ff1bfe4f8b9cb",
+      "same_bytes": true,
+      "copy_bytes": 8987
+    },
+    {
+      "copy": "vendor/timeline/export_timeline",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_final_baseline/export_timeline",
+      "original_sha256": "298a7ce4646346a3e550b132b53ee60725a36c75ba63775188f0185230da421e",
+      "copy_sha256": "298a7ce4646346a3e550b132b53ee60725a36c75ba63775188f0185230da421e",
+      "same_bytes": true,
+      "copy_bytes": 176648
+    },
+    {
+      "copy": "vendor/timeline/export_timeline.cpp",
+      "original": "/home/jixian/Desktop/FT/tools/abc_eval_final_baseline/export_timeline.cpp",
+      "original_sha256": "60c30a6f422e1167314a3770811f0bdf08b5c0812b3050c3df1382eee455a54f",
+      "copy_sha256": "60c30a6f422e1167314a3770811f0bdf08b5c0812b3050c3df1382eee455a54f",
+      "same_bytes": true,
+      "copy_bytes": 2571
+    }
+  ],
+  "copied_official_install": {
+    "file_count": 467,
+    "bytes": 14551114,
+    "all_files_byte_identical": true
+  },
+  "new_orchestration_tools": [
+    {
+      "path": "run.py",
+      "sha256": "46e913c6fa5ff98641f16e6f6eab13b19b1d53c0acd710627808dff9e4af4bc9"
+    },
+    {
+      "path": "verify.py",
+      "sha256": "35e981288a920ea364d1939f1745efcb883c29e47ecc7d3fb6d4101f2ec5204e"
+    },
+    {
+      "path": "compact.py",
+      "sha256": "72000f61cfaedde14305d9a2660c763f00a9b9236b1f69cada0037232b0ff71f"
+    }
+  ],
+  "external_read_only_dependencies": [
+    "/opt/ros/jazzy",
+    "/home/jixian/ros2_ws/install",
+    "/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline/.canonical_mapping/install",
+    "/home/jixian/Desktop/FT/results/abc_eval_final_baseline",
+    "/home/jixian/Desktop/FT/results/abc_eval_v2"
+  ]
+}
