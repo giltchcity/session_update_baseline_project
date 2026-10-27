@@ -108,37 +108,24 @@ Backend::Backend(const Config& config,
   change_detector_->setDsg(unmerged_graph_);
   reconciler_ = std::make_unique<Reconciler>(config.reconciler);
   change_detection_worker_ = std::make_unique<LatestOnlyWorker>([this] {
-    const auto clone_start = std::chrono::steady_clock::now();
-    DynamicSceneGraph::Ptr dsg;
-    RPGOMerges merges;
-    TimeStamp stamp;
-    bool had_loopclosure;
-    {
-      // Snapshot only when the single worker is ready. Requests accumulated
-      // during the previous expensive reconciliation therefore cause neither
-      // graph clones nor a queue of stale work.
-      std::lock_guard<std::mutex> lock(mutex_);
-      dsg = unmerged_graph_->clone();
-      merges = proposed_merges_;
-      stamp = last_timestamp_received_;
-      // Consume the sticky OR-latch in the same state snapshot critical
-      // section. A loop closure arriving after this exchange belongs to the
-      // coalesced follow-up execution, never to this older DSG snapshot.
-      had_loopclosure =
-          pending_change_detection_had_loopclosure_.exchange(false,
-                                                              std::memory_order_acq_rel);
+    // Every requested change detection, in request order, each on its own state.
+    while (true) {
+      ChangeDetectionJob job;
+      {
+        std::lock_guard<std::mutex> lock(change_detection_jobs_mutex_);
+        if (change_detection_jobs_.empty()) return;
+        job = std::move(change_detection_jobs_.front());
+        change_detection_jobs_.pop_front();
+      }
+      const auto start = std::chrono::steady_clock::now();
+      runChangeDetectionThread(
+          std::move(job.dsg), std::move(job.merges), job.stamp, job.had_loopclosure);
+      change_detection_compute_time_ns_.fetch_add(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              std::chrono::steady_clock::now() - start)
+              .count(),
+          std::memory_order_relaxed);
     }
-    const auto clone_done = std::chrono::steady_clock::now();
-    change_detection_clone_time_ns_.fetch_add(
-        std::chrono::duration_cast<std::chrono::nanoseconds>(clone_done - clone_start).count(),
-        std::memory_order_relaxed);
-    runChangeDetectionThread(
-        std::move(dsg), std::move(merges), stamp, had_loopclosure);
-    change_detection_compute_time_ns_.fetch_add(
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::steady_clock::now() - clone_done)
-            .count(),
-        std::memory_order_relaxed);
   });
 }
 
@@ -250,10 +237,19 @@ void Backend::spinCallback(const hydra::BackendInput& input) {
 }
 
 void Backend::runChangeDetection(bool had_loopclosure) {
-  // Only true is published here; false is consumed exclusively by the worker
-  // via exchange(). This is an atomic OR-latch across coalesced requests.
-  if (had_loopclosure) {
-    pending_change_detection_had_loopclosure_.store(true, std::memory_order_release);
+  // The state of this request, taken now (the caller holds mutex_), so the
+  // change detection of this time sees exactly this time's backend state.
+  const auto clone_start = std::chrono::steady_clock::now();
+  ChangeDetectionJob job{unmerged_graph_->clone(), proposed_merges_, last_timestamp_received_,
+                         had_loopclosure};
+  change_detection_clone_time_ns_.fetch_add(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(
+          std::chrono::steady_clock::now() - clone_start)
+          .count(),
+      std::memory_order_relaxed);
+  {
+    std::lock_guard<std::mutex> lock(change_detection_jobs_mutex_);
+    change_detection_jobs_.push_back(std::move(job));
   }
   change_detection_worker_->request();
 }

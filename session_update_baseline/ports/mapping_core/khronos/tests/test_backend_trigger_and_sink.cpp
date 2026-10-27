@@ -205,7 +205,9 @@ bool testLoopClosureSurvivesOptimizeAndSameTickSave(
   return true;
 }
 
-bool testPeriodicAndLoopClosureRequestsCoalesceWithoutLosingTrue() {
+// Requests made while a change detection runs are not merged: each runs, in order, on its own
+// state with its own loop-closure flag.
+bool testRequestsWhileBusyEachRunInOrder() {
   BackendFixture fixture(1);
   auto* detector = fixture.backend.installRecordingDetector(true);
 
@@ -224,9 +226,8 @@ bool testPeriodicAndLoopClosureRequestsCoalesceWithoutLosingTrue() {
 
   const auto observed = detector->observations();
   const auto stats = fixture.backend.workerStats();
-  if (observed != std::vector<bool>({false, true}) || stats.requests != 3 ||
-      stats.executions != 2 || stats.coalesced_requests != 2) {
-    std::cerr << "coalesced trigger regression failed: observations="
+  if (observed != std::vector<bool>({false, true, false}) || stats.requests != 3) {
+    std::cerr << "requests while busy regression failed: observations="
               << observed.size() << " requests=" << stats.requests
               << " executions=" << stats.executions
               << " coalesced=" << stats.coalesced_requests << "\n";
@@ -250,7 +251,7 @@ int main(int argc, char** argv) {
   const bool save_ok =
       testLoopClosureSurvivesOptimizeAndSameTickSave(argv[1]);
   const bool coalescing_ok =
-      testPeriodicAndLoopClosureRequestsCoalesceWithoutLosingTrue();
+      testRequestsWhileBusyEachRunInOrder();
   hydra::GlobalInfo::reset();
   return save_ok && coalescing_ok ? EXIT_SUCCESS : EXIT_FAILURE;
 }

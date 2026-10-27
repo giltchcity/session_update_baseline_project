@@ -39,6 +39,7 @@
 
 #include <array>
 #include <atomic>
+#include <deque>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -254,13 +255,19 @@ class Backend : public hydra::BackendModule {
    */
   size_t verifyCurrentObjectStates(TimeStamp stamp);
 
-  // One level-triggered worker. While change detection is busy, requests are
-  // coalesced and the next execution snapshots only the newest backend state.
+  // One worker runs every requested change detection, in order, each on the
+  // backend state of its request (cloned when requested): the 4D map gets a
+  // snapshot at every requested time, however long one execution takes.
+  struct ChangeDetectionJob {
+    DynamicSceneGraph::Ptr dsg;
+    RPGOMerges merges;
+    TimeStamp stamp = 0;
+    bool had_loopclosure = false;
+  };
   std::mutex map_mutex_;
   std::unique_ptr<LatestOnlyWorker> change_detection_worker_;
-  // Sticky OR-latch for coalesced asynchronous requests. A loop closure seen
-  // by any request must survive until the worker snapshots that generation.
-  std::atomic<bool> pending_change_detection_had_loopclosure_{false};
+  std::mutex change_detection_jobs_mutex_;
+  std::deque<ChangeDetectionJob> change_detection_jobs_;
   std::atomic<uint64_t> change_detection_clone_time_ns_{0};
   std::atomic<uint64_t> change_detection_compute_time_ns_{0};
   std::mutex finalization_mutex_;
