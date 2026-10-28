@@ -62,6 +62,8 @@ void declare_config(RayVerificator::Config& config) {
   field(config.min_absent_surface_fraction, "min_absent_surface_fraction");
   field(config.surface_match_tolerance, "surface_match_tolerance", "m");
   field(config.max_absence_incidence_deg, "max_absence_incidence_deg", "deg");
+  field(config.min_judged_samples, "min_judged_samples");
+  field(config.real_sensor_noise, "real_sensor_noise");
   enum_field(config.ray_policy,
              "ray_policy",
              {"First", "Last", "FirstAndLast", "Middle", "All", "Random", "Random3"});
@@ -73,6 +75,7 @@ void declare_config(RayVerificator::Config& config) {
   check(config.depth_tolerance, GT, 0.f, "depth_tolerance");
   checkInRange(config.min_absent_surface_fraction, 0.f, 1.f,
                "min_absent_surface_fraction");
+  check(config.min_judged_samples, GT, 0, "min_judged_samples");
 }
 
 namespace {
@@ -92,6 +95,7 @@ bool RayVerificator::facesSurface(const Eigen::Vector3f* normal,
 }
 
 float RayVerificator::minAbsenceCos() const {
+  if (!config.real_sensor_noise) return 0.f;
   return std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
 }
 

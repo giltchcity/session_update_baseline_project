@@ -300,7 +300,8 @@ void estimateCellModel(const TimeStamp stamp) {
 // full chain L2_P9 its look gate learned fewer, higher-share looks, widening the in-place model, and
 // delayed real C closures by 11-107 s with one D2 miss.)
 
-// Judged samples for a share to stand for the finite counts (P25). Relation to a published rule: with
+// min_judged_samples (RayVerificator::Config, 30): judged samples for a share to stand for the finite
+// counts (P25). Relation to a published rule: with
 // a full sampling budget (1500 cells) 30 is 2 % of it, Panoptic Multi-TSDFs' relative threshold
 // tau_rel = 2 % (Schmid et al., sec. D Map Management: "Submaps count as conflicting or matching if
 // the weight-adjusted number of points exceeds a threshold tau_abs = 20 or tau_rel = 2% of |P|";
@@ -318,7 +319,6 @@ void estimateCellModel(const TimeStamp stamp) {
 // inst 7 and 10), and n_min = m(1 - m) / v from the look's present moments (L2_FINAL replay: 28
 // changes, among them the real B inst 10/13/19 and real C inst 7/10/20 closures lost, because a
 // tight in-place model raises n_min to about 200).
-constexpr size_t kMinSamplesInView = 30;
 // Computational budget of surface cells per look (with 30 above it gives Panoptic's 2 %, see there). With uniformly strided cells the share's sampling
 // standard deviation is sqrt(m(1 - m) / 1500) (0.44 % at an in-place share m = 0.03, at most 1.3 %),
 // against the in-place model's floor of 1 %. It reaches decisions only through the sample count:
@@ -931,10 +931,12 @@ void RayVerificator::applyObservedAbsence(
   counts.reliable_in_view = verdicts;
   counts.reliable_seen_through = look.seen_through;
   const bool in_place = look.own_identity > look.seen_through;
-  // A share stands for the finite counts once the look judged min(30, reliable) samples (P25);
-  // partial views are weighted, not refused. A round without a judged reliable sample says
-  // nothing about presence or absence and is neither scored nor learned from.
-  if (verdicts > 0 && verdicts >= std::min<size_t>(kMinSamplesInView, look.reliable)) {
+  // A share stands for the finite counts once the look judged min(30, reliable) samples (P25,
+  // real depth noise only); partial views are weighted, not refused. A round without a judged
+  // reliable sample says nothing about presence or absence and is neither scored nor learned from.
+  if (verdicts > 0 &&
+      (!config.real_sensor_noise ||
+       verdicts >= std::min<size_t>(config.min_judged_samples, look.reliable))) {
     const double f = static_cast<double>(look.seen_through) / verdicts;
     PresentBeta beta;
     {

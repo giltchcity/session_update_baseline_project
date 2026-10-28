@@ -125,6 +125,12 @@ class RayVerificator {
     // A seen-through ray counts only if it meets the surface at less than this incidence
     // angle; depth is unreliable at grazing incidence (Nguyen et al., 3DIMPVT 2012).
     float max_absence_incidence_deg = 60.f;
+    // A look is scored only once it judged min(this, reliable) samples (P25,
+    // projected_physical_evidence.cpp).
+    int min_judged_samples = 30;
+    // Guards for real depth noise: the two limits above. Off for noise-free depth: every ray
+    // counts and a look with one judged sample is scored.
+    bool real_sensor_noise = true;
 
     // Time stamps to raycast for verification.
     // NOTE(lschmid): Could add uniform, random, all (that'd be expensive though).
