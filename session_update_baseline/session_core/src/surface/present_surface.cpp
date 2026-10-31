@@ -1753,7 +1753,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     const bool outvoted = tested_ev[k].free > tested_ev[k].support;
     if (k >= tested.size()) {
       const size_t j = k - tested.size();
-      fill_kept[j] = v == 1;
+      // A fill face without evidence either way stays shown, as a memory face (11-01: a wall the
+      // window kept, seen only edge-on, was hidden until later frames voted on it, TESSE apartment).
+      fill_kept[j] = v != 0;
       if (v == 0) ++(outvoted ? fill_outvoted : fill_covered);
       if (v == -1) ++fill_unreached;
       continue;
