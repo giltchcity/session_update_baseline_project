@@ -167,7 +167,9 @@ def main():
         else:
             lines.append('CHANGE  D3                      MISSING')
         gh = load(GH / 'GHOST.json')
-        if gh:
+        if gh and gh.get('old_site_full_map_ghost_pct') is None:   # 11-01: a single run has no old site (no D3 probe)
+            lines.append('GHOST   old-site full-map %s (Table 2) = n/a (no old-site probe)' % gh.get('transition'))
+        elif gh:
             lines.append('GHOST   old-site full-map %s (Table 2) = %.2f %%   (%d / %d probes, %d D3 events)'
                          % (gh['transition'], gh['old_site_full_map_ghost_pct'], gh['numerator'], gh['denominator'],
                             gh['events_included']))

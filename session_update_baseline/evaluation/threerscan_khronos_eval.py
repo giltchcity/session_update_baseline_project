@@ -16,9 +16,13 @@ map_timestamps.txt (the snapshots numbered 0..n-1 over the chain), METRICS.json:
 Change P/R/F1, the official utils' definitions; no background metric) the mean over the snapshots, the mean weighted
 by how long each snapshot is the current map (to the next one in its visit; a visit's last one, the gap before it),
 and each visit's last snapshot.
-usage: threerscan_khronos_eval.py ROOM ours|khronos|timeline METHOD_DIR
+Any other chain (real A->B->C, synthetic and Flat A->B): CHAIN.json of eval/khronos4d_gt.py in place of ROOM names its
+sessions, their start times, the config and the template map; timeline only. A snapshot belongs to the last session
+started at its stamp (3RScan: visit k starts at 1 + 200 k s). METHOD_DIR/ignore.json ({stamp_ns: [object ids]}, the
+synthetic harness's ignore_prediction_nodes), when there, drops those objects from those snapshots after the completion.
+usage: threerscan_khronos_eval.py ROOM|CHAIN.json ours|khronos|timeline METHOD_DIR
 """
-import json, os, subprocess, sys, tempfile
+import bisect, json, os, subprocess, sys, tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -31,7 +35,14 @@ TABLES = ('static_objects.csv', 'background_mesh.csv', 'dynamic_objects.csv')
 METRICS = ['ObjectPrecision', 'ObjectRecall', 'ObjectF1', 'ChangePrecision', 'ChangeRecall', 'ChangeF1']  # no background (user)
 
 room, method, mdir = sys.argv[1], sys.argv[2], Path(sys.argv[3]).resolve()
-config = FT / f'configs/khronos/eval_3rscan_{room}_local.yaml'
+if room.endswith('.json'):
+    chain = json.load(open(room))
+    config, visits, starts, template = Path(chain['config']), chain['sessions'], chain['starts_ns'], Path(chain['template'])
+else:
+    config = FT / f'configs/khronos/eval_3rscan_{room}_local.yaml'
+    visits = json.load((FT / 'datasets/3rscan/mapping_configs' / room / 'chain.json').open())['visits']
+    starts = [1000000000 + 200000000000 * k for k in range(len(visits))]
+    template = FT / 'wt_takeover_runs/3rscan' / room / 'ours_290e110/visit_0/final.4dmap.zpk'
 work = tempfile.TemporaryDirectory(prefix='3rscan-chain-', dir='/dev/shm')
 if os.environ.get('THREERSCAN_OBJECTS_ONLY') == '1':
     # METRICS read only the object table (objects and changes); the background-mesh and dynamic-object
@@ -40,7 +51,6 @@ if os.environ.get('THREERSCAN_OBJECTS_ONLY') == '1':
     text = text.replace('evaluate_dynamic_objects: true', 'evaluate_dynamic_objects: false')
     config = Path(work.name) / config.name; config.write_text(text)
     TABLES = ('static_objects.csv',)
-visits = json.load((FT / 'datasets/3rscan/mapping_configs' / room / 'chain.json').open())['visits']
 if method == 'ours':
     joined = Path(work.name) / 'chain.4dmap'
     fill = subprocess.run(['bash', '-c', 'set +u; source /opt/ros/jazzy/setup.bash; source /home/jixian/ros2_ws/install/setup.bash; '
@@ -58,7 +68,18 @@ elif method == 'timeline':
                            *[str(mdir / f'visit_{k}/snapshots.jsonl') for k in range(len(visits))]],
                           check=True, capture_output=True, text=True)
     print(done.stdout.strip().splitlines()[-1], flush=True)
-    template = FT / 'wt_takeover_runs/3rscan' / room / 'ours_290e110/visit_0/final.4dmap.zpk'
+    if (mdir / 'ignore.json').exists():
+        # the synthetic harness's scope (its query manifests' ignore_prediction_nodes): the objects it leaves out of
+        # a snapshot's prediction, dropped from that snapshot after the completion, so it sees them as the method
+        # gave them (their records closed later included)
+        ignore = {int(t): set(map(str, ids)) for t, ids in json.loads((mdir / 'ignore.json').read_text()).items()}
+        key = lambda o: str(((o.get('details') or {}).get('instance_id') or [o['id']])[0])
+        lines = [json.loads(line) for line in combined.read_text().splitlines()]
+        for snap in lines:
+            drop = ignore.get(int(snap['stamp_ns']), set())
+            snap['objects'] = [o for o in snap['objects'] if key(o) not in drop]
+        combined.write_text(''.join(json.dumps(x) + '\n' for x in lines))
+        print(f'ignored per the scope: {sum(len(v) for v in ignore.values())} object-snapshots', flush=True)
     conv = subprocess.run(['bash', '-c', env, 'timeline-to-4dmap', str(FT / 'eval/chain_fill/timeline_to_4dmap'),
                            str(template), str(combined), str(joined)], check=True, capture_output=True, text=True)
     print(conv.stdout.strip().splitlines()[-1], flush=True)
@@ -83,7 +104,7 @@ jobs = [(k, src, i, stamp) for k, src in sources for i, stamp in enumerate(zs.st
 with ProcessPoolExecutor(int(os.environ.get('THREERSCAN_JOBS', '1'))) as pool:   # snapshots are independent
     tables = list(pool.map(score_one, [(src, i) for _, src, i, _ in jobs]))
 for (k, src, i, stamp), result in zip(jobs, tables):
-    v = k if k is not None else (stamp - 1000000000) // 200000000000
+    v = k if k is not None else bisect.bisect_right(starts, stamp) - 1
     for name in TABLES:
         lines = result[name]
         assert headers.setdefault(name, lines[0]) == lines[0] and all(l.startswith('0,') for l in lines[1:]), (src, i, name)

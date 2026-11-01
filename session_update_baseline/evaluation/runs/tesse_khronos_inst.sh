@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # TESSE, official Khronos (63faadde, zsnap build + instance bridge) fed our instances: the TESSE table's Khronos run
-# (tesse/configs/khronos_uHumans2_cd5.yaml: 5 m, change detection every 5 frames; the scene's label space) with
+# (tesse/configs/khronos_uHumans2_cd5.yaml: 5 m, change detection every 5 frames; the scene's label space; the active
+# window at 5 cm with truncation 0.15 m, as our runs: user 10-31, every method at the same resolution) with
 # PackedSemanticInstanceForwarding (min_cluster_size 50, max_range 5 m, as the TESSE runs' ConnectedSemantics) on the
-# instance images and physical catalog our runs use, as tesse/khronos_inst_office; into tesse/khronos_inst_SCENE.
+# instance images and physical catalog our runs use; into tesse/khronos_inst_SCENE_5cm (until 10-31 the config's 10 cm:
+# tesse/khronos_inst_SCENE, eval/tesse_{paper,apt}_qj/khronos_inst_5m_all_m050).
 # Then the 4D evaluation of the TESSE table (tesse_online_eval.py ours4d, configs/khronos at 0.5 m) into
-# eval/tesse_{paper,apt}_qj/khronos_inst_5m_all_m050 and the shared grid against ours (290e110, 0.5 m).
+# eval/tesse_{paper,apt}_qj/khronos_inst_5cm_all_m050 and the shared grid against ours (290e110, 0.5 m).
 # Nothing in here ever stops the run: no memory, swap, disk or progress checks, generous player timeouts.
-# usage: tesse_khronos_inst.sh office|apartment
+# KHRONOS_TRACKER=external (11-01): the upstream ExternalTracker (min_num_observations 15), as the real and 3RScan
+# rows, into tesse/khronos_inst_ext_SCENE_5cm and eval/.../khronos_inst_ext_5cm_all_m050.
+# usage: [KHRONOS_TRACKER=external] tesse_khronos_inst.sh office|apartment
 set -eo pipefail
 SCENE=$1; FT=/home/jixian/Desktop/FT; R=$FT/wt_takeover_runs; T=$R/tesse
 case $SCENE in
@@ -14,7 +18,12 @@ case $SCENE in
   apartment) TD=$T/data/session_apt; TC=$T/configs/apartment; E=$R/eval/tesse_apt_qj; FLAG=(--scene apartment);;
   *) echo "usage: $0 office|apartment" >&2; exit 2;;
 esac
-OUT=$T/khronos_inst_$SCENE; MAP=$OUT/state/final.4dmap.zpk
+TRACK=(); X=""
+if [[ ${KHRONOS_TRACKER:-} == external ]]; then TRACK=(--config-utilities-yaml "{active_window: {tracker: {type: ExternalTracker, min_num_observations: 15}}}"); X=_ext; fi
+# KHRONOS_CD_EVERY=N: the backend change detection every N frames (the config: 5, upstream uHumans2.yaml: 50), the
+# snapshot cadence unchanged; into ..._cdN.
+if [[ -n ${KHRONOS_CD_EVERY:-} ]]; then TRACK+=(--config-utilities-yaml "{backend: {change_detection: {run_every_n_frames: $KHRONOS_CD_EVERY}}}"); X=${X}_cd$KHRONOS_CD_EVERY; fi
+OUT=$T/khronos_inst${X}_${SCENE}_5cm; MAP=$OUT/state/final.4dmap.zpk
 ROOT=$FT/session_update_baseline_project/session_update_baseline
 PLAYER=$R/analysis/nss_flat_ros2_player_resend.py   # the player with the unacknowledged-frame resend
 BUILD=$FT/build_artifacts/official_khronos_63faadde_zsnap
@@ -38,6 +47,7 @@ taskset -c 0-9 $BUILD/adapter_inst/official_khronos_session_node \
   --config-utilities-yaml "{sensor_frame: left_cam, store_visualization_details: true, experiment: {output_dir: '$STATE', overwrite: true, save_every_n_frames: 0, save_full_state: false, log_timing: false, log_timing_details: false, exit_after_clock: false}}" \
   --config-utilities-yaml "{input: {inputs: {left_cam: {sensor: {min_range: 0.1, max_range: 5.0, extrinsics: {sensor_frame: left_cam}}}}}}" \
   --config-utilities-yaml "{active_window: {object_detector: {type: PackedSemanticInstanceForwarding, min_cluster_size: 50, max_range: 5}}}" \
+  --config-utilities-yaml "{active_window: {volumetric_map: {voxel_size: 0.05, truncation_distance: 0.15}}}" "${TRACK[@]}" \
   --ros-args -r "~/input/left_cam/depth_registered/image_rect:=/nss/depth/image_raw" -r "~/input/left_cam/rgb/image_raw:=/nss/rgb/image_raw" \
   -r "~/input/left_cam/rgb/camera_info:=/nss/rgb/camera_info" -r "~/input/left_cam/semantic/image_raw:=/nss/semantic/image_raw" \
   > $CONTROL/logs/khronos.log 2>&1 &
@@ -51,9 +61,9 @@ wait $MAPPER
 mv $STAGING $OUT
 step "TESSE $SCENE Khronos instances: mapped, $(du -h $MAP | cut -f1), bridge $(grep -h INSTANCE_BRIDGE $OUT/control/logs/khronos.log | tail -1 | grep -o 'observed_instances=[0-9]*')"
 
-TESSE_EVAL_JOBS=4 ionice -c3 nice -n 19 taskset -c 0-9 $PY $R/analysis/tesse_online_eval.py "${FLAG[@]}" ours4d $MAP $E/khronos_inst_5m_all_m050 \
-  > $R/logs/tesse_khronos_inst_eval_$SCENE.log 2>&1
-step "TESSE $SCENE Khronos instances 4D (0.5 m): $(grep -A1 '^Data' $E/khronos_inst_5m_all_m050/TABLES_4D.txt | tail -1 | tr -s ' ')"
-$PY $R/analysis/tesse_shared_grid.py $E/khronos_inst_5m_all_m050 $E/ours_290e110_5m_all_m050 > $E/SHARED_GRID_khronos_inst_m050.txt 2>&1
-cat $E/SHARED_GRID_khronos_inst_m050.txt
+TESSE_EVAL_JOBS=8 ionice -c3 nice -n 19 taskset -c 0-9 $PY $R/analysis/tesse_online_eval.py "${FLAG[@]}" ours4d $MAP $E/khronos_inst${X}_5cm_all_m050 \
+  > $R/logs/tesse_khronos_inst${X}_eval_${SCENE}_5cm.log 2>&1
+step "TESSE $SCENE Khronos instances 4D (0.5 m): $(grep -A1 '^Data' $E/khronos_inst${X}_5cm_all_m050/TABLES_4D.txt | tail -1 | tr -s ' ')"
+$PY $R/analysis/tesse_shared_grid.py $E/khronos_inst${X}_5cm_all_m050 $E/ours_290e110_5m_all_m050 > $E/SHARED_GRID_khronos_inst${X}_5cm_m050.txt 2>&1
+cat $E/SHARED_GRID_khronos_inst${X}_5cm_m050.txt
 step "TESSE $SCENE Khronos instances: done"

@@ -18,6 +18,7 @@ Presence flags, association gates, surface representation (0.10 m / 50 %) and th
 matching code are copied verbatim.
 """
 from pathlib import Path
+import os
 import csv
 import json
 
@@ -73,6 +74,11 @@ def load_versions_session(snapshots_path, session):
     if s == 'A':
         result.append(dict(session=s, time_s=0., active_time_s=0., stamp_ns=mod.BASE[s], index=-1,
                            version='A_initial_empty', objects=[]))
+    elif os.environ.get('SINGLE_RUN') == '1':
+        # 11-01 single runs (each visit mapped alone from an empty map): B and C start from nothing, as A does. Unset,
+        # nothing changes: a chained B/C must carry its inherited baseline.
+        result.append(dict(session=s, time_s=0., active_time_s=mod.OFFSET[s], stamp_ns=mod.BASE[s], index=-1,
+                           version=f'{s}_initial_empty', objects=[]))
     elif not any(r['time_s'] <= 0 for r in raw):
         raise ValueError('Missing inherited baseline ' + s +
                          ' (no snapshot at or before session start: the map has no seed/prior snapshot)')

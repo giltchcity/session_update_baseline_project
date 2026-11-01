@@ -18,14 +18,19 @@ evaluated one at a time.
 | Dataset | Code | Notes |
 |---|---|---|
 | Real room A/B/C | `eval_fast/` (`run.py`, `object_only.py`, `configs/`) | online object P/R/F1 duration-weighted with the NR correction, G1, D2, D3; one snapshot at a time in `/dev/shm` |
-| TESSE office/apartment | `tesse/tesse_online_eval.py`, `khronos_configs/eval_{office,apartment}*.yaml` | `ours4d`: each map queried at every map time up to its own (the fixed evaluator); ours as a 4D map derived by `chain_fill` |
+| TESSE office/apartment | `tesse/tesse_online_eval.py`, `khronos_configs/eval_{office,apartment}*.yaml` | `ours4d`: each map queried at every map time up to its own (the fixed evaluator); ours as a 4D map derived by `chain_fill`; the background at the config's 5 cm threshold (`single_run/official_tables_at.py`), ours with its objects and historical objects (`tesse/tesse_bg_history.py`); G1 the final map at 5 cm |
+| Single runs (each visit mapped alone: real A/B/C, synthetic A/B) | `single_run/` (`single_run_official.py`: the visit's ground truth; `dynamic_gt_eval.py`: the moving things, real people and synthetic objects moved in view; `single_official_table.py`), `tesse/` | the TESSE table's metrics with the visit's own ground truth; our 4D map with the run's own records (`chain_fill/change_fill`, `chain_fill/motion_fill`); runs `runs/single_run_compare.sh`, `runs/real_single_fix1101.sh`, `runs/synthetic_live_obs.sh`, scoring `runs/single_run_official{,_mv}.sh`, `runs/single_bg_all.sh` |
 | 3RScan | `threerscan_khronos_eval.py`, `chain_fill/`, `timeline_complete.py`, `khronos_configs/eval_3rscan_*` | the visit chain joined by `chain_fill`; `timeline` completes object timelines of methods without a 4D map (the Gaussian rows) with the same rules, and gives our maps the same scores as `chain_fill` |
 | Synthetic A/B | `synthetic/` (`run_synthetic_eval.py`, `synthetic_ram.py`, `historical_object_eval.cpp`) | the published synthetic metrics; the historical object evaluator at 0.5 m |
 | Flat A/B | `flat/flat_eval.py` | G1 of a session's final map (objects present at the final stamp) against the Flat point references |
 
 `chain_fill/` derives a 4D map from a run's own snapshots without remapping: an object node without a mesh keeps its
-last mesh, a relocation the map counted keeps the old place as a closed node, an object first present in a later
-visit is first observed then. `timeline_export` / `timeline_to_4dmap` carry an object timeline (and, for a 4D map, its
+last mesh, an object first present in a later visit is first observed then; no move is declared (since 10-30, as the
+GaME and wavemap exports: the run's closure count also counts removals and states reopened in place). For a single
+run, `change_fill` (before `chain_fill`) writes the run's own changes as presence times: a state the run closed ends
+between its snapshots, an appearance follows the official reconciler on the run's change evidence, and a move needs
+the closure count to rise and the surface to move beyond the ground truth's own state gate (0.10 m); `motion_fill`
+writes the run's moving-object trajectories (`single_run/ours_motion_from_run.py`). `timeline_export` / `timeline_to_4dmap` carry an object timeline (and, for a 4D map, its
 snapshots' layers and global meshes) to and from the evaluator's map format.
 
 ## Runs

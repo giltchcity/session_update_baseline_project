@@ -1,26 +1,21 @@
 #!/usr/bin/env python3
-"""One object timeline of a 3RScan visit chain for the official evaluation (eval/chain_fill/timeline_to_4dmap), from
-the visits' timelines in the timeline_export format, completed by one set of rules for every method, from what the
-earlier snapshots hold (for a 4D map's timeline, what eval/chain_fill does with the map itself):
-  surface: an object listed without surface points (taken away; its node kept) gets the last surface, with its box,
-    of the same physical object (details instance_id, else its id) in an earlier snapshot, so the evaluator can
-    associate it;
-  moves: a method that counts its objects' relocations (details session_mobility_changes, 0 when absent) declares
-    them: when the count rises, the object's last surface is held, and at its next surface, if that surface no longer
-    represents the held one (under 50 % of the held points within 0.10 m of it, the criterion of the ground truth's
-    states) the object moved, at its first observation at the new place (details observation_first_stamp_ns, else
-    the snapshot's stamp); otherwise it was re-observed in place. A method that counts none has every surface
-    compared with the last earlier one: it moved, at this snapshot, when neither represents the other (a surface
-    that grows or is re-observed in part at the same place represents, or is represented by, the earlier one).
-    A move keeps the earlier record, closed then (last observed = the move), in every later snapshot (node 'h' n,
-    as chain_fill), and the object is first observed then (it appeared at its new place);
-  appearance: an object first present in a later visit than the first gets, while its first observed time is 0,
-    that snapshot's stamp (objects of the first visit keep 0, present from the start as the ground truth's);
+"""One object timeline of a visit chain for the official evaluation (eval/chain_fill/timeline_to_4dmap), from the
+visits' timelines in the timeline_export format. It writes what each method's own snapshots say, and judges no change
+for a method (the user, 10-29: official evaluator unchanged; a non-native method's output converted as it is):
   removal: an object listed before and no longer listed while its last listing still had it present (a timeline
     that drops what its map no longer holds) is kept, closed at the first snapshot without it (last observed = its
-    stamp), in every later snapshot; listed again later, it is first observed then (it appeared again). An object
-    the method closed itself before it stopped listing it, and a method that keeps a removed object's node, absent,
-    are left as they are.
+    stamp), in every later snapshot; listed again later, it is first observed then. An object the method closed
+    itself before it stopped listing it, and a method that keeps a removed object's node, absent, are left as they are;
+  moves: the method's own count of its objects' relocations (details session_mobility_changes): when it rises, the
+    object's earlier record is closed at the method's time of the move (details observation_first_stamp_ns, else the
+    snapshot's stamp) and kept in every later snapshot (node 'h' n, as chain_fill), and the object is first observed
+    then (at its new place). A method that counts none has no moves;
+  appearance: the method's own first_observed_ns, as it gives it (0: present from the start);
+  surface: an object listed without surface points (taken away; its node kept) gets the last surface, with its box,
+    of the same physical object (details instance_id, else its id) in an earlier snapshot, so the evaluator can
+    associate it.
+Until 10-29 it also judged moves from the surfaces (10 cm / 50 %, also re-checking a declared move) and gave an
+object first listed in a later visit an appearance at that snapshot: both left out (regression_20261029/).
 Mesh: the official evaluator times an object first observed at 0 by the global mesh around it (when it was first
 seen); a snapshot line that names its mesh (timeline_export: its map snapshot) keeps it, else it names a mesh file
 (uint64 count, per vertex float32 x y z and uint64 first-seen ns): VISIT_K.jsonl's directory/mesh.bin when the method
@@ -32,19 +27,14 @@ import copy, json, struct, sys
 from pathlib import Path
 
 import numpy as np
-from scipy.spatial import cKDTree
 
-GATE, FRAC, MAX = 0.10, 0.5, 2000
+MAX = 2000
 BOX = ('bbox_center', 'bbox_dimensions', 'bbox_min', 'bbox_max')
 
 
 def sample(points):
     p = np.asarray(points, float)
     return p[:: max(1, (len(p) + MAX - 1) // MAX)]
-
-
-def represented(a, b):
-    return float((cKDTree(b).query(a)[0] <= GATE).mean()) if len(a) and len(b) else 0.0
 
 
 def write_mesh(path, points, stamps):
@@ -83,11 +73,10 @@ def is_present(o, t):                   # khronos::isPresent
 
 
 out_path, visits = sys.argv[1], sys.argv[2:]
-last, first_present, moved_at, places, listed, gone, listed_now = {}, {}, {}, [], {}, {}, set()
-counts, held, listing = {}, {}, {}                     # listing: the last listed record of each object
-filled = appeared = 0
+last, moved_at, places, listed, gone, listed_now = {}, {}, [], {}, {}, set()
+counts, listing = {}, {}                               # listing: the last listed record of each object
+filled = 0
 snaps = [[json.loads(line) for line in open(path)] for path in visits]
-declared = any('session_mobility_changes' in (o.get('details') or {}) for s in snaps for x in s for o in x['objects'])
 meshes = []
 for v, path in enumerate(visits):                     # the global mesh of each visit's snapshots without their own
     own = Path(path).parent / 'mesh.bin'
@@ -122,21 +111,13 @@ with open(out_path, 'w') as out:
             listed_now = here
             for o in snap['objects']:
                 k = key(o)
-                if k in gone:                             # listed again after it was dropped: it appeared again
+                again = k in gone
+                if again:                                 # listed again after it was dropped: first observed now
                     gone.pop(k); moved_at[k] = t
-                if declared:
-                    count = detail(o, 'session_mobility_changes', 0)
-                    if k in counts and count > counts[k] and k in last and k not in held:
-                        held[k] = copy.deepcopy(last[k])
-                    counts[k] = count
-                    if k in held and o['surface']:
-                        if represented(sample(held[k]['surface']), sample(o['surface'])) < FRAC:
-                            close(held[k], detail(o, 'observation_first_stamp_ns', t), k)
-                        del held[k]
-                elif o['surface'] and k in last:
-                    a, b = sample(last[k]['surface']), sample(o['surface'])
-                    if represented(a, b) < FRAC and represented(b, a) < FRAC:
-                        close(last[k], t, k)
+                count = detail(o, 'session_mobility_changes', 0)       # the method's own relocations
+                if k in counts and count > counts[k] and k in last and not again:
+                    close(last[k], detail(o, 'observation_first_stamp_ns', t), k)
+                counts[k] = count
                 if k in moved_at and o['first_observed_ns'] and o['first_observed_ns'][0] < moved_at[k]:
                     o['first_observed_ns'][0] = moved_at[k]
                 if o['surface']:
@@ -145,12 +126,7 @@ with open(out_path, 'w') as out:
                     o['surface'] = last[k]['surface']; filled += 1
                     for b in BOX:
                         if b in last[k]: o[b] = last[k][b]
-                if is_present(o, t) and k not in first_present:
-                    first_present[k] = (v, t)
-                if k in first_present and first_present[k][0] > 0 and o['first_observed_ns'] and o['first_observed_ns'][0] == 0:
-                    o['first_observed_ns'][0] = first_present[k][1]; appeared += 1
                 listing[k] = o
             snap['objects'] += places
             out.write(json.dumps(snap) + '\n')
-print(f'TIMELINE_COMPLETE visits={len(visits)} moves={len(places)} filled={filled} appeared={appeared} objects={len(last)}'
-      f' relocations={"declared" if declared else "from surfaces"}')
+print(f'TIMELINE_COMPLETE visits={len(visits)} closed={len(places)} filled={filled} objects={len(last)}')
