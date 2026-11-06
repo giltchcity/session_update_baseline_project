@@ -765,7 +765,8 @@ class NssFlatPlayer(Node):
             color_msg = self.bridge.cv2_to_imgmsg(cv2.cvtColor(color, cv2.COLOR_BGR2RGB), encoding="rgb8")
             depth_msg = self.bridge.cv2_to_imgmsg(depth.astype(np.float32, copy=False), encoding="32FC1")
             if instances is None or self.args.instance_only:
-                label_msg = self.bridge.cv2_to_imgmsg(labels, encoding="mono8")
+                # 8- or 16-bit label images as they are (the mapper takes any integer type, convertLabels)
+                label_msg = self.bridge.cv2_to_imgmsg(labels, encoding={np.uint8: "mono8", np.uint16: "mono16"}[labels.dtype.type])
             else:
                 # The mapper configuration must explicitly declare this wire
                 # protocol. CV_32SC1 alone is not a discriminator because Hydra

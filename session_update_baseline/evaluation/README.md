@@ -12,6 +12,9 @@ except `khronos_eval_query_earlier/pipeline_evaluator.cpp`: the official loop ov
 time for every query (`map_timestamps_[i]` for each `j <= i`); the fixed copy queries each map at every map time up to
 its own, the paper's 4D definition (eq. 20). The query times come from `KHRONOS_EVAL_QUERY_TIMES` when maps are
 evaluated one at a time.
+Its ObjectEvaluator does not read `compensate_missegmentation` (its `declare_config` has no such field), so static
+objects are always counted with the compensation, whatever the config says: per GT object only one of its map objects
+is looked at, per map object only one of its GT objects.
 
 ## Per dataset
 
@@ -19,6 +22,7 @@ evaluated one at a time.
 |---|---|---|
 | Real room A/B/C | `eval_fast/` (`run.py`, `object_only.py`, `configs/`) | online object P/R/F1 duration-weighted with the NR correction, G1, D2, D3; one snapshot at a time in `/dev/shm` |
 | TESSE office/apartment | `tesse/tesse_online_eval.py`, `khronos_configs/eval_{office,apartment}*.yaml` | `ours4d`: each map queried at every map time up to its own (the fixed evaluator); ours as a 4D map derived by `chain_fill`; the background at the config's 5 cm threshold (`single_run/official_tables_at.py`), ours with its objects and historical objects (`tesse/tesse_bg_history.py`); G1 the final map at 5 cm |
+| TESSE, semantic input | `semantic_front/` (`tesse_semantic_front.py --3d`: the front; `tesse_semfront_run.sh`: our run on its ids; `object_loss_check.py`: where a map's static-object score goes, from the evaluator's own per-object output), `runs/tesse_khronos_inst.sh` with `KHRONOS_DETECTOR=semantic` | object ids from the semantics only, for both: Khronos's own ConnectedSemantics at 5 cm; ours the semantic front (Khronos's 3-D regions and MaxIoU tracking, an id written once its surface has been measured again more often than seen through, no ids for people, as the annotation); the rest as the TESSE row. `semantic_front/front_e4a02cf/` is the GaME session's `update_layer/front.py` and `frames.py` at e4a02cf, which the front builds on (not in this branch's history) |
 | Single runs (each visit mapped alone: real A/B/C, synthetic A/B) | `single_run/` (`single_run_official.py`: the visit's ground truth; `dynamic_gt_eval.py`: the moving things, real people and synthetic objects moved in view; `single_official_table.py`), `tesse/` | the TESSE table's metrics with the visit's own ground truth; our 4D map with the run's own records (`chain_fill/change_fill`, `chain_fill/motion_fill`); runs `runs/single_run_compare.sh`, `runs/real_single_fix1101.sh`, `runs/synthetic_live_obs.sh`, scoring `runs/single_run_official{,_mv}.sh`, `runs/single_bg_all.sh` |
 | 3RScan | `threerscan_khronos_eval.py`, `chain_fill/`, `timeline_complete.py`, `khronos_configs/eval_3rscan_*` | the visit chain joined by `chain_fill`; `timeline` completes object timelines of methods without a 4D map (the Gaussian rows) with the same rules, and gives our maps the same scores as `chain_fill` |
 | Synthetic A/B | `synthetic/` (`run_synthetic_eval.py`, `synthetic_ram.py`, `historical_object_eval.cpp`) | the published synthetic metrics; the historical object evaluator at 0.5 m |
