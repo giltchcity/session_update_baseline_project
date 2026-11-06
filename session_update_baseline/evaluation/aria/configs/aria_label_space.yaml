@@ -1,0 +1,10 @@
+# Aria (11-02): GaME's class-agnostic SAM masks tracked into objects by the GaME session's front (e4a02cf):
+# 1 = a pixel the front gave an object id, 0 = everything else (background)
+total_semantic_labels: 2
+dynamic_labels: []
+invalid_labels: []
+object_labels: [1]
+surface_places_labels: [0]
+label_names:
+  - {label: 0, name: background, name_descriptive: a background surface}
+  - {label: 1, name: object, name_descriptive: an object}

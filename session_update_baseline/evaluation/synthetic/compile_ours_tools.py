@@ -14,6 +14,9 @@
 # NOTE: complete_native_export.cpp was edited at 2026-09-17 06:09 to also write <prefix>.rgb
 # colour files; the 02:36 ours_export binary used for the published numbers predates that.
 # .f32/.u32/meshes.jsonl logic (the only metric inputs) is the same.
+# 2026-10-23: compiled without -DSYNTHETIC_OURS, so an exported object is "current" exactly as for Khronos:
+# present at the snapshot with a surface. Every method's geometry is then the map at that moment; a node that
+# carries a surface but is not present (4D history) is not current geometry.
 from pathlib import Path
 import os,shlex,subprocess
 BUILD=Path(os.environ['HARNESS_TOOLS_BUILD']);EV=Path(os.environ['HARNESS_TOOLS_KHRONOS_EVAL'])
@@ -28,7 +31,7 @@ for line in (cm/'flags.make').read_text().splitlines():
 # --- compile_complete_exporters.py, method == 'ours' ---
 obj=BIN/'ours_export.o'
 subprocess.run(['/usr/bin/c++',*flags['CXX_DEFINES'],*flags['CXX_INCLUDES'],'-O2','-std=c++17',
-    '-DSYNTHETIC_OURS','-c',str(HERE/'complete_native_export.cpp'),'-o',str(obj)],check=True)
+    '-c',str(HERE/'complete_native_export.cpp'),'-o',str(obj)],check=True)
 link=shlex.split((cm/'link.txt').read_text());first=next(i for i,x in enumerate(link) if x.endswith('.cpp.o'));link[first]=str(obj)
 link[link.index('-o')+1]=str(BIN/'ours_export')
 subprocess.run(link,cwd=BUILD,check=True);print('BUILT ours_export',flush=True)

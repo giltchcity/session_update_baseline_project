@@ -52,5 +52,20 @@ state change), `synthetic_b_once.sh` and `synthetic_b_states.sh` (synthetic B an
 `real_mapping_only.sh` and `tesse_mapping_only.sh` (mapping only, for timing and round-by-round comparison of the
 round logs), `real_views.py` (a real session's final maps from five viewpoints, coloured by its G1 reference).
 
+Added 11-06, the scripts behind the rows scored since 10-29: the Panoptic Mapping baseline (`panoptic/`: its input for
+3RScan and synthetic, `panoptic_maps.py` reading each map by its own submap states, `panoptic_export.py` its class-layer
+mesh; `runs/panoptic_rerun{,_synthetic,_3rscan}.sh`, `runs/panoptic_syn5cm.sh` the synthetic run at 5 cm,
+`runs/panoptic_score.sh`), the unified object setting (`runs/synthetic_obj_unified.sh`; `synthetic/build.py`,
+`historical_object_eval.cpp`, `compile_ours_tools.py` as scored since 10-29: Surface, 0.5 m, every 100th point,
+semantics required, and `compensate_missegmentation` false set in the code, which the YAML-configured official pipeline
+of the other datasets never reads, see above), Flat objects and changes (`runs/flat_objects_changes.sh`,
+`flat/flat_change_maps.py`), 3RScan (`runs/p3_khronos_inst_ext.sh`, `runs/p3_ours_chainfill_A.sh`), Khronos'
+continuous runs and observer build (`runs/khronos_continuous.sh`, `runs/build_khronos_observer_zsnap.sh`), the synthetic
+5 cm runs (`runs/synthetic_5cm_reruns.sh`), the TESSE 4D derivation for snapshot A (`runs/tesse_chain4d_A.sh`), Khronos at
+the paper's setting (`runs/tesse_khronos_paper.sh`), the real people's tracks (`single_run/real_motion_tracks.py`), the
+results table's detail pages (`results_detail.py`), and our TSDF maps on the Aria rooms (`aria/`: `run_tsdf.sh` and
+`aria_tsdf_all.sh` with `configs/`, `aria_noconst.sh` the ablation, `gt_check_tsdf.py` and `judged_check.py` against
+the ADT boxes, `render_views.py` the maps beside the camera's images, `run_front_points.sh`).
+
 `GOALS.md` lists the goal, the acceptance rule for every change (no metric below the current one by more than
 0.1 pp) and the status.

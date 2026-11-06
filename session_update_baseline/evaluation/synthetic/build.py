@@ -1,6 +1,8 @@
-"""historical_object_eval.cpp of datasets/synthetic_ab/evaluation_complete_20260917 with the static-object
-max_matching_distance at 0.5 m instead of 2 m (user 2026-10-24: every object evaluation at 0.5 m), built for both map
-readers with the recipe of /mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/compile_historical_object_eval.py, into this
+"""historical_object_eval.cpp of datasets/synthetic_ab/evaluation_complete_20260917 with the static-object evaluation
+of the real data, Flat and 3RScan (Surface, max_matching_distance 0.5 m, surface_subsampling_rate 100, semantics
+required, compensate_missegmentation false; one setting for every dataset, 2026-10-29) instead of the published
+synthetic harness's 2 m / every point / compensation on (eval/synthetic_object_eval_m050 changed the distance only),
+built for both map readers with the recipe of /mnt/d/3Study/ETH/FT/Synthetic_ABC/scripts/compile_historical_object_eval.py, into this
 directory (the 2 m binaries in evaluation_complete_20260917 are untouched).
 usage: python3 build.py
 """

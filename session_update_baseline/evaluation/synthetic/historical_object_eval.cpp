@@ -11,7 +11,7 @@ int main(int argc,char**argv){
  if(argc!=4)return 2;hydra::PipelineConfig config;hydra::GlobalInfo::init(config);
  auto map=khronos::SpatioTemporalMap::load(argv[1]);auto man=J::parse(std::ifstream(argv[2]));fs::path out(argv[3]);fs::create_directories(out);
  khronos::ObjectEvaluator::Config cfg;cfg.association_method=khronos::ObjectEvaluator::Config::AssociationMethod::SURFACE;
- cfg.max_matching_distance=0.5;cfg.surface_subsampling_rate=1;cfg.match_require_semantics=true;cfg.compensate_missegmentation=true;
+ cfg.max_matching_distance=0.5;cfg.surface_subsampling_rate=100;cfg.match_require_semantics=true;cfg.compensate_missegmentation=false;
  khronos::ObjectEvaluator ev(cfg);ev.setOutputFile((out/"object.csv").string(),(out/"vis").string());
  std::vector<khronos::Points> local;
  for(const auto&o:man["objects"]){std::ifstream f(o["points"].get<std::string>(),std::ios::binary);khronos::Points p;float v[3];while(f.read((char*)v,12))p.emplace_back(v[0],v[1],v[2]);local.push_back(p);}
