@@ -12,9 +12,6 @@ except `khronos_eval_query_earlier/pipeline_evaluator.cpp`: the official loop ov
 time for every query (`map_timestamps_[i]` for each `j <= i`); the fixed copy queries each map at every map time up to
 its own, the paper's 4D definition (eq. 20). The query times come from `KHRONOS_EVAL_QUERY_TIMES` when maps are
 evaluated one at a time.
-Its ObjectEvaluator does not read `compensate_missegmentation` (its `declare_config` has no such field), so static
-objects are always counted with the compensation, whatever the config says: per GT object only one of its map objects
-is looked at, per map object only one of its GT objects.
 
 ## Per dataset
 
@@ -57,8 +54,7 @@ Added 11-06, the scripts behind the rows scored since 10-29: the Panoptic Mappin
 mesh; `runs/panoptic_rerun{,_synthetic,_3rscan}.sh`, `runs/panoptic_syn5cm.sh` the synthetic run at 5 cm,
 `runs/panoptic_score.sh`), the unified object setting (`runs/synthetic_obj_unified.sh`; `synthetic/build.py`,
 `historical_object_eval.cpp`, `compile_ours_tools.py` as scored since 10-29: Surface, 0.5 m, every 100th point,
-semantics required, and `compensate_missegmentation` false set in the code, which the YAML-configured official pipeline
-of the other datasets never reads, see above), Flat objects and changes (`runs/flat_objects_changes.sh`,
+semantics required), Flat objects and changes (`runs/flat_objects_changes.sh`,
 `flat/flat_change_maps.py`), 3RScan (`runs/p3_khronos_inst_ext.sh`, `runs/p3_ours_chainfill_A.sh`), Khronos'
 continuous runs and observer build (`runs/khronos_continuous.sh`, `runs/build_khronos_observer_zsnap.sh`), the synthetic
 5 cm runs (`runs/synthetic_5cm_reruns.sh`), the TESSE 4D derivation for snapshot A (`runs/tesse_chain4d_A.sh`), Khronos at

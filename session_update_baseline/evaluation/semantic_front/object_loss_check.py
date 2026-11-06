@@ -3,9 +3,8 @@ every snapshot; is it the objects' states?): the TESSE table's evaluation of the
 ours4d: the official evaluator copy that queries earlier times, the scene's config, objects only) at every snapshot time,
 keeping the evaluator's own per-object output (eval_visualization: objects.csv, each object's presence at each query;
 associations.csv, map object -> GT object and GT object -> map object, the most surface points within 0.5 m of the same
-class). Per query, as the evaluator counts them (static objects; its ObjectEvaluator never reads the config's
-compensate_missegmentation, so it always compensates: per GT object only one of its map objects is looked at, per map
-object only one of its GT objects):
+class). Per query, as the evaluator counts static objects (per GT object only one of its map objects is looked at, per
+map object only one of its GT objects):
   detected, missed, hallucinated: the evaluator's own counts (static_objects.csv);
   missed, no map object: a present GT object with no map object of its class within 0.5 m (how the geometry is cut);
   missed, people: the GT's dynamic objects (no mesh, never matched, the same for every map; presence from the GT graph,
