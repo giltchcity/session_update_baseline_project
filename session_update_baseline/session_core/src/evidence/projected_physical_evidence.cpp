@@ -932,11 +932,9 @@ void RayVerificator::applyObservedAbsence(
   counts.reliable_seen_through = look.seen_through;
   const bool in_place = look.own_identity > look.seen_through;
   // A share stands for the finite counts once the look judged min(30, reliable) samples (P25,
-  // real depth noise only); partial views are weighted, not refused. A round without a judged
+  // for every sensor); partial views are weighted, not refused. A round without a judged
   // reliable sample says nothing about presence or absence and is neither scored nor learned from.
-  if (verdicts > 0 &&
-      (!config.real_sensor_noise ||
-       verdicts >= std::min<size_t>(config.min_judged_samples, look.reliable))) {
+  if (verdicts > 0 && verdicts >= std::min<size_t>(config.min_judged_samples, look.reliable)) {
     const double f = static_cast<double>(look.seen_through) / verdicts;
     PresentBeta beta;
     {

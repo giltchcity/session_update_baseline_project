@@ -128,8 +128,8 @@ class RayVerificator {
     // A look is scored only once it judged min(this, reliable) samples (P25,
     // projected_physical_evidence.cpp).
     int min_judged_samples = 30;
-    // Guards for real depth noise: the two limits above. Off for noise-free depth: every ray
-    // counts and a look with one judged sample is scored.
+    // Guard for real depth noise: the incidence limit above. Off for noise-free depth: a
+    // seen-through ray counts at any incidence. min_judged_samples holds for every sensor.
     bool real_sensor_noise = true;
 
     // Time stamps to raycast for verification.
