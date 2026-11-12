@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <cmath>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -187,6 +188,29 @@ SurfaceCompatibility compareSurfaceFrames(
   return result;
 }
 
+// The world centroid of a frame's cluster (the instance's measured surface in that frame).
+std::optional<Eigen::Vector3f> clusterCentroid(const std::pair<FrameData::Ptr, int>& frame) {
+  const auto& a = *frame.first;
+  if (a.input.vertex_map.empty()) return std::nullopt;
+  const auto cluster = std::find_if(a.semantic_clusters.begin(), a.semantic_clusters.end(),
+      [&](const auto& c) { return c.id == frame.second; });
+  if (cluster == a.semantic_clusters.end()) return std::nullopt;
+  const Eigen::Isometry3f world_T_a = a.input.getSensorPose().cast<float>();
+  Eigen::Vector3f sum = Eigen::Vector3f::Zero();
+  size_t n = 0;
+  for (const auto& px : cluster->pixels) {
+    if (!px.isInImage(a.input.vertex_map)) continue;
+    const auto& v = a.input.vertex_map.at<InputData::VertexType>(px.v, px.u);
+    Point world(v[0], v[1], v[2]);
+    if (!world.array().isFinite().all()) continue;
+    if (!a.input.points_in_world_frame) world = world_T_a * world;
+    sum += world;
+    ++n;
+  }
+  if (!n) return std::nullopt;
+  return Eigen::Vector3f(sum / static_cast<float>(n));
+}
+
 }  // namespace
 
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
@@ -241,6 +265,26 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
                   << " stride=" << value->stride << " pixels=" << value->diag_pixels;
       }
     }
+    // DIAG (log only; nothing decided here reads it, and the mixture learns nothing from it): when
+    // the newest frame judged neither direction of this earlier frame, the nearest later frame that
+    // judges it, and whether the existing test would call that pair a move.
+    if (!admitted(forward) && !admitted(reverse)) {
+      for (size_t j = offset; j + 1 < frames.size() && j < offset + 40; ++j) {
+        const auto pf = compareSurfaceFrames(frames[offset - 1], frames[j],
+                                             config.static_consistency_tolerance);
+        const auto pr = compareSurfaceFrames(frames[j], frames[offset - 1],
+                                             config.static_consistency_tolerance);
+        if (!admitted(pf) && !admitted(pr)) continue;
+        LOG(INFO) << "STATIC_BLIND_DIAG inst=" << *track.physical_instance_id
+                  << " earlier=" << frames[offset - 1].first->input.timestamp_ns
+                  << " anchor=" << frames.back().first->input.timestamp_ns
+                  << " partner=" << frames[j].first->input.timestamp_ns
+                  << " forward=" << pf.supported << "/" << pf.free << "/" << pf.sampled
+                  << " reverse=" << pr.supported << "/" << pr.free << "/" << pr.sampled
+                  << " conflict=" << (conflicts(pf) || conflicts(pr));
+        break;
+      }
+    }
     if (!conflicts(forward) && !conflicts(reverse)) continue;
     LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
               << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
@@ -248,6 +292,30 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
               << " forward_support=" << forward.supported << " forward_free=" << forward.free
               << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free
               << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
+    {
+      // Reported motion of the instance, for consumers only (nothing here or downstream reads
+      // it): the window's earliest frame and the settled frame compared as the boundary compares
+      // frames. A move when one direction measured the earlier surface free more often than
+      // supported and no direction measured it supported more often than free (the majority rule
+      // of the change test); the interval runs from the earliest frame to the last rejected one.
+      const auto first_forward = compareSurfaceFrames(frames.front(), frames.back(),
+                                                      config.static_consistency_tolerance);
+      const auto first_reverse = compareSurfaceFrames(frames.back(), frames.front(),
+                                                      config.static_consistency_tolerance);
+      const auto gone = [](const SurfaceCompatibility& v) { return v.free > v.supported; };
+      const auto there = [](const SurfaceCompatibility& v) { return v.supported > v.free; };
+      const bool moved = (gone(first_forward) || gone(first_reverse)) &&
+                         !there(first_forward) && !there(first_reverse);
+      const auto from = clusterCentroid(frames.front());
+      const auto to = clusterCentroid(frames.back());
+      LOG(INFO) << "INSTANCE_MOTION inst=" << *track.physical_instance_id << " moved=" << moved
+                << " from=" << frames.front().first->input.timestamp_ns
+                << " until=" << frames[offset - 1].first->input.timestamp_ns
+                << " settled=" << frames[offset].first->input.timestamp_ns
+                << " first_forward=" << first_forward.supported << "/" << first_forward.free
+                << " first_reverse=" << first_reverse.supported << "/" << first_reverse.free
+                << " displacement=" << ((from && to) ? (*to - *from).norm() : -1.f);
+    }
     frames.erase(frames.begin(), frames.begin() + offset);
     break;
   }

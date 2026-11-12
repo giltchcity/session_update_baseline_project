@@ -503,8 +503,24 @@ bool PresentSurface::reaches(size_t index, const Eigen::AlignedBox3f& box, float
          nearest <= frame.farthestIn(camera_.width, window.u0, window.u1, window.v0, window.v1) * 1e-3f + beyond;
 }
 
+namespace {
+// Ablation switch: SESSION_CORE_FREE_LIMIT=0 drops the free-space limit lambda_o of eq. (3): an earlier frame's
+// free space runs past an object that arrived later; rays that hit an ended state are still excluded in full.
+// Unset or any other value: the method as it is.
+bool freeLimits() {
+  static const bool on = [] {
+    const char* v = std::getenv("SESSION_CORE_FREE_LIMIT");
+    const bool off = v && std::string(v) == "0";
+    if (off) std::fprintf(stderr, "[PresentSurface] ABLATION: free-space limit lambda_o off (SESSION_CORE_FREE_LIMIT=0)\n");
+    return !off;
+  }();
+  return on;
+}
+}  // namespace
+
 void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>& limit,
                              const Window& window, const std::vector<uint8_t>* mask) const {
+  if (!freeLimits()) return;
   if (state.triangles.empty() && state.voxels.empty()) return;
   const int W = static_cast<int>(camera_.width);
   Eigen::Vector3f X[8];
@@ -789,6 +805,26 @@ void PresentSurface::updateStates(States next) {
     if (change.before) horizon = std::max(horizon, change.before->horizon());
     if (change.after) horizon = std::max(horizon, change.after->horizon());
     changes.push_back(change);
+  }
+  // Reported for consumers only (nothing reads it): every change of an identity's state as the
+  // state machine decided it -- current or not, its start t_l and the centre of its surface,
+  // before and after -- at the latest frame consumed. A move within the visit is a current state
+  // replaced by a current state of the same identity that starts later at another site.
+  {
+    const TimeStamp at = consumed_ ? frames_.frame(consumed_ - 1).stamp : TimeStamp(0);
+    const auto centre = [](const State* s) {
+      return (s && !s->box.isEmpty()) ? Eigen::Vector3f(s->box.center()) : Eigen::Vector3f::Constant(NAN);
+    };
+    for (const auto& change : changes) {
+      const Eigen::Vector3f b = centre(change.before), a = centre(change.after);
+      LOG(INFO) << "STATE_CHANGE inst=" << change.id << " at=" << at
+                << " before_current=" << (change.before && change.before->current)
+                << " before_start=" << (change.before ? change.before->start : TimeStamp(0))
+                << " after_current=" << (change.after && change.after->current)
+                << " after_start=" << (change.after ? change.after->start : TimeStamp(0))
+                << " before_centre=" << b.x() << "," << b.y() << "," << b.z()
+                << " after_centre=" << a.x() << "," << a.y() << "," << a.z();
+    }
   }
   if (changes.empty()) {
     states_ = std::move(next);
