@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <limits>
 #include <map>
@@ -677,12 +678,38 @@ double finiteCountLogRatio(const double k, const double n, const PresentBeta& be
 // object. With weights independent of s this is the recursion max(0, S + w llr); here the
 // maximum over s is taken explicitly. Returns the weight of the look under the strongest
 // candidate before it (a new candidate when none is positive).
+// Ablation switches of the absence test (reviewer W2); unset, every value is the method's.
+//   SESSION_CORE_ABSENCE_ETA=X        commit at log X instead of log 99
+//   SESSION_CORE_ABSENCE_WEIGHTS=one  every candidate's weight 1 (plain Page statistic)
+//   SESSION_CORE_ABSENCE_BETA=fixed   the present model fixed at the cold start Beta(0.1, 1.9)
+//   SESSION_CORE_ABSENCE_OFF=1        the absence test never commits
+struct AbsenceAblation {
+  double log_eta = std::log(99.0);
+  bool unit_weights = false, fixed_beta = false, off = false;
+};
+const AbsenceAblation& absenceAblation() {
+  static const AbsenceAblation ablation = [] {
+    AbsenceAblation a;
+    if (const char* v = std::getenv("SESSION_CORE_ABSENCE_ETA")) a.log_eta = std::log(std::atof(v));
+    if (const char* v = std::getenv("SESSION_CORE_ABSENCE_WEIGHTS")) a.unit_weights = std::string(v) == "one";
+    if (const char* v = std::getenv("SESSION_CORE_ABSENCE_BETA")) a.fixed_beta = std::string(v) == "fixed";
+    if (const char* v = std::getenv("SESSION_CORE_ABSENCE_OFF")) a.off = std::string(v) == "1";
+    if (a.log_eta != std::log(99.0) || a.unit_weights || a.fixed_beta || a.off) {
+      LOG(WARNING) << "ABLATION: absence test eta=" << std::exp(a.log_eta) << " unit_weights=" << a.unit_weights
+                   << " fixed_beta=" << a.fixed_beta << " off=" << a.off;
+    }
+    return a;
+  }();
+  return ablation;
+}
+
 double addLook(ObjectAbsenceState& state, const AbsenceLook& look, const double llr) {
   const size_t t = state.page.size();
   std::vector<size_t> first_since(t + 1, 0);
   for (const int32_t p : look.previous_look) ++first_since[static_cast<size_t>(p + 1)];
   for (size_t s = 1; s <= t; ++s) first_since[s] += first_since[s - 1];
   const auto weight = [&](const size_t s) {
+    if (absenceAblation().unit_weights) return 1.0;
     return std::min(1.0, static_cast<double>(first_since[s]) / std::max<size_t>(1, look.reliable));
   };
   size_t strongest = t;
@@ -942,6 +969,7 @@ void RayVerificator::applyObservedAbsence(
       const auto [mean, second] = presentMoments(*state);
       beta = presentBeta(mean, second);
     }
+    if (absenceAblation().fixed_beta) beta = PresentBeta{0.05, 0.1, 1.9};
     const double look_llr = -presentLogDensity(beta, f);
     {
       // DIAG (exact replay of eq. 7 under other present models; no decision reads it).
@@ -993,7 +1021,8 @@ void RayVerificator::applyObservedAbsence(
       state->first_window && !state->page.empty()
           ? prior_log_odds + state->page.front()
           : -std::numeric_limits<double>::infinity();
-  counts.absence_coverage_sufficient = std::max(before_session, state->cusum) > std::log(99.0);
+  counts.absence_coverage_sufficient =
+      !absenceAblation().off && std::max(before_session, state->cusum) > absenceAblation().log_eta;
   if (prior_log_odds != 0.0) {
     LOG(INFO) << "ABSENCE_COMMIT inst=" << physical_id << " slot=" << state_slot
               << " prior_log_odds=" << prior_log_odds << " before_session=" << before_session
