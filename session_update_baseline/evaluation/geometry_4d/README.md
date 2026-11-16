@@ -57,11 +57,16 @@ Set up the environment before every step:
 4. **`run_wavemap.sh`**: Wavemap (row 3) and Occupancy ours (row 4).
 5. **`run_panoptic.sh`**: Panoptic. It first rescores the complete mesh at the 25 frames; the mean F1 must be 41.6442
    (A 42.4271, B 40.9216). Then it runs scheme C at those frames and at the last frames.
-6. **3DGS rows** (GaME, ours): not exported as meshes. They come from
-   `runs/update_layer_game_T1_20261006/analysis/slice_eval_20261114/slice_geometry.py`, by session
-   "椅子精修差距根因定位 (fork清理)". Per slice it renders median depth at the 1,228 keyframe views, fuses a 2 cm TSDF, and
-   scores in memory with this reference and these seeds; the GT frame is the nearest one. There are 24 slices
-   (13 A + 11 B). It writes `room/map_vs_gt_{game,3dgs_ours}/MAP_VS_GT.csv`.
+6. **3DGS rows** (GaME, ours): not exported as meshes. The code is pinned in the 3DGS repo `code_mine_20261014`, branch
+   `eval-slice-4d-20261117`, tag `home-geometry-3dgs-20261117` (commits cb88ad7 -> 3e8065c -> 3065368). The scripts
+   are in `update_layer/eval/slice_4d/` (`slice_geometry_4d.py`, `run_geometry_4d.sh`, `room_export.py`), and its
+   README lists the inputs and expected values.
+   - Per slice it renders median depth at the 1,228 keyframe views (where the keyframe measured depth), fuses a 2 cm
+     TSDF, and scores in memory with this reference and these seeds.
+   - Slices follow the query rule above: 25 slices (13 A + 12 B). B's inherited slice is scored at B's frame 0.
+   - GaME is read with each round's own parameters (its archived per-round history). 3DGS ours is read from the stored
+     4D map (`snapshots.py` at 674b871).
+   - It writes `room/map_vs_gt_{game,3dgs_ours}/MAP_VS_GT.csv`, plus `MAP_VS_GT_complete.csv` for the whole mesh.
 7. **`summarize.py`**: the table. Expected:
 
 | Map | Method | Mesh | Mesh_4D (A / B) |
@@ -69,8 +74,8 @@ Set up the environment before every step:
 | TSDF | Khronos | 76.7 | 69.5 (66.2 / 72.6) |
 | TSDF | Panoptic Mapping | 76.1 | 60.3 (62.0 / 58.7) |
 | TSDF | Ours | 83.0 | 75.3 (70.7 / 80.3) |
-| 3DGS | GaME | 77.2 | 71.3 (67.6 / 75.7) |
-| 3DGS | Ours | 81.2 | 77.0 (74.3 / 80.1) |
+| 3DGS | GaME | 77.2 | 71.6 (68.1 / 75.4) |
+| 3DGS | Ours | 81.2 | 76.9 (74.3 / 79.6) |
 | Occupancy | Wavemap | 79.9 | 72.5 (67.9 / 77.5) |
 | Occupancy | Ours | 80.8 | 72.8 (68.0 / 78.0) |
 
@@ -84,12 +89,12 @@ Run one job at a time: each uses 4 cores at nice 19, with exports in /dev/shm th
 | Khronos | `wt_takeover_runs/khronos_continuous/synthetic_5cm/sessions/session_{a,b}.4dmap.zpk`, official Khronos run continuously A -> B at 5 cm |
 | Wavemap / Occupancy ours | timelines of `wm5_row3_22e68d6` (in `KEEP_baseline_runs_wavemap_rows13`) and `wm_synth_row4_7b63cc1` |
 | Panoptic | `G:/我的云端硬盘/FT_archive/eval/panoptic_rerun_synthetic_5cm/{a,b}/native` |
-| 3DGS | ours: tag `reg2_syn_a`, current 4D-map format; GaME: published `94c0435` |
+| 3DGS | ours: tag `reg2_syn_a`, the stored 4D map (each session's kept parameters); GaME: published `94c0435`, each round's own parameters |
 
 ## Do not get it wrong again
 
 - **The default reference is scheme C.** `GEO4D_RECALL=complete` gives the whole-mesh numbers of 11-15: Mesh_4D TSDF
-  53.1, Khronos 48.2, Wavemap 55.0, Occupancy 55.2, Panoptic 41.6, GaME 53.4, 3DGS ours 56.8. Any other value is an error.
+  53.1, Khronos 48.2, Wavemap 55.0, Occupancy 55.2, Panoptic 41.6, GaME 53.2, 3DGS ours 56.7. Any other value is an error.
 - **Do not use the observed-surface variants** ("observed by now", "observed by the end of the visit"). They are
   superseded, and their results are archived in `G:/我的云端硬盘/FT_archive/geometry_4d_20261114_observed_reference`.
 - **Khronos must be the continuous A -> B run.** The separately run Khronos of September starts B from an empty map. It
@@ -99,6 +104,8 @@ Run one job at a time: each uses 4 cores at nice 19, with exports in /dev/shm th
 - **The final Mesh is the slice at B's last frame.** A Khronos row at the last frame is not one of its slices: its last
   B slice is at 118.3 s. That row counts for Mesh, not for Mesh_4D.
 - **3DGS ours 56.0** (complete mesh, old per-round format) cannot be reproduced. The per-round parameters were deleted
-  in the 11-16 history conversion. The current format gives 56.8.
+  in the 11-16 history conversion. The stored 4D map gives 56.7.
+- **GaME must be read with each round's own parameters**, as the map it had at that moment. Read with the parameters
+  each session kept, its early slices lose precision (11.8 s: 0.60 vs 0.84), which penalises it.
 - **GaME's earlier Home Mesh 80.9 has no source.** `wt_takeover_runs/RESULTS_TABLE_20261029.md` records GaME Home
   A 94.32 / B 91.25 under the observed-surface protocol.
