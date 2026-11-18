@@ -111,6 +111,7 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // from one that has always been where A last saw it. Closing this needs the
   // registry serialized alongside the map, not a change to the seeding rule.
   persistent_objects_.initializeFromObjects(*unmerged_graph_);
+  if (present_surface_) present_surface_->setInstancesWithState(persistent_objects_.trackedIds());
 
   // Every surface point of the loaded state (background and object meshes,
   // world frame): which surface of this session's final map is memory.

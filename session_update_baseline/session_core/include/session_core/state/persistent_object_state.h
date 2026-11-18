@@ -38,6 +38,7 @@
 
 #pragma once
 
+#include <hydra/reconstruction/volumetric_map.h>
 #include <cstddef>
 #include <map>
 #include <memory>
@@ -380,6 +381,14 @@ class PersistentObjectState {
    */
   std::vector<FragmentView> unresolvedCandidates(size_t physical_instance_id) const;
 
+  /**
+   * The surfaces (world frame) of what the registry holds undecided and no node shows: every
+   * replacement candidate, and a current-session state beside an inherited one it was not
+   * shown with. Shown with the background until decided, as their pixels always were.
+   */
+  void appendPendingSurfaces(std::vector<Eigen::Vector3f>& vertices,
+                             std::vector<std::array<uint32_t, 3>>& faces) const;
+
  private:
   /**
    * @brief One temporal state of a physical object: the object as it was at one
@@ -394,6 +403,11 @@ class PersistentObjectState {
   struct Fragment {
     spark_dsg::Mesh geometry{false, true, false, true};
     BoundingBox bbox;
+    // The state's own reconstruction: the volumes of its segments, voxel by voxel (one state,
+    // one volume). Its surface is what the state shows; `geometry` keeps every segment's mesh
+    // for the evidence, which reads what each observation measured. Empty for a state an
+    // earlier session left (its surface came with the map).
+    std::shared_ptr<hydra::VolumetricMap> volume;
     Eigen::Vector3d position = Eigen::Vector3d::Zero();
 
     // Observation bounds of the segment that opened this fragment, and of the
@@ -468,6 +482,8 @@ class PersistentObjectState {
     // B observations run their own mini D1/D2 state machine here so that a
     // B-internal move (cabinet X->Y) is resolved without touching A history.
     std::unique_ptr<PhysicalState> b_session;
+    // Whether the last materialization showed the current-session state with the inherited one.
+    mutable bool session_state_shown = false;
 
     // Latest full-session evidence for an inherited fragment. Its state
     // decision is made once at terminal finalization, after all B rays and all

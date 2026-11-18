@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <algorithm>
 #include <array>
 #include <functional>
@@ -46,6 +47,10 @@ class PresentTsdf {
   // (reader, frame, depth, free limit) -> whether the frame is read; readers below the
   // integrator's thread count run at once.
   using ReadFrame = std::function<bool(int, size_t, std::vector<float>&, std::vector<float>&)>;
+  // frame -> the pixels (non-zero, CV_32SC1; empty: none) whose readings are not this volume's
+  // surface: integrated as Hydra integrates a masked pixel, the empty space before the
+  // truncation band only.
+  using NotSurface = std::function<void(size_t, cv::Mat&)>;
 
   PresentTsdf(const hydra::VolumetricMap::Config& map,
               const hydra::ProjectiveIntegrator::Config& integrator,
@@ -54,7 +59,7 @@ class PresentTsdf {
 
   // Integrate `frames` (ascending), each in the domain `read` gives it, in observation order.
   void integrate(const Camera& camera, const std::vector<float>& ray_norm, const std::vector<size_t>& frames,
-                 const FramePose& pose, const ReadFrame& read);
+                 const FramePose& pose, const ReadFrame& read, const NotSurface& not_surface = {});
   // One bit per voxel of a block (linear voxel index).
   using VoxelMask = std::vector<uint64_t>;
   using Changes = std::vector<std::pair<hydra::BlockIndex, VoxelMask>>;
@@ -78,6 +83,9 @@ class PresentTsdf {
   Rebuilt rebuild(const Camera& camera, const std::vector<float>& ray_norm,
                   const std::vector<size_t>& frames, const FramePose& pose, const ReadFrame& read);
   void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces);
+  // Take `volume` (the same voxel grid) in, voxel by voxel, as if its frames had been
+  // integrated here: the weighted mean of the distances, the weight capped as the integrator's.
+  void absorb(const hydra::VolumetricMap& volume);
 
   static std::vector<float> rayNorm(const Camera& camera);
   static void depthFromRange(const std::vector<float>& ray_norm, const std::vector<uint16_t>& range_mm,
@@ -97,10 +105,12 @@ class PresentTsdf {
   // (`marked_only`) the marked voxels of the marked blocks. Batch by batch, the frames are read
   // concurrently; then each block, in parallel, folds the batch's frames that see it in order.
   Rebuilt fold(const Camera& camera, const std::vector<float>& ray_norm, const std::vector<size_t>& frames,
-               const FramePose& pose, const ReadFrame& read, bool marked_only);
+               const FramePose& pose, const ReadFrame& read, bool marked_only,
+               const NotSurface& not_surface = {});
   // Native integration of voxel `i` of `block` with `data` (its domain `domain`); whether it updated it.
   bool foldVoxel(const hydra::BlockTuple& block, size_t i, const hydra::InputData& data,
-                 const Eigen::Isometry3f& sensor_T_world, const Domain& domain) const;
+                 const Eigen::Isometry3f& sensor_T_world, const Domain& domain,
+                 const cv::Mat& not_surface = cv::Mat()) const;
 };
 
 }  // namespace khronos

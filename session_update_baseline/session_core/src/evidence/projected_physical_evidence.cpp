@@ -850,14 +850,18 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
   }
   result.surface_samples = samples.size();
   const auto stamps = evidence_snapshot->timestamps(earliest, latest);
-  for (const auto& point : samples) {
-    bool coverage = false;
-    TimeStamp sample_support = 0, sample_absence = 0;
-    for (size_t frame = 0; frame < stamps.size(); ++frame) {
-      const auto p = evidence_snapshot->project(stamps[frame], point);
+  // Frame by frame (a stored frame is unpacked once for all the samples), each sample keeping
+  // what the frames, in their order, told of it.
+  std::vector<uint8_t> covered(samples.size(), 0);
+  std::vector<TimeStamp> supported(samples.size(), 0), absent(samples.size(), 0);
+  for (size_t frame = 0; frame < stamps.size(); ++frame) {
+    for (size_t sample = 0; sample < samples.size(); ++sample) {
+      TimeStamp& sample_support = supported[sample];
+      TimeStamp& sample_absence = absent[sample];
+      const auto p = evidence_snapshot->project(stamps[frame], samples[sample]);
       const auto vote = classifyMeasurement(p, physical_id, config.depth_tolerance);
       if (vote == Vote::Unavailable) continue;
-      coverage = true;
+      covered[sample] = 1;
       // Exact (frame, pixel), not (sample, frame): a pixel is one measurement
       // even when several surface triangles project onto it.
       const size_t key = (frame << 32) | static_cast<size_t>(p.pixel_index);
@@ -881,8 +885,10 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
           break;
       }
     }
-    if (!coverage) ++result.unobserved_samples;
-    if (sample_absence > sample_support) ++result.contradicted_surface_samples;
+  }
+  for (size_t sample = 0; sample < samples.size(); ++sample) {
+    if (!covered[sample]) ++result.unobserved_samples;
+    if (absent[sample] > supported[sample]) ++result.contradicted_surface_samples;
   }
   // Compatibility layer (P20, kept pending, user 2026-10-05): the proxy-free coverage verdict of
   // the unit interface. Its only production caller, countCurrentPhysicalSurface, overwrites it at

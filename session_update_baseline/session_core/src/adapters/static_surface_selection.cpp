@@ -35,6 +35,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
+#include "khronos/utils/phase_clock.h"
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include <algorithm>
 #include <cmath>
@@ -191,7 +192,8 @@ SurfaceCompatibility compareSurfaceFrames(
 
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
-    std::optional<TimeStamp> after_stamp) const {
+    std::optional<TimeStamp> after_stamp, const bool report, TimeStamp* rejected_stamp,
+    const bool learn) const {
   auto frames = collectSemanticFrames(track, frame_data, after_stamp);
   if (!track.physical_instance_id || frames.size() < 2) return frames;
   std::stable_sort(frames.begin(), frames.end(), [](const auto& a, const auto& b) {
@@ -231,7 +233,7 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     for (const auto* value : {&forward, &reverse}) {
       if (admitted(*value)) learned.push_back(share(*value));
       // DIAG (P31): pixel positions of judged directions that measured free space.
-      if (admitted(*value) && value->free > 0) {
+      if (report && admitted(*value) && value->free > 0) {
         LOG(INFO) << "STATIC_PAIR_DIAG inst=" << *track.physical_instance_id
                   << " earlier=" << frames[offset - 1].first->input.timestamp_ns
                   << " current=" << frames.back().first->input.timestamp_ns
@@ -242,16 +244,17 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
       }
     }
     if (!conflicts(forward) && !conflicts(reverse)) continue;
-    LOG(INFO) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
+    LOG_IF(INFO, report) << "STATIC_SURFACE_BOUNDARY inst=" << *track.physical_instance_id
               << " rejected_stamp=" << frames[offset - 1].first->input.timestamp_ns
               << " current_stamp=" << frames.back().first->input.timestamp_ns
               << " forward_support=" << forward.supported << " forward_free=" << forward.free
               << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free
               << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
+    if (rejected_stamp) *rejected_stamp = frames[offset - 1].first->input.timestamp_ns;
     frames.erase(frames.begin(), frames.begin() + offset);
     break;
   }
-  if (!learned.empty()) {
+  if (learn && !learned.empty()) {
     std::lock_guard<std::mutex> lock(mixture.mutex);
     mixture.shares.insert(mixture.shares.end(), learned.begin(), learned.end());
     refitShareMixture(mixture);
@@ -259,7 +262,7 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
               << " identified=" << mixture.identified << " pi=" << mixture.pi
               << " a=" << mixture.a << " b=" << mixture.b;
   }
-  LOG(INFO) << "STATIC_SURFACE_FRAMES inst=" << *track.physical_instance_id
+  LOG_IF(INFO, report) << "STATIC_SURFACE_FRAMES inst=" << *track.physical_instance_id
             << " candidates=" << original_size << " selected=" << frames.size()
             << " first=" << frames.front().first->input.timestamp_ns
             << " last=" << frames.back().first->input.timestamp_ns;

@@ -36,6 +36,7 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/backend/backend.h"
+#include "khronos/active_window/object_extraction/segment_volumes.h"
 #include "session_core/surface/closed_object_background.h"
 #include "session_core/surface/triangle_grid.h"
 #include <algorithm>
@@ -62,6 +63,7 @@ void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
 
 void Backend::setPresentSurface(PresentSurface::Ptr surface) {
   present_surface_ = std::move(surface);
+  if (present_surface_) present_surface_->setInstancesWithState(persistent_objects_.trackedIds());
 }
 
 void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
@@ -245,6 +247,8 @@ void Backend::sessionAfterReconcile(
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
   UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
+  // The mapper hands a first segment over early only for an instance no state is held of.
+  if (present_surface_) present_surface_->setInstancesWithState(persistent_objects_.trackedIds());
   if (finalize_pending) {
     // Canonicalization above ingests the last extractor segments. They did
     // not exist in the registry during the preceding state decision. Drain
@@ -271,22 +275,9 @@ void Backend::sessionAfterReconcile(
     LOG(INFO) << "TERMINAL_STATE_DRAIN stamp=" << stamp << " closed=" << terminal_closed;
   }
   if (!present_surface_) return;
-  // The legal contribution domain (README section 5): an identity whose
-  // current state began in this session contributes from that state's first
-  // sighting on (the registry's track_first_seen, else its birth).
-  std::map<size_t, TimeStamp> state_starts;
-  const TimeStamp session_start = present_surface_->firstStamp();
-  for (const size_t id : persistent_objects_.trackedIds()) {
-    const auto current = persistent_objects_.currentFragment(id);
-    if (!current || current->birth_time < session_start) continue;
-    state_starts[id] =
-        current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
-    if (finalize_pending) {
-      LOG(INFO) << "[PresentSurface] current state began in this session: id=" << id
-                << " birth=" << current->birth_time << " first_sighting=" << state_starts[id]
-                << " (session start " << session_start << ")";
-    }
-  }
+  // No state restricts a frame: the present never takes a pixel of a physical instance, so an
+  // object that leaves or arrives changes nothing in it and no frame is read again for it.
+  const std::map<size_t, TimeStamp> state_starts;
   PresentSurface::Inputs inputs;
   inputs.shown = shown_memory_.get();
   // The state layer already knows which states closed. The shown memory reads the
@@ -332,6 +323,44 @@ void Backend::sessionAfterReconcile(
       return found && d_sq <= memory_copy_tolerance_ * memory_copy_tolerance_;
     };
   }
+  PresentSurface::Surface pending;
+  persistent_objects_.appendPendingSurfaces(pending.vertices, pending.faces);
+  // What a track holds before its first hand-over. Of an instance a state is shown of, only the
+  // faces farther than a voxel from that state's surface: nearer ones are the object's, which
+  // its node shows (as the present's faces near an object's mesh were the object's).
+  size_t held_faces = 0, held_shown_by_state = 0;
+  for (const auto& piece : SegmentVolumes::held()) {
+    std::vector<Eigen::Vector3f> shown_points;   // outlives the search over it
+    std::unique_ptr<hydra::PointNeighborSearch> shown;
+    if (const auto current = persistent_objects_.currentFragment(piece.instance)) {
+      const auto& mesh = *current->geometry;
+      shown_points.reserve(mesh.numVertices());
+      for (size_t i = 0; i < mesh.numVertices(); ++i) {
+        shown_points.push_back(current->bbox->pointToWorldFrame(mesh.pos(i)));
+      }
+      if (!shown_points.empty()) shown = std::make_unique<hydra::PointNeighborSearch>(shown_points);
+    }
+    const float near_sq = object_surface_resolution_ * object_surface_resolution_;
+    const uint32_t offset = static_cast<uint32_t>(pending.vertices.size());
+    pending.vertices.insert(pending.vertices.end(), piece.vertices.begin(), piece.vertices.end());
+    for (const auto& f : piece.faces) {
+      ++held_faces;
+      if (shown) {
+        const Eigen::Vector3f centre = (piece.vertices[f[0]] + piece.vertices[f[1]] + piece.vertices[f[2]]) / 3.f;
+        float d_sq = 0.f;
+        size_t index = 0;
+        if (shown->search(centre, d_sq, index) && d_sq <= near_sq) {
+          ++held_shown_by_state;
+          continue;
+        }
+      }
+      pending.faces.push_back({f[0] + offset, f[1] + offset, f[2] + offset});
+    }
+  }
+  inputs.pending = &pending;
+  LOG(INFO) << "PENDING_SURFACES stamp=" << stamp << " vertices=" << pending.vertices.size()
+            << " faces=" << pending.faces.size() << " held_faces=" << held_faces
+            << " held_faces_shown_by_their_state=" << held_shown_by_state;
   auto round = present_surface_->compose(*dsg, stamp, state_starts, inputs, finalize_pending);
   if (!finalize_pending) return;
   if (inputs.is_memory) {

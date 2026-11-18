@@ -3,6 +3,7 @@
  * All Rights Reserved.
  * -------------------------------------------------------------------------- */
 
+#include "khronos/utils/phase_clock.h"
 #include "session_core/evidence/physical_evidence_store.h"
 
 #include <algorithm>
@@ -18,6 +19,7 @@
 #include <hydra/input/sensor.h>
 
 #include "khronos/active_window/data/frame_data.h"
+#include "session_core/surface/frame_archive.h"
 
 namespace khronos {
 namespace {
@@ -32,12 +34,6 @@ struct Run {
   int32_t value = kInvalidCode;
 };
 
-struct DepthRun {
-  // Exclusive flattened-pixel end offset.
-  uint32_t end = 0;
-  // Depth in millimetres. 0 means invalid/unavailable.
-  uint16_t depth_mm = 0;
-};
 
 struct FrameEvidence {
   uint32_t width = 0;
@@ -45,11 +41,44 @@ struct FrameEvidence {
   Eigen::Isometry3f sensor_T_world = Eigen::Isometry3f::Identity();
   hydra::Sensor::ConstPtr sensor;
   std::vector<Run> runs;
-  std::vector<DepthRun> depth_runs;
+  // The range of every pixel in millimetres (0: invalid / unavailable), packed as the frame
+  // archive packs a frame's ranges (differences to the previous pixel, LZ4): real depth differs
+  // from pixel to pixel, so runs of equal range are one pixel long.
+  FrameArchive::Frame depth;
+  // Identifies this frame's packed ranges to the readers' caches (held, so never reused).
+  std::shared_ptr<const std::vector<uint8_t>> packed_key;
+  // The frame's ranges, unpacked (row-major). A reader keeps the frames it last read.
+  std::shared_ptr<const std::vector<uint16_t>> ranges() const;
   // DIAG (Stage 0, derivation_joint_sensor_20261006): the label code of pixels without valid range,
   // kInvalidCode where the range is valid. `runs` keeps kInvalidCode for those pixels as before.
   std::vector<Run> no_depth_label_runs;
 };
+
+std::shared_ptr<const std::vector<uint16_t>> FrameEvidence::ranges() const {
+  // A round reads its few new frames for one object state after another: each thread keeps the
+  // frames it read last (the evidence itself is immutable and shared between snapshots).
+  struct Read {
+    std::shared_ptr<const std::vector<uint8_t>> key;   // the packed bytes this was read from
+    std::shared_ptr<const std::vector<uint16_t>> range_mm;
+  };
+  constexpr size_t kKept = 8;
+  thread_local std::vector<Read> kept;
+  for (size_t i = 0; i < kept.size(); ++i) {
+    if (kept[i].key == packed_key) {
+      std::rotate(kept.begin(), kept.begin() + i, kept.begin() + i + 1);
+      return kept.front().range_mm;
+    }
+  }
+  PhaseClock clock(Phase::kEvidenceDecode);
+  auto range_mm = std::make_shared<std::vector<uint16_t>>();
+  std::vector<FrameArchive::InstanceRun> unused;
+  if (!depth.decode(static_cast<size_t>(width) * height, *range_mm, unused)) {
+    range_mm->assign(static_cast<size_t>(width) * height, 0);
+  }
+  if (kept.size() >= kKept) kept.pop_back();
+  kept.insert(kept.begin(), Read{packed_key, range_mm});
+  return range_mm;
+}
 
 bool sameSize(const cv::Mat& image, int rows, int cols) {
   return image.empty() || (image.rows == rows && image.cols == cols);
@@ -64,7 +93,6 @@ bool isFinitePoint(const Point& point) {
 struct PhysicalEvidenceStore::Storage {
   std::map<TimeStamp, std::shared_ptr<const FrameEvidence>> frames;
   size_t num_runs = 0;
-  size_t num_depth_runs = 0;
 };
 
 PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage)
@@ -104,16 +132,7 @@ bool PhysicalEvidenceStore::Snapshot::denseRange(TimeStamp stamp,
   height = frame.height;
   sensor_T_world = frame.sensor_T_world;
   sensor = frame.sensor;
-  const size_t n = static_cast<size_t>(width) * height;
-  range_mm.assign(n, 0);
-  size_t start = 0;
-  for (const auto& run : frame.depth_runs) {
-    const size_t end = std::min<size_t>(run.end, n);
-    if (end > start) {
-      std::fill(range_mm.begin() + start, range_mm.begin() + end, run.depth_mm);
-    }
-    start = std::max(start, end);
-  }
+  range_mm = *frame.ranges();
   return true;
 }
 
@@ -158,13 +177,9 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   }
 
   float measured_depth = std::numeric_limits<float>::quiet_NaN();
-  const auto depth_it = std::upper_bound(
-      frame.depth_runs.begin(),
-      frame.depth_runs.end(),
-      index,
-      [](uint32_t pixel, const DepthRun& run) { return pixel < run.end; });
-  if (depth_it != frame.depth_runs.end() && depth_it->depth_mm > 0) {
-    measured_depth = static_cast<float>(depth_it->depth_mm) / 1000.0f;
+  const auto ranges = frame.ranges();
+  if (index < ranges->size() && (*ranges)[index] > 0) {
+    measured_depth = static_cast<float>((*ranges)[index]) / 1000.0f;
   }
 
   ProjectedEndpointEvidence projection;
@@ -255,14 +270,12 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   frame->height = static_cast<uint32_t>(ranges.rows);
   frame->sensor_T_world = input.getSensorPose().cast<float>().inverse();
   frame->sensor = std::move(sensor);
-  frame->runs.reserve(static_cast<size_t>(ranges.rows) * ranges.cols / 8 + 1);
+  std::vector<uint16_t> range_mm(static_cast<size_t>(ranges.rows) * ranges.cols, 0);
 
   const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   int32_t previous = 0;
   int32_t previous_no_depth = kInvalidCode;
-  uint16_t previous_depth_mm = 0;
   bool have_previous = false;
-  bool have_previous_depth = false;
   uint32_t offset = 0;
   for (int v = 0; v < ranges.rows; ++v) {
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
@@ -274,11 +287,7 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
           depth_mm = static_cast<uint16_t>(mm);
         }
       }
-      if (have_previous_depth && depth_mm != previous_depth_mm) {
-        frame->depth_runs.push_back({offset, previous_depth_mm});
-      }
-      previous_depth_mm = depth_mm;
-      have_previous_depth = true;
+      range_mm[offset] = depth_mm;
 
       const auto label_code = [&]() -> int32_t {
         const int physical_id = data.instance_image.empty()
@@ -314,20 +323,20 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
     frame->runs.push_back({offset, previous});
     frame->no_depth_label_runs.push_back({offset, previous_no_depth});
   }
-  if (have_previous_depth) {
-    frame->depth_runs.push_back({offset, previous_depth_mm});
-  }
+  frame->runs.shrink_to_fit();
+  frame->no_depth_label_runs.shrink_to_fit();
+  frame->depth = FrameArchive::Frame::pack(input.timestamp_ns, input.getSensorPose(), frame->width, range_mm,
+                                           {{static_cast<uint32_t>(range_mm.size()), 0}});
+  frame->packed_key = std::make_shared<const std::vector<uint8_t>>();
 
   std::lock_guard<std::mutex> lock(mutex_);
   auto next = std::make_shared<Storage>(*storage_);
   const auto existing = next->frames.find(input.timestamp_ns);
   if (existing != next->frames.end()) {
     next->num_runs -= existing->second->runs.size();
-    next->num_depth_runs -= existing->second->depth_runs.size();
   }
   next->frames[input.timestamp_ns] = frame;
   next->num_runs += frame->runs.size();
-  next->num_depth_runs += frame->depth_runs.size();
   storage_ = std::move(next);
   return true;
 }

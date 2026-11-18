@@ -58,6 +58,28 @@ class ObjectExtractor {
     // If not speicified, extract no objects.
     return nullptr;
   }
+
+  /**
+   * @brief Integrate a frame's measurement of a physical instance into the segment its track is
+   * observing (Track::volume), as the frame arrives.
+   */
+  /**
+   * @brief Whether the instance was told to be an object by an earlier extraction.
+   */
+  virtual bool knownObject(int /* instance */) const { return true; }
+
+  /**
+   * @brief The truncation distance of the volumes objects are integrated in as the frames arrive
+   * (the map's configured one).
+   */
+  virtual void setFrameTruncation(float /* truncation_distance */) {}
+
+  virtual bool integrateFrame(const FrameData::Ptr& /* data */,
+                              const MeasurementCluster& /* cluster */,
+                              Track& /* track */,
+                              const FrameDataBuffer& /* earlier_frames */) {
+    return false;
+  }
 };
 
 }  // namespace khronos

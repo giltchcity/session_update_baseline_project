@@ -38,13 +38,18 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <vector>
+
+#include <hydra/reconstruction/volumetric_map.h>
 
 #include "khronos/active_window/data/measurement_clusters.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {
+
+struct FrameData;
 
 /**
  * @brief Data structure for a single observation of an object.
@@ -135,6 +140,15 @@ struct Track {
 
   // Whether this object is still active.
   bool is_active = true;
+
+  // What a physical instance's track observed since its last hand-over, integrated as the
+  // frames arrived (ObjectExtractor::integrateFrame): the instance's own pixels, each frame once.
+  struct Segment {
+    std::shared_ptr<hydra::VolumetricMap> volume;
+    TimeStamp first = 0, last = 0;
+    size_t frames = 0;
+  };
+  Segment segment;
 
   void updateSemantics(const std::optional<SemanticClusterInfo>& other_semantics);
 };

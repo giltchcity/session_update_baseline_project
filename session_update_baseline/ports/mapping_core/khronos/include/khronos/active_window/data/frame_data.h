@@ -93,6 +93,10 @@ struct FrameData {
   Image instance_image;
   using InstanceImageType = int;
 
+  // The pixels of this frame that entered an object's segment (ObjectExtractor::integrateFrame),
+  // by the object's id; 0 elsewhere. Those pixels, and only those, are not the background's.
+  Image fused_image;
+
   explicit FrameData(const hydra::InputData& input) : input(input) {}
 };
 

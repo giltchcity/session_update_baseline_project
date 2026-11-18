@@ -36,6 +36,8 @@
  * -------------------------------------------------------------------------- */
 
 #pragma once
+#include <set>
+#include <mutex>
 
 #include <optional>
 #include <string>
@@ -121,6 +123,28 @@ class MeshObjectExtractor : public ObjectExtractor {
   KhronosObjectAttributes::Ptr extractObject(const Track& track,
                                              const FrameDataBuffer& frame_data) override;
 
+  bool integrateFrame(const FrameData::Ptr& data,
+                      const MeasurementCluster& cluster,
+                      Track& track,
+                      const FrameDataBuffer& earlier_frames) override;
+  // One frame's reading of an object into a segment's volume.
+  void fuseInto(Track::Segment& target, FrameData& data, int cluster_id, const BoundingBox& box);
+  // The volume a segment's frames are integrated in: an absolute voxel size, so the segments of
+  // one object share a grid.
+  static hydra::VolumetricMap::Config segmentVolume(float voxel_size);
+  // The volume an object is integrated in as its frames arrive: that grid, with the map's
+  // configured truncation distance (setFrameTruncation). The band of two voxels is too narrow
+  // for a surface seen at a slant: its far voxels get no reading and the surface comes out
+  // short of where it is. (The buffered reconstruction the object reasoning gets keeps its own.)
+  hydra::VolumetricMap::Config frameVolume() const;
+  void setFrameTruncation(float truncation_distance) override { frame_truncation_ = truncation_distance; }
+
+  KhronosObjectAttributes::Ptr reconstructVoted(
+      const Track& track,
+      const std::vector<std::pair<FrameData::Ptr, int>>& frames,
+      std::shared_ptr<hydra::VolumetricMap>& rebuilt) const;
+  bool knownObject(int instance) const override;
+
   /**
    * @brief Extract a dynamic object from the given track.
    * @param track The track representing the object.
@@ -174,7 +198,8 @@ class MeshObjectExtractor : public ObjectExtractor {
   // method does not assign D1 labels or alter physical identity/history.
   std::vector<std::pair<FrameData::Ptr, int>> selectStaticFrames(
       const Track& track, const FrameDataBuffer& frame_data,
-      std::optional<TimeStamp> after_stamp = std::nullopt) const;
+      std::optional<TimeStamp> after_stamp = std::nullopt, bool report = true,
+      TimeStamp* rejected_stamp = nullptr, bool learn = true) const;
 
   /**
    * @brief Compute tje maximal spatial extent covered by all frames.
@@ -190,10 +215,19 @@ class MeshObjectExtractor : public ObjectExtractor {
                                   const hydra::SemanticVoxel& confidence_voxel) const;
 
  private:
+  // The instances the object tests told to be objects.
+  mutable std::mutex judged_mutex_;
+  mutable std::set<int> judged_objects_;
+  float frame_truncation_ = 0.f;  // 0: the segment volume's own
+
   // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
   std::optional<Track> preparePhysicalTrack(const Track& track) const;
 
   hydra::MeshIntegrator mesh_integrator_;
+  // Integrate arriving frames into the tracks' segments (the active window's thread only): a
+  // segment of few blocks on the calling thread, a larger one on the configured threads.
+  ObjectIntegrator frame_integrator_;
+  ObjectIntegrator small_frame_integrator_;
 
   inline static const auto registration_ =
       config::RegistrationWithConfig<ObjectExtractor,

@@ -267,21 +267,42 @@ void testOnlineSurface() {
   require(nlohmann::json::parse(second.report_json)["frames"]==2 &&
           next->mesh()->numVertices()>q->mesh()->numVertices(),"next snapshot consumes its new observation");
 
-  // Retraction changes the accumulated volume itself, including already
-  // published geometry; a newer observation at another place stays intact.
-  PresentSurface moving(mapConfig(),integrationConfig(),meshConfig());
-  moving.integrate(camera,frame(1000000000ULL,1.f));
-  auto old_site=graph();
-  moving.compose(*old_site,1000000000ULL,{}, {},false);
-  require(!old_site->mesh()->faces.empty(),"old state initially has a surface");
-  auto moved_frame=frame(2000000000ULL,2.f);
-  moved_frame.world_T_sensor.translation().x()=10.;
-  moving.integrate(camera,std::move(moved_frame));
-  moving.compose(*old_site,2000000000ULL,{{7,2000000000ULL}}, {},false);
-  require(!old_site->mesh()->faces.empty(),"new state remains after old contributions are removed");
-  for (const auto& point:old_site->mesh()->points) {
-    require(point.x()>5.f,"no old-state surface survives publication");
+  // A volume that is the background's after all (a segment the extraction made no object of)
+  // joins the present voxel by voxel at the next round: its surface is there, and what the
+  // present already measured stays.
+  PresentSurface returning(mapConfig(),integrationConfig(),meshConfig());
+  returning.integrate(camera,frame(1000000000ULL,1.f));
+  auto before=graph();
+  returning.compose(*before,1000000000ULL,{}, {},false);
+  require(!before->mesh()->faces.empty(),"the present has its own surface before a volume returns");
+  {
+    // A wall at z = 2 m around x = 10 m, as a volume on the present's grid.
+    auto segment_config=mapConfig();
+    segment_config.truncation_distance=2.f*segment_config.voxel_size;
+    auto segment=std::make_shared<hydra::VolumetricMap>(segment_config);
+    auto& layer=segment->getTsdfLayer();
+    const float band=segment_config.truncation_distance;
+    for (float x=9.6f;x<10.4f;x+=.2f) for (float y=-.4f;y<.4f;y+=.2f) for (float z=1.6f;z<2.4f;z+=.2f) {
+      segment->allocateBlock(layer.getBlockIndex(hydra::Point(x,y,z)));
+    }
+    for (auto& block:layer) {
+      for (size_t i=0;i<block.numVoxels();++i) {
+        auto& voxel=block.getVoxel(i);
+        voxel.distance=std::max(-band,std::min(band,2.f-block.getVoxelPosition(i).z()));
+        voxel.weight=1.f;
+      }
+    }
+    returning.absorb(segment);
   }
+  auto after=graph();
+  returning.compose(*after,1000000000ULL,{}, {},false);
+  bool near_kept=false,far_joined=false;
+  for (const auto& point:after->mesh()->points) {
+    near_kept|=point.x()<5.f;
+    far_joined|=point.x()>5.f;
+  }
+  require(near_kept,"the present keeps what it measured when a volume returns");
+  require(far_joined,"a returned volume's surface joins the present");
 
   // Fill: an archived window face stays where a counted frame measured it (the
   // one valid pixel, (1,1) at 1 m), and only there.

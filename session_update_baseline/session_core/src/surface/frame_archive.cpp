@@ -177,6 +177,7 @@ void FrameArchive::keepLimit(size_t index, std::vector<uint8_t> packed_limit) {
   bytes_ -= kept.size();
   kept = std::move(packed_limit);
   bytes_ += kept.size();
+  peak_bytes_ = std::max(peak_bytes_, bytes_);
 }
 
 bool FrameArchive::pack(const FrameData& data, Camera& cam, Frame& frame) {
@@ -205,6 +206,8 @@ bool FrameArchive::pack(const FrameData& data, Camera& cam, Frame& frame) {
   const bool have_dynamic = !data.dynamic_image.empty() && data.dynamic_image.type() == CV_32SC1 &&
                             data.dynamic_image.rows == ranges.rows &&
                             data.dynamic_image.cols == ranges.cols;
+  const bool have_fused = !data.fused_image.empty() && data.fused_image.type() == CV_32SC1 &&
+                          data.fused_image.rows == ranges.rows && data.fused_image.cols == ranges.cols;
   const bool have_instances = !data.instance_image.empty() &&
                               data.instance_image.type() == CV_32SC1 &&
                               data.instance_image.rows == ranges.rows &&
@@ -225,6 +228,8 @@ bool FrameArchive::pack(const FrameData& data, Camera& cam, Frame& frame) {
   const size_t n = static_cast<size_t>(cam.width) * cam.height;
   std::vector<uint16_t> range_mm(n, 0);
   std::vector<InstanceRun> instances;
+  std::vector<uint32_t> fused;  // offsets where "entered an object" begins, ends, begins, ...
+  bool was_in_object = false;
   uint32_t offset = 0;
   uint16_t previous = 0;
   for (int v = 0; v < ranges.rows; ++v) {
@@ -232,6 +237,7 @@ bool FrameArchive::pack(const FrameData& data, Camera& cam, Frame& frame) {
     const int* label_row = have_labels ? input.label_image.ptr<int>(v) : nullptr;
     const int* id_row = have_instances ? data.instance_image.ptr<int>(v) : nullptr;
     const int* dynamic_row = have_dynamic ? data.dynamic_image.ptr<int>(v) : nullptr;
+    const int* fused_row = have_fused ? data.fused_image.ptr<int>(v) : nullptr;
     for (int u = 0; u < ranges.cols; ++u, ++offset) {
       const float r = row[u];
       if (std::isfinite(r) && r > cam.min_range && r <= cam.max_range &&
@@ -246,10 +252,20 @@ bool FrameArchive::pack(const FrameData& data, Camera& cam, Frame& frame) {
           (id > 0 && id <= std::numeric_limits<uint16_t>::max()) ? static_cast<uint16_t>(id) : 0;
       if (offset > 0 && id16 != previous) instances.push_back({offset, previous});
       previous = id16;
+      // A pixel that entered an object's volume: its reading is that object's surface. The
+      // frame keeps the reading (what lies before it is empty for everyone, and it votes as any
+      // reading does) and which pixels these are.
+      const bool in_object = fused_row && fused_row[u] != 0;
+      if (in_object != was_in_object) {
+        fused.push_back(offset);
+        was_in_object = in_object;
+      }
     }
   }
   if (offset > 0) instances.push_back({offset, previous});
+  if (was_in_object) fused.push_back(offset);
   frame = Frame::pack(input.timestamp_ns, input.getSensorPose(), cam.width, range_mm, instances);
+  frame.in_object = std::move(fused);
   return true;
 }
 
@@ -260,9 +276,24 @@ bool FrameArchive::keep(const Camera& camera, Frame frame) {
     return false;
   }
   if (frames_.empty()) camera_ = camera;
-  bytes_ += frame.packed.size() + (frame.seen.size() + frame.tile_farthest_mm.size()) * sizeof(uint16_t) + sizeof(Frame);
+  bytes_ += frame.packed.size() + (frame.seen.size() + frame.tile_farthest_mm.size()) * sizeof(uint16_t) +
+            frame.in_object.size() * sizeof(uint32_t) + sizeof(Frame);
+  peak_bytes_ = std::max(peak_bytes_, bytes_);
   frames_.push_back(std::move(frame));
   return true;
+}
+
+void FrameArchive::release(const size_t first, const size_t last) {
+  for (size_t i = first; i < last && i < frames_.size(); ++i) {
+    Frame& frame = frames_[i];
+    bytes_ -= frame.packed.size() + (frame.seen.size() + frame.tile_farthest_mm.size()) * sizeof(uint16_t) +
+              frame.in_object.size() * sizeof(uint32_t) + frame.limit.size();
+    std::vector<uint8_t>().swap(frame.packed);
+    std::vector<uint16_t>().swap(frame.seen);
+    std::vector<uint16_t>().swap(frame.tile_farthest_mm);
+    std::vector<uint8_t>().swap(frame.limit);
+    std::vector<uint32_t>().swap(frame.in_object);
+  }
 }
 
 namespace {

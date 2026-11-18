@@ -681,12 +681,32 @@ void PresentSurface::integrate(const FrameArchive::Camera& camera, FrameArchive:
   arrivals_.emplace_back(camera, std::move(frame));
 }
 
+void PresentSurface::setInstancesWithState(std::vector<size_t> instances) {
+  std::sort(instances.begin(), instances.end());
+  std::lock_guard<std::mutex> lock(arrivals_mutex_);
+  instances_with_state_ = std::move(instances);
+}
+
+bool PresentSurface::instanceHasState(const size_t instance) const {
+  std::lock_guard<std::mutex> lock(arrivals_mutex_);
+  return std::binary_search(instances_with_state_.begin(), instances_with_state_.end(), instance);
+}
+
+void PresentSurface::absorb(std::shared_ptr<hydra::VolumetricMap> volume) {
+  if (!volume) return;
+  std::lock_guard<std::mutex> lock(arrivals_mutex_);
+  returned_.push_back(std::move(volume));
+}
+
 void PresentSurface::advanceTo(TimeStamp stamp) {
+  std::vector<std::shared_ptr<hydra::VolumetricMap>> returned;
   {
     std::lock_guard<std::mutex> lock(arrivals_mutex_);
     for (auto& [camera, frame] : arrivals_) frames_.keep(camera, std::move(frame));
     arrivals_.clear();
+    returned.swap(returned_);
   }
+  for (const auto& volume : returned) tsdf_.absorb(*volume);
   if (!frames_.numFrames()) return;
   if (consumed_ == 0) {
     const auto& c = frames_.camera();
@@ -716,6 +736,13 @@ void PresentSurface::advanceTo(TimeStamp stamp) {
     PresentTsdf::depthFromRange(ray_norm_, range[reader], depth);
     kept[i - fresh.front()] = FrameArchive::packLimit(limit);
     return true;
+  }, [&](size_t i, cv::Mat& mask) {
+    // The pixels that entered an object's volume: their surface is the object's.
+    const auto& runs = frames_.frame(i).in_object;
+    if (runs.empty()) return;
+    mask = cv::Mat::zeros(static_cast<int>(camera_.height), static_cast<int>(camera_.width), CV_32SC1);
+    int* pixels = mask.ptr<int>();
+    for (size_t k = 0; k + 1 < runs.size(); k += 2) std::fill(pixels + runs[k], pixels + runs[k + 1], 1);
   });
   for (const size_t i : fresh) frames_.keepLimit(i, std::move(kept[i - fresh.front()]));
   consumed_ = fresh.back() + 1;
@@ -1195,65 +1222,16 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     centroid[f] = ((a + b + c) / 3.0).cast<float>();
   }
 
-  // Identity of every present face: the current object mesh within one object
-  // voxel of its centroid (the nearest), or the background. A face the last round
-  // had keeps its identity unless an object triangle within that voxel changed.
+  // The present holds the background only: a pixel of a physical instance never enters it (the
+  // instance's own reconstruction is its surface, kept by its node), so every present face is
+  // the background's.
   const float v_f = static_cast<float>(voxel_);
   std::vector<uint32_t> face_id(Fp.size(), 0);
   std::vector<uint64_t> present_key(Fp.size());
-  size_t identities_reused = 0;
-  {
-    std::vector<uint32_t> labelled;
-    std::vector<std::pair<uint64_t, Eigen::AlignedBox3f>> object_triangles;
-    for (uint32_t f = 0; f < faces.size(); ++f) {
-      const Slot& slot = slots[fslot[f]];
-      if (slot.background || slot.physical == 0 || !slot_of_label.count(slot.physical)) continue;
-      labelled.push_back(f);
-      const auto &a = pos[faces[f][0]], &b = pos[faces[f][1]], &c = pos[faces[f][2]];
-      object_triangles.emplace_back(triangleKey(a, b, c, slot.physical), triangleBox(a, b, c));
-    }
-    std::sort(object_triangles.begin(), object_triangles.end(), byKey<Eigen::AlignedBox3f>);
-    ChangedTriangles changed(4.f * v_f);
-    changed.between(object_triangles, object_triangles_);
-    object_triangles_ = std::move(object_triangles);
-    std::vector<uint8_t> known(Fp.size(), 0);
-    parallelFor(Fp.size(), num_threads_, [&](size_t, size_t b, size_t e) {
-      for (size_t f = b; f < e; ++f) {
-        present_key[f] = triangleKey(Vp[Fp[f][0]], Vp[Fp[f][1]], Vp[Fp[f][2]]);
-        const uint32_t* id = findKey(face_ids_, present_key[f]);
-        if (!id || changed.near(centroid[f], v_f)) continue;
-        face_id[f] = *id;
-        known[f] = 1;
-      }
-    });
-    std::vector<uint32_t> query;
-    for (uint32_t f = 0; f < Fp.size(); ++f) {
-      if (known[f]) ++identities_reused;
-      else query.push_back(f);
-    }
-    if (!labelled.empty() && !query.empty()) {
-      const TriangleGrid objects(pos, faces, &labelled, 4.f * v_f);
-      parallelFor(query.size(), num_threads_, [&](size_t, size_t b, size_t e) {
-        for (size_t j = b; j < e; ++j) {
-          const uint32_t f = query[j];
-          float d;
-          Eigen::Vector3f closest;
-          uint32_t hit;
-          if (objects.closest(centroid[f], v_f, d, closest, hit)) {
-            face_id[f] = static_cast<uint32_t>(slots[fslot[hit]].physical);
-          }
-        }
-      });
-    }
-    face_ids_.clear();
-    for (uint32_t f = 0; f < Fp.size(); ++f) face_ids_.emplace_back(present_key[f], face_id[f]);
-    std::sort(face_ids_.begin(), face_ids_.end(), byKey<uint32_t>);
-  }
-
-  if (dump) {
-    const std::vector<int32_t> labels(face_id.begin(), face_id.end());
-    writePly(inputs.dump_dir + "/present.ply", Vp, Fp, &labels);
-  }
+  const size_t identities_reused = 0;
+  parallelFor(Fp.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+    for (size_t f = b; f < e; ++f) present_key[f] = triangleKey(Vp[Fp[f][0]], Vp[Fp[f][1]], Vp[Fp[f][2]]);
+  });
 
   // ------------------------------------ memory and fill: surfaces built from
   // earlier observations. Memory is the previous final map as it showed it;
@@ -1360,12 +1338,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       const uint32_t p = S.face_physical[f];
       int32_t target = bg_slot;
       if (p > 0) {
-        const auto it = slot_of_label.find(p);
-        if (it == slot_of_label.end() || state_starts.count(p)) {
-          ++shown_object_state;
-          continue;
-        }
-        target = static_cast<int32_t>(it->second);
+        // An object's surface is its node's own reconstruction, never an earlier map's face.
+        ++shown_object_state;
+        continue;
       } else if (closed_owned_[f]) {
         ++shown_closed_state;
         continue;
@@ -1705,8 +1680,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     }
   };
   // An element or point the last round decided keeps what the frames before this round gave it (an
-  // earlier session's face by its index, a fill face by its vertices, a point by its position); a
-  // new one reads the frames before this round once. All of them read this round's frames.
+  // earlier session's face by its index, a fill face by its vertices, a point by its position).
+  // All of them read this round's frames, and no others: a new one starts without votes (shown,
+  // until the frames to come outvote it), since no frame is kept beyond the round that used it.
   std::vector<uint64_t> point_key(memory_objects.size());
   for (size_t k = 0; k < memory_objects.size(); ++k) point_key[k] = keyOf(memory_points[k].data(), 3);
   std::vector<uint32_t> all_elements, all_points, new_elements, new_points, old_elements, old_points;
@@ -1726,7 +1702,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   moveFrames(old_elements, old_points);
   moved_.clear();
   const size_t fresh_decoded = readFrames(first_fresh, num_frames, all_elements, all_points);
-  const size_t history_decoded = readFrames(0, first_fresh, new_elements, new_points);
+  const size_t history_decoded = 0;
   votes_.clear();
   for (size_t k = 0; k < element_key.size(); ++k) votes_.emplace_back(element_key[k], tested_ev[k]);
   std::sort(votes_.begin(), votes_.end(), byKey<Votes>);
@@ -1734,6 +1710,11 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   for (size_t k = 0; k < point_key.size(); ++k) read_points_.emplace_back(point_key[k], reads[k]);
   std::sort(read_points_.begin(), read_points_.end(), byKey<int32_t>);
   voted_ = num_frames;
+  // Every frame through this round is integrated, recorded and has voted: what it read is given
+  // up (the archive holds the frames between two rounds, never a session).
+  const size_t archive_bytes_before = frames_.numBytes();
+  frames_.release(released_, num_frames);
+  released_ = num_frames;
   std::vector<uint8_t> in_view(memory_objects.size(), 0);
   for (size_t k = 0; k < reads.size(); ++k) in_view[k] = reads[k] > 0;
   report << ",\"read\":{\"fresh_frames\":" << num_frames - first_fresh << ",\"decoded_fresh\":" << fresh_decoded
@@ -1798,14 +1779,25 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   // memory faces that stay keep their own vertices, as do the fill faces.
   std::vector<Eigen::Vector3f> Vn;
   std::vector<Face3> Fn;
-  const std::vector<Eigen::Vector3f>& Vnew = shown_mode ? Vn : Vp;
-  const std::vector<Face3>& Fnew = shown_mode ? Fn : Fp;
-  if (shown_mode) {
+  const bool pending_mode = inputs.pending && !inputs.pending->faces.empty();
+  const bool extended = shown_mode || pending_mode;
+  const std::vector<Eigen::Vector3f>& Vnew = extended ? Vn : Vp;
+  const std::vector<Face3>& Fnew = extended ? Fn : Fp;
+  if (extended) {
     Vn = Vp;
     Fn = Fp;
+  }
+  if (shown_mode) {
     const uint32_t offset = static_cast<uint32_t>(Vp.size());
     Vn.insert(Vn.end(), inputs.shown->vertices.begin(), inputs.shown->vertices.end());
     for (const auto& f : inputs.shown->faces) Fn.push_back({f[0] + offset, f[1] + offset, f[2] + offset});
+  }
+  // Pending surfaces follow, the background's for this round.
+  const uint32_t pending_begin = static_cast<uint32_t>(Fn.size());
+  if (pending_mode) {
+    const uint32_t offset = static_cast<uint32_t>(Vn.size());
+    Vn.insert(Vn.end(), inputs.pending->vertices.begin(), inputs.pending->vertices.end());
+    for (const auto& f : inputs.pending->faces) Fn.push_back({f[0] + offset, f[1] + offset, f[2] + offset});
   }
   std::vector<std::vector<uint32_t>> present_of_slot(slots.size()), kept_of_slot(slots.size());
   size_t present_unassigned = 0;
@@ -1818,6 +1810,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     } else {
       ++present_unassigned;
     }
+  }
+  if (pending_mode && bg_slot >= 0) {
+    for (uint32_t f = pending_begin; f < Fn.size(); ++f) present_of_slot[bg_slot].push_back(f);
   }
   size_t memory_faces_total = 0, memory_faces_kept = 0;
   if (shown_mode) {
@@ -1850,11 +1845,11 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     auto& mesh = *slot.mesh;
     const auto& kept = kept_of_slot[s];
     const auto& present = present_of_slot[s];
-    if (!slot.background && kept.empty() && present.empty()) {
-      ++guarded;
+    if (!slot.background) {
+      // An object's surface is its own reconstruction as the object reasoning keeps it.
+      object_faces_out += mesh.numFaces();
       continue;
     }
-    if (!slot.background) object_faces_out += kept.size() + present.size();
     const size_t old_n = mesh.numVertices();
     // New vertex list: vertices of kept faces (original order), then present vertices.
     std::vector<int64_t> kept_new(old_n, -1);
@@ -1956,7 +1951,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " fill_kept=" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "/"
             << fill.size() << " inside_retired=" << num_retired
             << " guarded_objects=" << guarded << " reused(identities/rivals)=" << identities_reused << "/"
-            << rivals_reused << " read(new_elements/decoded_fresh/decoded_history/moved)="
+            << rivals_reused << " archive_bytes(before_release/after/peak)=" << archive_bytes_before
+            << "/" << frames_.numBytes() << "/" << frames_.peakBytes()
+            << " read(new_elements/decoded_fresh/decoded_history/moved)="
             << new_elements.size() << "/" << fresh_decoded << "/" << history_decoded << "/" << num_moved
             << " phases_s(integrate/states/mesh/assign/sigma/votes/rest)="
             << integrate_s << "/" << states_s << "/" << mesh_s << "/" << assign_s << "/" << sigma_s << "/"

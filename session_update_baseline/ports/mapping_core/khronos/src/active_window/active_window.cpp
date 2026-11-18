@@ -36,6 +36,10 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/active_window/active_window.h"
+#include "khronos/utils/phase_clock.h"
+
+#include "khronos/active_window/object_extraction/segment_volumes.h"
+#include "khronos/active_window/tracking/external_tracker.h"
 
 #include <cstdint>
 
@@ -109,6 +113,8 @@ ActiveWindow::ActiveWindow(const Config& config, const OutputQueue::Ptr& output_
       extraction_worker_(config.extraction_worker, config.object_extractor.create()),
       sinks_(KhronosSink::instantiate(config.khronos_sinks)),
       frame_data_buffer_(config.frame_data_buffer) {
+  // Objects are integrated, as their frames arrive, with the map's truncation distance.
+  extraction_worker_.setFrameTruncation(config.volumetric_map.truncation_distance);
   // Create member processors as specified in the configs.
   motion_detector_ = config.motion_detector.create();
   if (!motion_detector_) {
@@ -173,10 +179,34 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   // throughout frames.
   tracker_->processInput(map_, *data);
 
+  // A physical instance's own pixels build its reconstruction as the frames
+  // arrive: each frame enters the segment its track is observing.
+  if (!data->instance_image.empty()) {
+    Timer object_timer("active_window/integrate_objects", latest_stamp_);
+    PhaseClock object_clock(Phase::kObjectFrames);
+    for (const auto& cluster : data->semantic_clusters) {
+      for (Track& track : tracker_->getTracks()) {
+        if (track.physical_instance_id && *track.physical_instance_id == cluster.id &&
+            track.last_seen == latest_stamp_) {
+          if (extraction_worker_.observe(data, cluster, track, frame_data_buffer_)) {
+            for (const Pixel& pixel : cluster.pixels) {
+              data->fused_image.at<int>(pixel.v, pixel.u) = cluster.id;
+            }
+          }
+          break;
+        }
+      }
+    }
+  }
+
   // Every processed frame enters the session's present surface, with the pixels
   // the reconstruction below rejects (dynamic semantics and the motion and
   // dynamic clusters of this frame) removed.
   if (present_surface_) {
+    // A segment the extraction did not make an object of is the background's after all.
+    for (auto& volume : SegmentVolumes::takeReturned()) {
+      present_surface_->absorb(std::move(volume));
+    }
     present_surface_->integrate(*data);
   }
 
@@ -296,6 +326,10 @@ void ActiveWindow::updateMap(const FrameData& data) {
   std::set<int32_t> excluded_labels(labels.dynamic_labels.begin(), labels.dynamic_labels.end());
   hydra::maskInvalidSemantics(data.input.label_image, excluded_labels, integration_mask);
   hydra::maskNonZero(data.dynamic_image, integration_mask);
+  // A pixel that entered an object's segment builds that object, not the
+  // background: an object that leaves takes its surface with it and one that
+  // arrives meets no earlier free space.
+  hydra::maskNonZero(data.fused_image, integration_mask);
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
   // Update the tracking information for all touched blocks. This resets
@@ -327,6 +361,30 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
 
   extractInactiveObjects();
   extractActiveChunks(latest_stamp_);
+  {
+    // What a track holds since its last hand-over is shown with the background, as its pixels
+    // always were from the frame they arrived: a track just begun, an instance not yet told to
+    // be an object, and the side of a known object seen since. (Where the object's state already
+    // shows that surface, the object reasoning's side leaves the face out.)
+    std::vector<SegmentVolumes::Held> held;
+    for (const Track& track : tracker_->getTracks()) {
+      if (!track.physical_instance_id || !track.segment.volume) {
+        continue;
+      }
+      const auto shown = SegmentVolumes::voted(*track.segment.volume);
+      held_integrator_.generateMesh(*shown, false, false);
+      const auto mesh = utils::combineMeshLayer(shown->getMeshLayer());
+      SegmentVolumes::Held piece;
+      piece.instance = *track.physical_instance_id;
+      for (const auto& point : mesh.points) piece.vertices.push_back(point);
+      for (const auto& face : mesh.faces) {
+        piece.faces.push_back({static_cast<uint32_t>(face[0]), static_cast<uint32_t>(face[1]),
+                               static_cast<uint32_t>(face[2])});
+      }
+      if (!piece.faces.empty()) held.push_back(std::move(piece));
+    }
+    SegmentVolumes::setHeld(std::move(held));
+  }
   if (!threaded) {
     extraction_worker_.join();
   }
@@ -336,6 +394,16 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::extractOutputData(const FrameData& 
   output->graph_update[update->layer] = update;
   extraction_worker_.fill(*update);
   return output;
+}
+
+void ActiveWindow::submitSegments(Track&& track) {
+  if (track.physical_instance_id && track.segment.volume) {
+    LOG(INFO) << "OBJECT_HANDOVER inst=" << *track.physical_instance_id << " at=" << latest_stamp_
+              << " segment=" << track.segment.first << ".." << track.segment.last << "/"
+              << track.segment.frames;
+  }
+  // What the track observed since its last hand-over goes to the object reasoning.
+  extraction_worker_.submit(latest_stamp_, std::move(track), frame_data_buffer_);
 }
 
 void ActiveWindow::extractInactiveObjects() {
@@ -350,22 +418,20 @@ void ActiveWindow::extractInactiveObjects() {
 
     // NOTE(lschmid) Move the track and copy the frame data buffer to the thread. The buffer will
     // keep relevant frames alive while the AW updates.
-    extraction_worker_.submit(latest_stamp_, std::move(*it), frame_data_buffer_);
     chunk_submitted_observations_.erase(it->id);
+    submitSegments(std::move(*it));
     it = tracker_->getTracks().erase(it);
   }
 }
 
 void ActiveWindow::extractActiveChunks(const TimeStamp stamp) {
-  // Stride one full buffer of stored frames per chunk: chunk windows tile the
-  // track's observation history instead of overlapping, so the backend's
-  // same-site union accumulates near-duplicate-free coverage. The chunk cadence
-  // is derived from the frame buffer geometry (a storage mechanism), not a
-  // tuned correctness threshold.
+  // A track hands over what it observed once it is established (its confidence complete), so
+  // the object reasoning sees a new object, or a known one at a new place, at its next round;
+  // from then on, one full buffer of stored frames per hand-over.
   const size_t stride = static_cast<size_t>(
       config.frame_data_buffer.max_buffer_size *
       std::max(1, config.frame_data_buffer.store_every_n_frames));
-  for (const Track& track : tracker_->getTracks()) {
+  for (Track& track : tracker_->getTracks()) {
     if (!track.is_active) {
       continue;
     }
@@ -376,16 +442,17 @@ void ActiveWindow::extractActiveChunks(const TimeStamp stamp) {
     }
     const size_t submitted =
         chunk_submitted_observations_.emplace(track.id, 0).first->second;
+    // One full buffer of stored frames per hand-over, as always.
     if (track.observations.size() < submitted + stride) {
       continue;
     }
     chunk_submitted_observations_[track.id] = track.observations.size();
-    // Submit a COPY: the live track stays in the tracker and keeps observing.
-    // The extractor still only sees the trailing buffer window, but successive
-    // chunks now cover the whole observation history of a stable track.
-    extraction_worker_.submit(stamp, track, frame_data_buffer_);
+    // Submit a COPY: the live track stays in the tracker and keeps observing,
+    // and starts its next segment.
+    submitSegments(Track(track));
+    track.segment = Track::Segment();
     CLOG(4) << "[Khronos Active Window] Incremental chunk for track " << track.id
-            << " (" << track.observations.size() << " observations).";
+            << " (" << track.observations.size() << " observations) at " << stamp << ".";
   }
 }
 
@@ -416,6 +483,7 @@ std::unique_ptr<FrameData> ActiveWindow::createData(const hydra::InputPacket& in
   result->dynamic_image = cv::Mat::zeros(result->input.depth_image.size(), CV_32SC1);
   result->object_image = cv::Mat::zeros(result->input.depth_image.size(), CV_32SC1);
   result->instance_image = instances;
+  result->fused_image = cv::Mat::zeros(result->input.depth_image.size(), CV_32SC1);
   return result;
 }
 

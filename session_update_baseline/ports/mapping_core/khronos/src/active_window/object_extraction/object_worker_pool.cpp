@@ -102,6 +102,13 @@ void ObjectWorkerPool::stop() {
   spin_thread_.reset();
 }
 
+bool ObjectWorkerPool::observe(const FrameData::Ptr& data,
+                               const MeasurementCluster& cluster,
+                               Track& track,
+                               const FrameDataBuffer& earlier_frames) {
+  return extractor_ && extractor_->integrateFrame(data, cluster, track, earlier_frames);
+}
+
 void ObjectWorkerPool::join() {
   uint64_t target_generation = 0;
   std::exception_ptr failure;

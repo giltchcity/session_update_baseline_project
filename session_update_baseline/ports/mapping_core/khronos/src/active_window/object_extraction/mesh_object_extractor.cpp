@@ -36,6 +36,7 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/active_window/object_extraction/mesh_object_extractor.h"
+#include "khronos/utils/phase_clock.h"
 
 #include <sstream>
 #include <set>
@@ -44,6 +45,7 @@
 #include <spark_dsg/colormaps.h>
 
 #include "khronos/active_window/data/reconstruction_types.h"
+#include "khronos/active_window/object_extraction/segment_volumes.h"
 #include "khronos/utils/geometry_utils.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -84,13 +86,110 @@ void declare_config(MeshObjectExtractor::Config& config) {
   check(config.min_reconstruction_resolution, GE, 0.0f, "min_reconstruction_resolution");
 }
 
+namespace {
+hydra::ProjectiveIntegrator::Config singleThreaded(hydra::ProjectiveIntegrator::Config config) {
+  config.num_threads = 1;
+  return config;
+}
+}  // namespace
+
 MeshObjectExtractor::MeshObjectExtractor(const Config& config)
-    : config(config), mesh_integrator_(config.mesh_integrator) {}
+    : config(config),
+      mesh_integrator_(config.mesh_integrator),
+      frame_integrator_(config.projective_integrator),
+      small_frame_integrator_(singleThreaded(config.projective_integrator)) {
+  // The vote an object's surface is told by, for whoever shows a volume.
+  SegmentVolumes::setVote(config.min_object_reconstruction_confidence,
+                          static_cast<float>(config.min_object_reconstruction_observations));
+}
+
+hydra::VolumetricMap::Config MeshObjectExtractor::segmentVolume(const float voxel_size) {
+  VolumetricMap::Config map_config;
+  map_config.voxel_size = voxel_size;
+  map_config.voxels_per_side = 8;
+  map_config.truncation_distance = map_config.voxel_size * 2;
+  map_config.with_semantics = true;
+  map_config.with_tracking = false;
+  return map_config;
+}
+
+hydra::VolumetricMap::Config MeshObjectExtractor::frameVolume() const {
+  auto map_config = segmentVolume(config.object_reconstruction_resolution);
+  if (frame_truncation_ > 0.f) {
+    map_config.truncation_distance = frame_truncation_;
+  }
+  return map_config;
+}
+
+bool MeshObjectExtractor::integrateFrame(const FrameData::Ptr& frame,
+                                         const MeasurementCluster& cluster,
+                                         Track& track,
+                                         const FrameDataBuffer& /* earlier_frames */) {
+  // An absolute voxel size is known before the object's extent is; a size relative to the
+  // extent is not, and such an object is reconstructed from the buffered frames instead.
+  if (config.object_reconstruction_resolution <= 0.f) {
+    return false;
+  }
+  if (!config::isValid(frameVolume())) {
+    return false;
+  }
+  // Each frame once into the volume of what the object's track observes since the last
+  // hand-over, by the rule an object was always built by: every reading in the volume's blocks,
+  // each counted for or against the object's id (the surface is the voxels the object's own
+  // readings carry, SegmentVolumes::voted). Whether the object moved among those frames is told
+  // at the hand-over, from the buffered frames, as it always was (extractStaticObject).
+  fuseInto(track.segment, *frame, cluster.id, cluster.bounding_box);
+  return true;
+}
+
+void MeshObjectExtractor::fuseInto(Track::Segment& target,
+                                   FrameData& data,
+                                   const int cluster_id,
+                                   const BoundingBox& box) {
+  if (!target.volume) {
+    target.volume =
+        std::make_shared<VolumetricMap>(frameVolume());
+    if (target.first == 0) target.first = data.input.timestamp_ns;
+  }
+  // The blocks this frame's measurement of the object reaches: its box and the truncation band.
+  VolumetricMap& map = *target.volume;
+  const TsdfLayer& tsdf_layer = map.getTsdfLayer();
+  const Point reach = 0.5f * box.dimensions + Point::Constant(map.config.truncation_distance);
+  const auto min_block_index = tsdf_layer.getBlockIndex(box.world_P_center - reach);
+  const auto max_block_index = tsdf_layer.getBlockIndex(box.world_P_center + reach);
+  for (int x = min_block_index.x(); x <= max_block_index.x(); ++x) {
+    for (int y = min_block_index.y(); y <= max_block_index.y(); ++y) {
+      for (int z = min_block_index.z(); z <= max_block_index.z(); ++z) {
+        map.allocateBlock(BlockIndex(x, y, z));
+      }
+    }
+  }
+  // Only the segment's own blocks are updated: updateMap would first enumerate every block the
+  // sensor's frustum reaches out to its maximum range (a background map's allocation), to update
+  // the same few. A segment of few blocks is not worth starting threads for.
+  const auto blocks = tsdf_layer.allocatedBlockIndices();
+  ObjectIntegrator& integrator =
+      blocks.size() <= static_cast<size_t>(8 * std::max(1, config.projective_integrator.num_threads))
+          ? small_frame_integrator_
+          : frame_integrator_;
+  integrator.setFrameData(&data, cluster_id);
+  integrator.updateBlocks(blocks, data.input, cv::Mat(), map);
+  target.last = data.input.timestamp_ns;
+  ++target.frames;
+}
 
 KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& track,
                                                                 const FrameDataBuffer& frame_data) {
-  // Check the track is valid for extraction.
+  PhaseClock extraction_clock(Phase::kExtraction);
+  // Check the track is valid for extraction. What it measured is the background's then.
   if (!trackIsValid(track)) {
+    if (track.physical_instance_id && track.segment.volume) {
+      LOG(INFO) << "OBJECT_SEGMENT_RETURNED inst=" << *track.physical_instance_id
+                << " why=track_confidence first=" << track.segment.first << " last=" << track.segment.last
+                << " frames=" << track.segment.frames << " confidence=" << track.confidence
+                << " limit=" << config.min_object_allocation_confidence;
+    }
+    SegmentVolumes::giveBack(track.segment.volume);
     return nullptr;
   }
 
@@ -228,7 +327,6 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   if (config.object_reconstruction_resolution == 0.f) {
     return nullptr;
   }
-
   // A settled physical object owns a new current surface at its latest pose.
   // Reusing semantic frames from before/during motion would weld the previous
   // and current locations into one private mesh. Keep the trajectory separately
@@ -236,13 +334,95 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   const auto after_motion = track.has_dynamic_history && track.last_motion_seen > 0
                                 ? std::optional<TimeStamp>(track.last_motion_seen)
                                 : std::nullopt;
-  const auto frames = selectStaticFrames(track, frame_data, after_motion);
+  // The frames of the object's current place are selected at the hand-over exactly as they
+  // always were (the same buffered frames, the same call): an end of a move among them is
+  // recorded (STATIC_SURFACE_BOUNDARY) and the session's share model learns from the pairs.
+  TimeStamp rejected = 0;
+  const auto frames = selectStaticFrames(track, frame_data, after_motion, true, &rejected);
+  // The volume the track integrated as the frames arrived is this segment's, each frame in it
+  // once, unless an end of a move lies among the frames (or the tracker saw motion since the
+  // segment began): then it holds frames of two places and is no one's.
+  const bool own_volume = track.segment.volume && rejected == 0 &&
+                          !(after_motion && *after_motion > track.segment.first);
+  // A segment the extraction makes no object of. Its own volume is the background's after all,
+  // the object's pixels with it (they always were the background's then). A volume of two
+  // places is dropped: of an instance told to be an object, its pixels are no background's (the
+  // object is at the old place no more); of one never told to be an object, the background's.
+  const auto noObject = [&](const char* why) -> KhronosObjectAttributes::Ptr {
+    if (track.segment.volume && track.physical_instance_id) {
+      const bool to_background = own_volume || !knownObject(*track.physical_instance_id);
+      LOG(INFO) << (to_background ? "OBJECT_SEGMENT_RETURNED" : "OBJECT_SEGMENT_DROPPED") << " inst="
+                << *track.physical_instance_id << " why=" << why << " first=" << track.segment.first
+                << " last=" << track.segment.last << " frames=" << track.segment.frames
+                << " own_volume=" << own_volume;
+      if (to_background) SegmentVolumes::giveBack(track.segment.volume);
+    }
+    return nullptr;
+  };
   if (frames.empty()) {
     CLOG(5) << "[MeshObjectExtractor] Dropping " << getTrackName(track)
             << ": no semantic observations.";
-    return nullptr;
+    return noObject("no_frames");
   }
 
+  // The segment the object reasoning gets is what it always got: the voted reconstruction of the
+  // selected frames (mesh, box, the object tests on it) and the attributes taken from them. The
+  // reasoning judges by nothing else.
+  std::shared_ptr<VolumetricMap> rebuilt;
+  auto object = reconstructVoted(track, frames, rebuilt);
+  if (!object) {
+    return noObject("object_tests");
+  }
+  if (track.physical_instance_id) {
+    {
+      std::lock_guard<std::mutex> lock(judged_mutex_);
+      judged_objects_.insert(*track.physical_instance_id);
+    }
+    if (track.segment.volume) {
+      LOG(INFO) << "OBJECT_SEGMENT inst=" << *track.physical_instance_id << " first=" << track.segment.first
+                << " last=" << track.segment.last << " frames=" << track.segment.frames
+                << " own_volume=" << own_volume << " rejected_stamp=" << rejected
+                << " selected_frames=" << frames.size() << " vertices=" << object->mesh.points.size();
+    }
+  }
+  // Record how many frames actually supported this reconstruction and whether
+  // the track carries D1 motion evidence (tracker-measured displacement above
+  // min_dynamic_displacement; the static-fallback above clears the flag for
+  // sub-threshold motion). Physical-ID canonicalization gates geometric
+  // takeover on these (update_khronos_objects_functor.cpp): an established
+  // current mesh must not be regressed by a weaker re-observation, while a
+  // genuinely moved segment's reconstruction is the object's new current pose.
+  object->details[kReconstructionFramesDetail] = {frames.size()};
+  // FrameDataBuffer is a reconstruction cache, not the sensor observation
+  // ledger. The tracker can have a newer positive instance observation that
+  // was not retained in the cache. Do not move the support bound backwards
+  // and then use that very observation's boundary pixels to delete this state.
+  setObservationBounds(*object, frames.front().first->input.timestamp_ns,
+                       std::max(track.last_seen, frames.back().first->input.timestamp_ns));
+  object->details[kHasDynamicHistoryDetail] = {track.has_dynamic_history ? 1u : 0u};
+  // A volume rides with the segment to the state the object reasoning gives it to, which shows
+  // the surface of its segments' volumes (one state, one volume; segments share the grid of an
+  // absolute voxel): the volume the track integrated as the frames arrived, each frame once, or,
+  // where that one holds two places, the reconstruction above. No judgement reads it.
+  if (config.object_reconstruction_resolution > 0.f) {
+    object->details[kSegmentVolumeDetail] = {SegmentVolumes::put(own_volume ? track.segment.volume : rebuilt)};
+  }
+
+  // Move the object mesh to bbox frame.
+  const Point offset = object->bounding_box.world_P_center;
+  for (Point& point : object->mesh.points) {
+    point -= offset;
+  }
+  return object;
+}
+
+KhronosObjectAttributes::Ptr MeshObjectExtractor::reconstructVoted(
+    const Track& track,
+    const std::vector<std::pair<FrameData::Ptr, int>>& frames,
+    std::shared_ptr<hydra::VolumetricMap>& rebuilt) const {
+  // The object as its buffered frames reconstruct it, every reading entering with whether it is
+  // the object's and a voxel kept by its share of them, and the object tests on that
+  // reconstruction (extent, mesh, box limits). Nullptr: no object.
   // Compute the maximal extent and resolution.
   BoundingBox extent = computeExtent(frames);
   if (extent.volume() < config.min_object_volume) {
@@ -255,50 +435,44 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   CLOG(5) << "[MeshObjectExtractor] Using extents of " << extent << " for " << getTrackName(track)
           << " during extraction";
 
-  // Setup a volumetric map to reconstruct this object.
-  VolumetricMap::Config map_config;
-  if (config.object_reconstruction_resolution < 0.f) {
-    map_config.voxel_size = extent.dimensions.maxCoeff() * -config.object_reconstruction_resolution;
-    map_config.voxel_size = std::max(map_config.voxel_size, config.min_reconstruction_resolution);
-  } else {
-    map_config.voxel_size = config.object_reconstruction_resolution;
-  }
-  map_config.voxels_per_side = 8;
-  map_config.truncation_distance = map_config.voxel_size * 2;
-  map_config.with_semantics = true;
-  map_config.with_tracking = false;
-  if (!config::isValid(map_config)) {
-    return nullptr;
-  }
-  VolumetricMap map(map_config);
+  // Without a volume integrated as the frames arrived (a voxel size relative to the extent),
+  // the segment is reconstructed from the buffered frames.
+  {
+    auto map_config = segmentVolume(config.object_reconstruction_resolution);
+    if (config.object_reconstruction_resolution < 0.f) {
+      map_config.voxel_size = extent.dimensions.maxCoeff() * -config.object_reconstruction_resolution;
+      map_config.voxel_size = std::max(map_config.voxel_size, config.min_reconstruction_resolution);
+      map_config.truncation_distance = map_config.voxel_size * 2;
+    }
+    if (!config::isValid(map_config)) {
+      return nullptr;
+    }
+    rebuilt = std::make_shared<VolumetricMap>(map_config);
 
-  // Allocate all blocks.
-  TsdfLayer& tsdf_layer = map.getTsdfLayer();
-  auto& confidence_layer = *map.getSemanticLayer();
-  const auto min_block_index = tsdf_layer.getBlockIndex(extent.world_P_center - extent.dimensions);
-  const auto max_block_index = tsdf_layer.getBlockIndex(extent.world_P_center + extent.dimensions);
-  for (int x = min_block_index.x(); x <= max_block_index.x(); ++x) {
-    for (int y = min_block_index.y(); y <= max_block_index.y(); ++y) {
-      for (int z = min_block_index.z(); z <= max_block_index.z(); ++z) {
-        map.allocateBlock(BlockIndex(x, y, z));
+    // Allocate all blocks.
+    const auto min_block_index =
+        rebuilt->getTsdfLayer().getBlockIndex(extent.world_P_center - extent.dimensions);
+    const auto max_block_index =
+        rebuilt->getTsdfLayer().getBlockIndex(extent.world_P_center + extent.dimensions);
+    for (int x = min_block_index.x(); x <= max_block_index.x(); ++x) {
+      for (int y = min_block_index.y(); y <= max_block_index.y(); ++y) {
+        for (int z = min_block_index.z(); z <= max_block_index.z(); ++z) {
+          rebuilt->allocateBlock(BlockIndex(x, y, z));
+        }
       }
     }
-  }
 
-  // Print info if desired.
-  const Eigen::IOFormat fmt(
-      Eigen::StreamPrecision, Eigen::DontAlignCols, ", ", "; ", "", "", "[", "]");
-  CLOG(5) << "[MeshObjectExtractor] Allocated TSDF layer for " << getTrackName(track) << " with "
-          << tsdf_layer.numBlocks() << " blocks (min_index=" << min_block_index.format(fmt)
-          << ", max_index=" << max_block_index.format(fmt) << ") with voxel size "
-          << map_config.voxel_size << " [m]";
-
-  // Perform 3D reconstruction using projective updates over all frames.
-  ObjectIntegrator integrator(config.projective_integrator);
-  for (const auto& [frame_data, segment_id] : frames) {
-    integrator.setFrameData(frame_data.get(), segment_id);
-    integrator.updateMap(frame_data->input, map, false);
+    // Perform 3D reconstruction using projective updates over all frames.
+    ObjectIntegrator integrator(config.projective_integrator);
+    for (const auto& [frame_data, segment_id] : frames) {
+      integrator.setFrameData(frame_data.get(), segment_id);
+      integrator.updateMap(frame_data->input, *rebuilt, false);
+    }
   }
+  VolumetricMap& map = *rebuilt;
+  const VolumetricMap::Config& map_config = map.config;
+  TsdfLayer& tsdf_layer = map.getTsdfLayer();
+  auto& confidence_layer = *map.getSemanticLayer();
 
   // Erase low_confidence voxels to extract the object of interest.
   for (TsdfBlock& tsdf_block : tsdf_layer) {
@@ -352,29 +526,12 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   CLOG(5) << "[MeshObjectExtractor] Extracted " << getTrackName(track) << " with volume "
           << object->bounding_box.volume() << ", confidence " << track.confidence << ", mesh size "
           << object->mesh.points.size() << ".";
-
-  // Record how many frames actually supported this reconstruction and whether
-  // the track carries D1 motion evidence (tracker-measured displacement above
-  // min_dynamic_displacement; the static-fallback above clears the flag for
-  // sub-threshold motion). Physical-ID canonicalization gates geometric
-  // takeover on these (update_khronos_objects_functor.cpp): an established
-  // current mesh must not be regressed by a weaker re-observation, while a
-  // genuinely moved segment's reconstruction is the object's new current pose.
-  object->details[kReconstructionFramesDetail] = {frames.size()};
-  // FrameDataBuffer is a reconstruction cache, not the sensor observation
-  // ledger. The tracker can have a newer positive instance observation that
-  // was not retained in the cache. Do not move the support bound backwards
-  // and then use that very observation's boundary pixels to delete this state.
-  setObservationBounds(*object, frames.front().first->input.timestamp_ns,
-                       std::max(track.last_seen, frames.back().first->input.timestamp_ns));
-  object->details[kHasDynamicHistoryDetail] = {track.has_dynamic_history ? 1u : 0u};
-
-  // Move the object mesh to bbox frame.
-  const Point offset = object->bounding_box.world_P_center;
-  for (Point& point : object->mesh.points) {
-    point -= offset;
-  }
   return object;
+}
+
+bool MeshObjectExtractor::knownObject(const int instance) const {
+  std::lock_guard<std::mutex> lock(judged_mutex_);
+  return judged_objects_.count(instance) > 0;
 }
 
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::collectSemanticFrames(

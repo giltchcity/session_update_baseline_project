@@ -97,9 +97,10 @@ PresentTsdf::~PresentTsdf()=default;
 size_t PresentTsdf::numUnits() const { return map_.getTsdfLayer().numBlocks(); }
 
 bool PresentTsdf::foldVoxel(const hydra::BlockTuple& block, size_t i, const hydra::InputData& data,
-                            const Eigen::Isometry3f& sensor_T_world, const Domain& domain) const {
+                            const Eigen::Isometry3f& sensor_T_world, const Domain& domain,
+                            const cv::Mat& not_surface) const {
   const auto p=sensor_T_world*block.tsdf->getVoxelPosition(i);
-  const auto m=integrator_.getVoxelMeasurement(map_.config,data,{},p);
+  const auto m=integrator_.getVoxelMeasurement(map_.config,data,not_surface,p);
   if (!m.valid || !allowed(m,p.norm(),domain,data.range_image.cols,map_.config.truncation_distance)) return false;
   auto voxels=block.getVoxels(i);
   integrator_.updateVoxel(map_.config,data,m,voxels);
@@ -108,17 +109,21 @@ bool PresentTsdf::foldVoxel(const hydra::BlockTuple& block, size_t i, const hydr
 
 PresentTsdf::Rebuilt PresentTsdf::fold(const Camera& camera, const std::vector<float>& ray_norm,
                                        const std::vector<size_t>& frames, const FramePose& pose,
-                                       const ReadFrame& read, bool marked_only) {
+                                       const ReadFrame& read, bool marked_only,
+                                       const NotSurface& not_surface) {
   Rebuilt folded;
   const size_t batch=static_cast<size_t>(std::max(1,integrator_.config.num_threads));
   std::vector<std::vector<float>> depth(batch),limit(batch);
   std::vector<std::unique_ptr<hydra::InputData>> data(batch);
   std::vector<hydra::BlockIndices> blocks(batch);
   std::vector<Eigen::Isometry3f> sensor_T_world(batch);
+  std::vector<cv::Mat> masked(batch);
   // Each reader also prepares its frame's input and the blocks it folds into.
   const auto prepare=[&](size_t j,size_t frame) {
     blocks[j].clear();
+    masked[j]=cv::Mat();
     if (!read(static_cast<int>(j),frame,depth[j],limit[j])) return;
+    if (not_surface) not_surface(frame,masked[j]);
     const Domain domain{&depth[j],limit[j].empty()?nullptr:&limit[j]};
     data[j]=std::make_unique<hydra::InputData>(input(camera,pose(frame),ray_norm,domain));
     sensor_T_world[j]=data[j]->getSensorPose().cast<float>().inverse();
@@ -155,12 +160,12 @@ PresentTsdf::Rebuilt PresentTsdf::fold(const Camera& camera, const std::vector<f
         for (const size_t j:work[k]->second) {
           const Domain domain{&depth[j],limit[j].empty()?nullptr:&limit[j]};
           if (!mask) {
-            for (size_t i=0;i<block.tsdf->numVoxels();++i) updated|=foldVoxel(block,i,*data[j],sensor_T_world[j],domain);
+            for (size_t i=0;i<block.tsdf->numVoxels();++i) updated|=foldVoxel(block,i,*data[j],sensor_T_world[j],domain,masked[j]);
             continue;
           }
           for (size_t w=0;w<mask->size();++w) {
             for (uint64_t bits=(*mask)[w];bits;bits&=bits-1) {
-              foldVoxel(block,w*64+static_cast<size_t>(__builtin_ctzll(bits)),*data[j],sensor_T_world[j],domain);
+              foldVoxel(block,w*64+static_cast<size_t>(__builtin_ctzll(bits)),*data[j],sensor_T_world[j],domain,masked[j]);
             }
           }
         }
@@ -189,8 +194,9 @@ PresentTsdf::Rebuilt PresentTsdf::fold(const Camera& camera, const std::vector<f
 }
 
 void PresentTsdf::integrate(const Camera& camera, const std::vector<float>& ray_norm,
-                            const std::vector<size_t>& frames, const FramePose& pose, const ReadFrame& read) {
-  fold(camera,ray_norm,frames,pose,read,false);
+                            const std::vector<size_t>& frames, const FramePose& pose, const ReadFrame& read,
+                            const NotSurface& not_surface) {
+  fold(camera,ray_norm,frames,pose,read,false,not_surface);
 }
 
 PresentTsdf::Changes PresentTsdf::changedVoxels(const Camera& camera, const Eigen::Isometry3d& pose,
@@ -387,6 +393,33 @@ PresentTsdf::Rebuilt PresentTsdf::rebuild(const Camera& camera, const std::vecto
   }
   impl_->dirty.clear();
   return rebuilt;
+}
+
+void PresentTsdf::absorb(const hydra::VolumetricMap& volume) {
+  if (volume.config.voxel_size != map_.config.voxel_size) return;
+  auto& tsdf = map_.getTsdfLayer();
+  const float max_weight = integrator_.config.max_weight;
+  const float truncation = map_.config.truncation_distance;
+  for (const auto& block : volume.getTsdfLayer()) {
+    for (size_t i = 0; i < block.numVoxels(); ++i) {
+      const auto& a = block.getVoxel(i);
+      if (!(a.weight > 0.f)) continue;
+      const auto position = block.getVoxelPosition(i);
+      const auto index = tsdf.getBlockIndex(position);
+      map_.allocateBlock(index);
+      auto& target = tsdf.getBlock(index);
+      auto& v = target.getVoxel(target.getLinearIndex(target.getVoxelIndex(position)));
+      const float weight = v.weight + a.weight;
+      // A distance of this volume lies within its own truncation band: one taken in from a
+      // volume of a wider band is cut to it first.
+      const float distance = std::clamp(a.distance, -truncation, truncation);
+      v.distance = (v.distance * v.weight + distance * a.weight) / weight;
+      // The colour by the same weights (without it the surface taken in is black).
+      v.color = v.weight > 0.f ? v.color.blend(a.color, a.weight / weight) : a.color;
+      v.weight = std::min(weight, max_weight);
+      target.setUpdated();
+    }
+  }
 }
 
 void PresentTsdf::extractMesh(std::vector<Eigen::Vector3f>& vertices,std::vector<Face>& faces) {

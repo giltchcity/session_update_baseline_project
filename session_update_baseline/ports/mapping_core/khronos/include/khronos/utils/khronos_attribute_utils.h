@@ -64,6 +64,9 @@ inline constexpr char kHasDynamicHistoryDetail[] = "has_dynamic_history";
 // keeps the earliest one per fragment (the first sighting of that state) for
 // the session-end re-integration of the present; no decision reads it.
 inline constexpr char kTrackFirstSeenDetail[] = "track_first_seen_ns";
+// A segment's reconstruction volume, held in this process (SegmentVolumes) until the object
+// reasoning takes it into the state the segment belongs to.
+inline constexpr char kSegmentVolumeDetail[] = "segment_volume";
 
 Point computeSurfaceCentroid(const KhronosObjectAttributes& attrs);
 

@@ -38,6 +38,7 @@
 #include <malloc.h>
 
 #include "khronos/backend/backend.h"
+#include "khronos/utils/phase_clock.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -271,13 +272,25 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // version.
   // TODO(lschmid): Currently always reset the change detection to avoid rare (but possible) hiccups
   // from deleted active vertices. Fix this by only resetting the active window mesh.
-  change_detector_->setDsg(dsg);
-  auto changes =
-      change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
-  if (session_extensions_enabled_) sessionBeforeReconcile(dsg, changes, stamp, finalize_pending);
-  reconciler_->reconcile(*dsg, changes, stamp);
-
-  if (session_extensions_enabled_) sessionAfterReconcile(dsg, stamp, finalize_pending);
+  Changes changes;
+  {
+    PhaseClock clock(Phase::kDetectChanges);
+    change_detector_->setDsg(dsg);
+    changes = change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
+  }
+  if (session_extensions_enabled_) {
+    PhaseClock clock(Phase::kBeforeReconcile);
+    sessionBeforeReconcile(dsg, changes, stamp, finalize_pending);
+  }
+  {
+    PhaseClock clock(Phase::kReconcile);
+    reconciler_->reconcile(*dsg, changes, stamp);
+  }
+  if (session_extensions_enabled_) {
+    PhaseClock clock(Phase::kAfterReconcile);
+    sessionAfterReconcile(dsg, stamp, finalize_pending);
+  }
+  PhaseClock clock(Phase::kMapUpdate);
   map_.update(dsg, stamp);
 
   ChangeSink::callAll(change_sinks_, stamp, changes);
@@ -311,6 +324,7 @@ void Backend::finishProcessing() {
   }
   const auto worker_stats = change_detection_worker_->stats();
   const auto& detector_stats = change_detector_->getRayVerificatorStatistics();
+  LOG(INFO) << "PHASE_TIMES " << PhaseClock::report();
   LOG(INFO) << "[BackendPerformance] change_detection_unit=backend_update"
             << " requests=" << worker_stats.requests
             << " executions=" << worker_stats.executions

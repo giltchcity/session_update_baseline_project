@@ -35,9 +35,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
+#include "khronos/utils/phase_clock.h"
 #include "session_core/state/persistent_object_state.h"
 
 #include <array>
+#include <unordered_set>
+
+#include <hydra/reconstruction/mesh_integrator.h>
+
+#include "khronos/active_window/object_extraction/segment_volumes.h"
+#include "khronos/utils/geometry_utils.h"
 #include <map>
 #include <algorithm>
 #include <atomic>
@@ -270,6 +277,137 @@ std::vector<Segment> collectSegments(const DynamicSceneGraph& graph,
   return segments;
 }
 
+// The volume an extracted segment was reconstructed in, if this process still holds it.
+std::shared_ptr<hydra::VolumetricMap> segmentVolume(const KhronosObjectAttributes& attrs) {
+  const auto it = attrs.details.find(kSegmentVolumeDetail);
+  return (it == attrs.details.end() || it->second.empty()) ? nullptr
+                                                           : SegmentVolumes::take(it->second.front());
+}
+
+// One state, one volume: `add` joins `into` voxel by voxel, as if its frames had been
+// integrated there (the weighted mean of the distances; segments share one grid).
+void mergeVolume(std::shared_ptr<hydra::VolumetricMap>& into,
+                 const std::shared_ptr<hydra::VolumetricMap>& add) {
+  if (!add || add == into) return;
+  if (!into) {
+    auto config = add->config;
+    config.with_tracking = false;
+    into = std::make_shared<hydra::VolumetricMap>(config);
+  }
+  if (into->config.voxel_size != add->config.voxel_size ||
+      into->config.voxels_per_side != add->config.voxels_per_side) {
+    return;
+  }
+  auto& out = into->getTsdfLayer();
+  auto* out_votes = into->getSemanticLayer();
+  const auto* add_votes = add->getSemanticLayer();
+  for (const auto& block : add->getTsdfLayer()) {
+    into->allocateBlock(block.index);
+    auto& target = out.getBlock(block.index);
+    for (size_t i = 0; i < block.numVoxels(); ++i) {
+      const auto& a = block.getVoxel(i);
+      if (!(a.weight > 0.f)) continue;
+      auto& v = target.getVoxel(i);
+      const float weight = v.weight + a.weight;
+      v.distance = (v.distance * v.weight + a.distance * a.weight) / weight;
+      // The colour too, by the same weights (without it a state of several segments is black).
+      v.color = v.weight > 0.f ? v.color.blend(a.color, a.weight / weight) : a.color;
+      v.weight = weight;
+    }
+    target.setUpdated();
+    // The readings for and against the object's id, counted over every segment's frames.
+    const auto added = add_votes ? add_votes->getBlockPtr(block.index) : nullptr;
+    const auto counted = out_votes ? out_votes->getBlockPtr(block.index) : nullptr;
+    if (!added || !counted) continue;
+    for (size_t i = 0; i < added->numVoxels(); ++i) {
+      const auto& a = added->getVoxel(i);
+      if (a.empty) continue;
+      auto& v = counted->getVoxel(i);
+      if (v.empty) {
+        v = a;
+      } else {
+        v.semantic_likelihoods += a.semantic_likelihoods;
+      }
+    }
+  }
+}
+
+// What a state shows: the surface of its volume, and the faces of `geometry` (in `box`) where
+// the volume holds no surface within a voxel (a state an earlier session left, seen again only
+// in part). False without a volume surface: `geometry` is the state's surface as it is.
+struct StatePiece {
+  const std::shared_ptr<hydra::VolumetricMap>* volume;
+  const spark_dsg::Mesh* geometry;
+  const BoundingBox* box;
+};
+bool shownSurface(const std::vector<StatePiece>& pieces, const TimeStamp first, const TimeStamp last,
+                  spark_dsg::Mesh& mesh, BoundingBox& box) {
+  PhaseClock clock(Phase::kStateSurface);
+  std::shared_ptr<hydra::VolumetricMap> volume;
+  size_t volumes = 0;
+  for (const auto& piece : pieces) volumes += *piece.volume != nullptr;
+  if (volumes == 0) return false;
+  for (const auto& piece : pieces) {
+    if (!*piece.volume) continue;
+    if (volumes == 1) volume = *piece.volume;
+    else mergeVolume(volume, *piece.volume);
+  }
+  // The surface is the voxels the object's own readings carry (the vote of the frames of all
+  // its segments), read off a copy: the volume keeps its readings and votes.
+  const auto voted = SegmentVolumes::voted(*volume);
+  hydra::MeshIntegrator(hydra::MeshIntegratorConfig()).generateMesh(*voted, false, false);
+  const auto fused = utils::combineMeshLayer(voted->getMeshLayer());
+  if (fused.points.empty() || fused.faces.empty()) return false;
+  const float voxel = volume->config.voxel_size;
+  const auto key = [voxel](const Point& p, const int dx, const int dy, const int dz) {
+    const auto c = [voxel](const float x, const int d) {
+      return static_cast<uint64_t>(static_cast<int64_t>(std::floor(x / voxel)) + d + (int64_t(1) << 20));
+    };
+    return (c(p.x(), dx) << 42) | (c(p.y(), dy) << 21) | c(p.z(), dz);
+  };
+  std::unordered_set<uint64_t> held;
+  for (const auto& p : fused.points) {
+    for (int dx = -1; dx <= 1; ++dx) for (int dy = -1; dy <= 1; ++dy) for (int dz = -1; dz <= 1; ++dz) {
+      held.insert(key(p, dx, dy, dz));
+    }
+  }
+  std::vector<Point> points(fused.points.begin(), fused.points.end());
+  std::vector<spark_dsg::Mesh::Face> faces(fused.faces.begin(), fused.faces.end());
+  // Colours as the meshes carry them (a reader of the map reads one per vertex).
+  const auto colourOf = [](const spark_dsg::Mesh& m, const size_t i) {
+    return (m.has_colors && m.colors.size() == m.points.size()) ? m.colors[i] : spark_dsg::Color();
+  };
+  std::vector<spark_dsg::Color> colours(points.size());
+  for (size_t i = 0; i < points.size(); ++i) colours[i] = colourOf(fused, i);
+  for (const auto& piece : pieces) {
+    const auto& g = *piece.geometry;
+    const size_t n = g.numVertices();
+    for (const auto& f : g.faces) {
+      if (f[0] >= n || f[1] >= n || f[2] >= n) continue;
+      const Point a = piece.box->pointToWorldFrame(g.pos(f[0])), b = piece.box->pointToWorldFrame(g.pos(f[1])),
+                  c = piece.box->pointToWorldFrame(g.pos(f[2]));
+      if (held.count(key((a + b + c) / 3.f, 0, 0, 0))) continue;
+      const size_t base = points.size();
+      points.push_back(a);
+      points.push_back(b);
+      points.push_back(c);
+      for (int k = 0; k < 3; ++k) colours.push_back(colourOf(g, f[k]));
+      faces.push_back({base, base + 1, base + 2});
+    }
+  }
+  box = BoundingBox(points);
+  mesh = spark_dsg::Mesh(true, true, false, true);
+  mesh.resizeVertices(points.size());
+  for (size_t i = 0; i < points.size(); ++i) {
+    mesh.setPos(i, box.pointToBoxFrame(points[i]));
+    mesh.setColor(i, colours[i]);
+    mesh.setTimestamp(i, last);
+    mesh.setFirstSeenTimestamp(i, first);
+  }
+  mesh.faces = std::move(faces);
+  return true;
+}
+
 }  // namespace
 
 void PersistentObjectState::beginObservationEvent(const TimeStamp stamp) {
@@ -432,6 +570,7 @@ PersistentObjectState::Fragment PersistentObjectState::makeFragment(
   // Provenance rule: a fragment's geometry is exactly what was observed of *this* state. It is
   // never a previous fragment's mesh re-anchored to a new box, and never a union across states.
   fragment.geometry = attrs.mesh;
+  mergeVolume(fragment.volume, segmentVolume(attrs));
   fragment.bbox = attrs.bounding_box;
   fragment.position = attrs.position;
   fragment.birth_time = first;
@@ -691,6 +830,7 @@ void PersistentObjectState::mergeObservationIntoFragment(Fragment& target,
                                                         const TimeStamp first,
                                                         const TimeStamp last) {
   appendMeshUnion(target.geometry, target.bbox, attrs.mesh, attrs.bounding_box);
+  mergeVolume(target.volume, segmentVolume(attrs));
   target.position = target.bbox.world_P_center.cast<double>();
   target.reconstruction_frames += detailValue(attrs, kReconstructionFramesDetail);
   target.last_support_time = std::max(target.last_support_time, last);
@@ -730,6 +870,7 @@ void PersistentObjectState::absorbObservedThrough(PhysicalState& state) {
   ++state.mobility_continuations;
   appendMeshUnion(current.geometry, current.bbox,
                   state.observed_new->geometry, state.observed_new->bbox);
+  mergeVolume(current.volume, state.observed_new->volume);
   current.position = current.bbox.world_P_center.cast<double>();
   current.reconstruction_frames += state.observed_new->reconstruction_frames;
   current.last_support_time =
@@ -966,6 +1107,8 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     merged.bounding_box = current.bbox;
     merged.position = current.position;
     size_t frames = current.reconstruction_frames;
+    std::vector<StatePiece> shown = {{&current.volume, &current.geometry, &current.bbox}};
+    TimeStamp shown_first = current.birth_time, shown_last = current.last_support_time;
     if (current.requires_current_session_support &&
         state.b_session && state.b_session->current) {
       // The rays of the last round: contradiction outvotes support (P12-P14).
@@ -985,14 +1128,23 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
       // contradicted, or the B-session state at a different site) the inherited state is shown
       // alone; the next evidence round hands over, or the terminal round archives the session
       // state separately.
+      state.session_state_shown = !already_absent && same_site;
       if (!already_absent && same_site) {
         appendMeshUnion(merged.mesh, merged.bounding_box,
                         b_current.geometry, b_current.bbox);
         merged.position = merged.bounding_box.world_P_center.cast<double>();
         frames += b_current.reconstruction_frames;
+        shown.push_back({&b_current.volume, &b_current.geometry, &b_current.bbox});
+        shown_last = std::max(shown_last, b_current.last_support_time);
       }
     }
+    // The state shows the surface of its one volume, not its segments' meshes side by side.
+    if (shownSurface(shown, shown_first, shown_last, merged.mesh, merged.bounding_box)) {
+      merged.position = merged.bounding_box.world_P_center.cast<double>();
+    }
     merged.details[kReconstructionFramesDetail] = {frames};
+    // The token of a segment's volume names nothing outside this process.
+    merged.details.erase(kSegmentVolumeDetail);
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
     // Presence follows the registry's state decision (one decision criterion): an identity with a
     // CURRENT state is present until that state closes, when the branch below ends its presence
@@ -1131,6 +1283,7 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         ++state.mobility_continuations;
         appendMeshUnion(current.geometry, current.bbox,
                         b_current.geometry, b_current.bbox);
+        mergeVolume(current.volume, b_current.volume);
         current.position = current.bbox.world_P_center.cast<double>();
         current.reconstruction_frames += b_current.reconstruction_frames;
         current.last_support_time =
@@ -1401,6 +1554,29 @@ std::optional<PersistentObjectState::FragmentView> PersistentObjectState::observ
     return std::nullopt;
   }
   return viewOf(*it->second.observed_new);
+}
+
+void PersistentObjectState::appendPendingSurfaces(
+    std::vector<Eigen::Vector3f>& vertices, std::vector<std::array<uint32_t, 3>>& faces) const {
+  const auto append = [&](const Fragment& fragment) {
+    const auto& mesh = fragment.geometry;
+    const uint32_t offset = static_cast<uint32_t>(vertices.size());
+    for (size_t i = 0; i < mesh.numVertices(); ++i) {
+      vertices.push_back(fragment.bbox.pointToWorldFrame(mesh.pos(i)));
+    }
+    for (const auto& f : mesh.faces) {
+      if (f[0] >= mesh.numVertices() || f[1] >= mesh.numVertices() || f[2] >= mesh.numVertices()) continue;
+      faces.push_back({static_cast<uint32_t>(f[0]) + offset, static_cast<uint32_t>(f[1]) + offset,
+                       static_cast<uint32_t>(f[2]) + offset});
+    }
+  };
+  for (const auto& [id, state] : states_) {
+    if (state.observed_new) append(*state.observed_new);
+    if (!state.b_session) continue;
+    const PhysicalState& session = *state.b_session;
+    if (session.observed_new) append(*session.observed_new);
+    if (session.current && !state.session_state_shown) append(session.fragments[*session.current]);
+  }
 }
 
 std::vector<PersistentObjectState::FragmentView>

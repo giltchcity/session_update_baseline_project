@@ -61,6 +61,10 @@ class PresentSurface {
     // face of the previous final map that lies on one of them is the closed state's
     // own old surface: it follows the state atomically instead of the per-face test.
     std::vector<Eigen::Vector3f> closed_memory;
+    // Surfaces no node shows yet (undecided by the object reasoning, or held by a track of an
+    // instance not yet told to be an object): shown with the background this round only. They
+    // enter no volume and no vote.
+    const Surface* pending = nullptr;
     // Optional diagnostics (KHRONOS_REFUSION_DUMP): the terminal round writes the frame
     // archive (archive.kfa), the present with its face identities (present.ply) and
     // its report (refusion_report.json) there, for refusion_replay.
@@ -82,6 +86,12 @@ class PresentSurface {
 
   /** Enqueue a processed frame (packed by the caller); compose consumes only frames through its stamp. */
   void integrate(const FrameData& data);
+  /** A segment's volume that is the background's after all joins it at the next round. */
+  void absorb(std::shared_ptr<hydra::VolumetricMap> volume);
+
+  /** The instances the object reasoning holds a state of (told by it, asked by the mapper). */
+  void setInstancesWithState(std::vector<size_t> instances);
+  bool instanceHasState(size_t instance) const;
 
   /** Test/replay input: enqueue one archived frame through the same production path. */
   void integrate(const FrameArchive::Camera& camera, FrameArchive::Frame frame);
@@ -202,6 +212,9 @@ class PresentSurface {
   // Frames packed since the round last took them (in arrival order), with their own lock.
   mutable std::mutex arrivals_mutex_;
   std::vector<std::pair<FrameArchive::Camera, FrameArchive::Frame>> arrivals_;
+  // Segments' volumes that are the background's after all, until the next round takes them in.
+  std::vector<std::shared_ptr<hydra::VolumetricMap>> returned_;
+  std::vector<size_t> instances_with_state_;  // sorted
   FrameArchive frames_;
   PresentTsdf tsdf_;
   PresentTsdf::Camera camera_;
@@ -222,6 +235,7 @@ class PresentSurface {
   std::vector<std::pair<uint64_t, int32_t>> read_points_;
   std::vector<int64_t> residuals_;
   size_t voted_ = 0;
+  size_t released_ = 0;  // frames before it gave up what they read
   std::vector<Eigen::Vector3f> residual_position_, residual_normal_;
   std::vector<uint32_t> residual_at_;
   // The previous round's answers, kept where nothing they read can have changed (sorted by key):

@@ -91,6 +91,15 @@ class ObjectWorkerPool {
   void submit(TimeStamp stamp, const Track& track, const FrameDataBuffer& frame_data);
   KhronosObjectAttributes::Ptr runBlocking(const Track& track,
                                            const FrameDataBuffer& frame_data) const;
+  //! A frame's measurement of a physical instance enters the segment its track is observing.
+  void setFrameTruncation(float truncation_distance) {
+    if (extractor_) extractor_->setFrameTruncation(truncation_distance);
+  }
+  bool knownObject(int instance) const { return !extractor_ || extractor_->knownObject(instance); }
+  bool observe(const FrameData::Ptr& data,
+               const MeasurementCluster& cluster,
+               Track& track,
+               const FrameDataBuffer& earlier_frames);
 
   void fill(hydra::LayerUpdate& update);
 

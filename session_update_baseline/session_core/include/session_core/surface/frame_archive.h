@@ -60,6 +60,11 @@ class FrameArchive {
     // The free limit the present counts the frame with (packLimit; empty: none), kept from when
     // the frame was integrated or last moved to a new domain.
     std::vector<uint8_t> limit;
+    // The pixels that entered an object's volume when the frame arrived: flattened offsets
+    // where such a run begins, ends, begins, ... Their readings are those objects' surfaces:
+    // the background takes the empty space before them, not the surface. (Not in the binary
+    // dump: a frame loaded from one has none.)
+    std::vector<uint32_t> in_object;
 
     static Frame pack(TimeStamp stamp,
                       const Eigen::Isometry3d& world_T_sensor,
@@ -95,6 +100,14 @@ class FrameArchive {
   static std::vector<uint8_t> packLimit(const std::vector<float>& free_limit);
   /** Keep the packed free limit (packLimit) kept frame `index` is counted with. */
   void keepLimit(size_t index, std::vector<uint8_t> packed_limit);
+  /**
+   * Give up what kept frames [first, last) read (ranges, ids, limit): no frame is kept beyond
+   * its use. Their slots stay with stamp and pose, so later frames keep their indices; a frame
+   * given up decodes no more.
+   */
+  void release(size_t first, size_t last);
+  /** The largest numBytes() the archive reached. */
+  size_t peakBytes() const { return peak_bytes_; }
   const std::vector<Frame>& frames() const { return frames_; }
   size_t numFrames() const { return frames_.size(); }
   size_t numBytes() const { return bytes_; }
@@ -106,6 +119,7 @@ class FrameArchive {
 
  private:
   size_t bytes_ = 0;
+  size_t peak_bytes_ = 0;
   Camera camera_;
   std::vector<Frame> frames_;
 };

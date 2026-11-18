@@ -37,6 +37,7 @@
 
 #pragma once
 
+#include <set>
 #include <atomic>
 #include <deque>
 #include <map>
@@ -224,6 +225,10 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   // Track id -> observation count at the last incremental chunk submission.
   // Garbage-collected when a track dies. See extractActiveChunks().
   std::map<int, size_t> chunk_submitted_observations_;
+  // Meshes the volumes tracks hold of instances not yet told to be objects.
+  hydra::MeshIntegrator held_integrator_{hydra::MeshIntegratorConfig()};
+  // Hand what `track` observed since its last hand-over to the extraction.
+  void submitSegments(Track&& track);
 
   // Variables.
   TimeStamp latest_stamp_;

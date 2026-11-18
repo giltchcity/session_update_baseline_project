@@ -149,6 +149,45 @@ void testRleProjectionAndCopyOnWrite(const hydra::Sensor::ConstPtr& camera) {
   const auto first = store.snapshot();
   require(first && first.numFrames() == 1 && first.numRuns() == 4,
           "snapshot exposes immutable frame/run accounting");
+
+  // The ranges are stored packed and read back exactly: every pixel's millimetre value, pixel by
+  // pixel differing ranges included (real depth has no runs of equal range).
+  {
+    PhysicalEvidenceStore noisy_store;
+    auto noisy = makeFrame(camera, kT1, true);
+    std::vector<uint16_t> expected(8, 0);
+    for (int v = 0; v < 2; ++v) {
+      for (int u = 0; u < 4; ++u) {
+        // cv::Mat shares its pixels: the frame's own range image is written through the const header.
+        float& range = const_cast<float&>(noisy.input.range_image.at<float>(v, u));
+        if (std::isfinite(range) && range > 0.0f) {
+          range = 1.0f + 0.0137f * static_cast<float>(4 * v + u);
+          if (noisy.input.inRange(range)) {
+            expected[4 * v + u] = static_cast<uint16_t>(std::lround(range * 1000.0f));
+          }
+        }
+      }
+    }
+    require(noisy_store.ingest(noisy), "frame with pixel-wise differing ranges is ingested");
+    uint32_t width = 0, height = 0;
+    Eigen::Isometry3f sensor_T_world;
+    hydra::Sensor::ConstPtr sensor;
+    std::vector<uint16_t> range_mm;
+    const auto packed = noisy_store.snapshot();
+    require(packed.denseRange(kT1, width, height, sensor_T_world, sensor, range_mm) && width == 4 &&
+                height == 2 && range_mm == expected,
+            "packed ranges read back every pixel's millimetre value exactly");
+    for (int repeat = 0; repeat < 2; ++repeat) {   // the second pass reads the kept unpacked frame
+      for (int v = 0; v < 2; ++v) {
+        for (int u = 0; u < 4; ++u) {
+          const auto measured = packed.project(kT1, pointAtPixel(u, v)).endpoint.measured_depth_m;
+          const uint16_t mm = expected[4 * v + u];
+          require(mm == 0 ? std::isnan(measured) : measured == static_cast<float>(mm) / 1000.0f,
+                  "a projected pixel reads its own stored range");
+        }
+      }
+    }
+  }
   requireEvidence(first.classify(kT1, pointAtPixel(0, 0)),
                   EndpointClass::kBackground,
                   0,
