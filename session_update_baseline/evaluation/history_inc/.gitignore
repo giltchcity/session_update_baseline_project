@@ -1,0 +1,9 @@
+# Built here by build.sh (against a build's libkhronos); not sources.
+*.o
+hist_convert
+hist_measure
+mesh_dupes
+piece_map_check
+piece_map_cut
+piece_map_plain
+json_include/

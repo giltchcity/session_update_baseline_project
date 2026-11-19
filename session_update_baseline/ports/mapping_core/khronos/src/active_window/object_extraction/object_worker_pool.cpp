@@ -133,6 +133,11 @@ size_t ObjectWorkerPool::numRunning() const {
   return curr_workers_;
 }
 
+bool ObjectWorkerPool::idle() const {
+  std::lock_guard<std::mutex> lock(state_mutex_);
+  return completed_through_generation_ == accepted_generation_;
+}
+
 void ObjectWorkerPool::submit(TimeStamp stamp,
                               const Track& track,
                               const FrameDataBuffer& frame_data) {

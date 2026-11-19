@@ -87,6 +87,8 @@ class ObjectWorkerPool {
   void stop();
   void join();
   size_t numRunning() const;
+  //! Whether every submitted extraction has completed.
+  bool idle() const;
 
   void submit(TimeStamp stamp, const Track& track, const FrameDataBuffer& frame_data);
   KhronosObjectAttributes::Ptr runBlocking(const Track& track,

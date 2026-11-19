@@ -56,6 +56,7 @@ add_library(${PROJECT_NAME}
         src/backend/reconciliation/reconciler.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
+        src/spatio_temporal_map/piece_history.cpp
         src/spatio_temporal_map/incremental_mesh.cpp
         src/utils/geometry_utils.cpp
         src/utils/khronos_attribute_utils.cpp
@@ -83,6 +84,19 @@ ${PROJECT_NAME}
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(khronos::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+
+# piece_history.cpp instantiates spark_dsg's attribute readers, which call spark_dsg::Metadata(nlohmann::json). The
+# json found for this build can be another release than the one spark_dsg was built with (the symbols carry the
+# json ABI tag), so this one source compiles against the json next to spark_dsg's own headers when that holds one,
+# else the system's. -I directories are searched before -isystem ones, so the flag takes effect wherever it lands.
+find_path(KHRONOS_SPARK_DSG_JSON_DIR nlohmann/json.hpp
+          HINTS ${spark_dsg_DIR}/../../../include /usr/include NO_DEFAULT_PATH)
+if(KHRONOS_SPARK_DSG_JSON_DIR)
+  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/spark_dsg_json)
+  file(CREATE_LINK ${KHRONOS_SPARK_DSG_JSON_DIR}/nlohmann ${CMAKE_CURRENT_BINARY_DIR}/spark_dsg_json/nlohmann SYMBOLIC)
+  set_source_files_properties(src/spatio_temporal_map/piece_history.cpp PROPERTIES
+                              COMPILE_OPTIONS "-I${CMAKE_CURRENT_BINARY_DIR}/spark_dsg_json")
+endif()
 
 # Project algorithms and member adapters are owned by session_core.
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../session_core"

@@ -38,6 +38,7 @@
 #include "khronos/active_window/active_window.h"
 #include "khronos/utils/phase_clock.h"
 
+#include "khronos/active_window/object_extraction/move_trajectories.h"
 #include "khronos/active_window/object_extraction/segment_volumes.h"
 #include "khronos/active_window/tracking/external_tracker.h"
 
@@ -186,6 +187,15 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   // throughout frames.
   tracker_->processInput(map_, *data);
 
+  // The tracker's centre of each physical object seen in this frame: the positions of a move's
+  // trajectory, should a hand-over find the end of one (MoveTrajectories; an output only).
+  for (const Track& track : tracker_->getTracks()) {
+    if (track.physical_instance_id && track.is_active && track.last_seen == latest_stamp_ &&
+        track.last_centroid.allFinite()) {
+      MoveTrajectories::record(*track.physical_instance_id, latest_stamp_, track.last_centroid);
+    }
+  }
+
   // The window's own reconstruction of the frame. Where the window takes every static pixel
   // (window_fuses_object_pixels) it does not read which pixels the objects take, and the two write
   // apart (the window's map; each object's segment volume and the frame's fused image), so it
@@ -246,6 +256,11 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   // Save the frame for later use and free-up memory of frames no longer used.
   frame_data_buffer_.trimBuffer(tracker_->getTracks());
   frame_data_buffer_.storeData(data);
+  // An end of a move is found among the frames buffered at a hand-over only: with no extraction
+  // under way, centres older than the oldest buffered frame's time before an end serve no move.
+  if (extraction_worker_.idle()) {
+    MoveTrajectories::forgetBefore((*frame_data_buffer_.begin())->input.timestamp_ns);
+  }
 
   CLOG(4) << "[Khronos Active Window] Frame data buffer size: " << frame_data_buffer_.size()
           << ", object extraction threads running: " << extraction_worker_.numRunning() << ".";
@@ -312,6 +327,9 @@ void ActiveWindow::finishMapping() {
   // active window never reached the backend's final reconciliation/map state.
   const auto& latest = frame_data_buffer_.getLatestData();
   auto output = extractOutputData(latest, false);
+  // No frame comes any more, and the last hand-overs have found their boundaries: the moves still
+  // waiting for the time after their end are told with the frames there are.
+  MoveTrajectories::finish();
   output->sensor_data = std::make_shared<hydra::InputData>(latest.input);
   // The terminal packet duplicates the last timestamp by design. Re-ingest it
   // after terminal tracking/extraction and atomically replace that stamp before

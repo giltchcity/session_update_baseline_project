@@ -58,6 +58,7 @@
 #include "khronos/backend/change_state.h"
 #include "session_core/surface/closed_object_background.h"
 #include "khronos/common/common_types.h"
+#include "khronos/active_window/object_extraction/move_trajectories.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
 namespace khronos {
@@ -89,6 +90,7 @@ void declare_config(Backend::Config& config) {
     field(config.run_change_detection_every_n_frames, "run_every_n_frames");
   }
 
+  field(config.piece_history, "piece_history");
   field(config.update_objects, "update_objects");
   field(config.spatio_temporal_map, "spatio_temporal_map");
   field(config.reconciler, "reconciler");
@@ -291,10 +293,159 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
     sessionAfterReconcile(dsg, stamp, finalize_pending);
   }
   PhaseClock clock(Phase::kMapUpdate);
-  map_.update(dsg, stamp);
+  storeSnapshot(dsg, stamp);
 
   ChangeSink::callAll(change_sinks_, stamp, changes);
   CLOG(3) << "Change detection completed: " << map_.numTimeSteps() << " time steps in 4D map.";
+}
+
+namespace {
+
+// How many of the samples (in order of time) are not later than the stamp.
+size_t samplesUntil(const std::vector<MoveTrajectories::Sample>& samples, TimeStamp stamp) {
+  size_t count = 0;
+  while (count < samples.size() && samples[count].stamp <= stamp) {
+    ++count;
+  }
+  return count;
+}
+
+// The samples of the moves a snapshot at `stamp` carries, as evaluation/chain_fill/motion_fill.cpp
+// writes them: on the object node of the instance (details "instance_id"; the one present at the
+// stamp, else the first), every sample not later than the stamp, after whatever trajectory the
+// node has of its own. `carried` is how many samples the snapshot carries already, by instance.
+bool writeMoveTrajectories(DynamicSceneGraph& dsg,
+                           TimeStamp stamp,
+                           const std::map<int, std::vector<MoveTrajectories::Sample>>& moves,
+                           std::map<int, size_t>& carried) {
+  if (moves.empty() || !dsg.hasLayer(DsgLayers::OBJECTS)) {
+    return false;
+  }
+  std::map<int, KhronosObjectAttributes*> owner;
+  for (const auto& [id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
+    auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    if (!attrs) {
+      continue;
+    }
+    const auto instance = attrs->details.find("instance_id");
+    if (instance == attrs->details.end() || instance->second.empty()) {
+      continue;
+    }
+    const int instance_id = static_cast<int>(instance->second.front());
+    if (!moves.count(instance_id)) {
+      continue;
+    }
+    const auto found = owner.find(instance_id);
+    if (found == owner.end() ||
+        (isPresent(*attrs, stamp) && !isPresent(*found->second, stamp))) {
+      owner[instance_id] = attrs;
+    }
+  }
+  bool changed = false;
+  for (auto& [instance_id, attrs] : owner) {
+    const auto& samples = moves.at(instance_id);
+    const size_t count = samplesUntil(samples, stamp);
+    size_t& had = carried[instance_id];
+    if (count == had) {
+      continue;
+    }
+    const size_t own = attrs->trajectory_timestamps.size() - std::min(had, attrs->trajectory_timestamps.size());
+    attrs->trajectory_timestamps.resize(own);
+    attrs->trajectory_positions.resize(std::min(own, attrs->trajectory_positions.size()));
+    for (size_t i = 0; i < count; ++i) {
+      attrs->trajectory_timestamps.push_back(samples[i].stamp);
+      attrs->trajectory_positions.push_back(samples[i].position);
+    }
+    had = count;
+    changed = true;
+  }
+  return changed;
+}
+
+}  // namespace
+
+void Backend::alignMoveSamples() {
+  if (move_samples_.size() < map_.numTimeSteps()) {
+    move_samples_.insert(move_samples_.begin(), map_.numTimeSteps() - move_samples_.size(), {});
+  }
+}
+
+void Backend::storeSnapshot(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp) {
+  alignMoveSamples();
+  // The moves whose end and time after lie before this snapshot are told by now. A move just told
+  // belongs to the snapshots stored since it started as well: they are the latest few, written now
+  // (a piece history stores again only from the first of them on).
+  MoveTrajectories::resolve(stamp);
+  snapshots_stored_anew_ += writeToldMoves(MoveTrajectories::moves());
+  // A snapshot at the stamp of the last one takes its place (the terminal pass).
+  if (map_.numTimeSteps() > 0 && map_.stamps().back() == stamp && !move_samples_.empty()) {
+    move_samples_.back().clear();
+  } else {
+    move_samples_.emplace_back();
+  }
+  writeMoveTrajectories(*dsg, stamp, MoveTrajectories::moves(), move_samples_.back());
+  map_.update(dsg, stamp);
+}
+
+size_t Backend::writeToldMoves(const std::map<int, std::vector<MoveTrajectories::Sample>>& moves) {
+  if (moves.empty() || map_.numTimeSteps() == 0 || move_samples_.size() != map_.numTimeSteps()) {
+    return 0;
+  }
+  return map_.rewriteSnapshots(
+      [&](size_t index, TimeStamp stamp) {
+        for (const auto& [instance_id, of_instance] : moves) {
+          const auto had = move_samples_[index].find(instance_id);
+          if (samplesUntil(of_instance, stamp) != (had == move_samples_[index].end() ? 0 : had->second)) {
+            return true;
+          }
+        }
+        return false;
+      },
+      [&](DynamicSceneGraph& dsg, size_t index, TimeStamp stamp) {
+        const bool changed = writeMoveTrajectories(dsg, stamp, moves, move_samples_[index]);
+        // An instance without a node in the snapshot has nothing to carry there: settled.
+        for (const auto& [instance_id, of_instance] : moves) {
+          move_samples_[index][instance_id] = samplesUntil(of_instance, stamp);
+        }
+        return changed;
+      });
+}
+
+void Backend::fillMoveTrajectories() {
+  alignMoveSamples();
+  if (map_.numTimeSteps() == 0 || move_samples_.size() != map_.numTimeSteps()) {
+    return;
+  }
+  const auto start = std::chrono::steady_clock::now();
+  MoveTrajectories::resolve(map_.stamps().back());
+  const auto moves = MoveTrajectories::moves();
+  size_t samples = 0;
+  for (const auto& [instance_id, of_instance] : moves) {
+    samples += of_instance.size();
+  }
+  // A move told after a snapshot was stored belongs to that snapshot as well, up to the
+  // snapshot's own time: the snapshots of the map are what a reader of the map sees.
+  const size_t rewritten = writeToldMoves(moves);
+  // The graph the mapping worked on: what trajectory it has is the tracker's own.
+  size_t working_graph_samples = 0;
+  if (private_dsg_ && private_dsg_->graph && private_dsg_->graph->hasLayer(DsgLayers::OBJECTS)) {
+    for (const auto& [id, node] : private_dsg_->graph->getLayer(DsgLayers::OBJECTS).nodes()) {
+      const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+      working_graph_samples += attrs ? attrs->trajectory_timestamps.size() : 0;
+    }
+  }
+  size_t waiting = 0;
+  for (const auto& [instance_id, end] : MoveTrajectories::waiting()) {
+    (void)instance_id;
+    (void)end;
+    ++waiting;
+  }
+  LOG(INFO) << "MOVE_TRAJECTORY_FILL snapshots=" << map_.numTimeSteps() << " instances=" << moves.size()
+            << " samples=" << samples << " snapshots_stored_anew=" << rewritten
+            << " stored_anew_as_told=" << snapshots_stored_anew_
+            << " ends_waiting=" << waiting
+            << " working_graph_trajectory_samples=" << working_graph_samples << " seconds="
+            << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
 }
 
 void Backend::finishProcessing() {
@@ -320,7 +471,7 @@ void Backend::finishProcessing() {
     // With change detection explicitly disabled there is no reconciler output;
     // preserve the final optimized state as the sole honest fallback.
     std::lock_guard<std::mutex> map_lock(map_mutex_);
-    map_.update(private_dsg_->graph->clone(), last_timestamp_received_);
+    storeSnapshot(private_dsg_->graph->clone(), last_timestamp_received_);
   }
   const auto worker_stats = change_detection_worker_->stats();
   const auto& detector_stats = change_detector_->getRayVerificatorStatistics();
@@ -419,6 +570,7 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
                     "finishProcessing() before the terminal save.";
       return;
     }
+    fillMoveTrajectories();
     if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }

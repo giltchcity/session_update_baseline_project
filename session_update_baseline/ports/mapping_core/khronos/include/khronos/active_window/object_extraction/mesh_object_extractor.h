@@ -49,6 +49,7 @@
 #include <hydra/reconstruction/mesh_integrator.h>
 
 #include "khronos/active_window/integration/object_integrator.h"
+#include "khronos/active_window/object_extraction/move_trajectories.h"
 #include "khronos/active_window/object_extraction/object_extractor.h"
 
 namespace khronos {
@@ -84,6 +85,10 @@ class MeshObjectExtractor : public ObjectExtractor {
     // trajectory as metadata while materializing a static mesh at the settled
     // current pose.
     bool preserve_settled_dynamic_history = true;
+
+    // The trajectory of a physical object's move, written to its node where the hand-over finds
+    // the end of the move (MoveTrajectories): an output only.
+    MoveTrajectories::Config move_trajectory;
 
     // Geometric compatibility is independent of the D1 trajectory threshold.
     // A newer surface observed as free in an older RGB-D frame (or vice versa)
