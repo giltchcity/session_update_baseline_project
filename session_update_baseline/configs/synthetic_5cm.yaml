@@ -24,6 +24,11 @@ active_window:
   type: ActiveWindow
   verbosity: 2
   input_labels_are_packed: true
+  # true: the window map takes the pixels of physical instances too (upstream Khronos), so its
+  # reconstruction (the fill faces) covers the objects; the present volume takes none either way.
+  window_fuses_object_pixels: true
+  # Keep what every frame votes by place, for the faces that come to be later (no frame is kept).
+  place_votes: true
   min_output_separation: 0.4
   frame_data_buffer:
     max_buffer_size: 100

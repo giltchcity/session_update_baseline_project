@@ -325,6 +325,7 @@ void Backend::finishProcessing() {
   const auto worker_stats = change_detection_worker_->stats();
   const auto& detector_stats = change_detector_->getRayVerificatorStatistics();
   LOG(INFO) << "PHASE_TIMES " << PhaseClock::report();
+  LOG(INFO) << "EVIDENCE_DECODE_CACHE " << PhysicalEvidenceStore::decodeCacheReport();
   LOG(INFO) << "[BackendPerformance] change_detection_unit=backend_update"
             << " requests=" << worker_stats.requests
             << " executions=" << worker_stats.executions

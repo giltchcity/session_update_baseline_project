@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <limits>
 #include <mutex>
 #include <vector>
@@ -136,6 +137,15 @@ class PhysicalEvidenceStore {
   };
 
   PhysicalEvidenceStore();
+
+  /**
+   * How many unpacked frames the readers share (the newest by stamp; 0: none). A stored frame is
+   * packed; the states of a round read the same recent frames one after another, so unpacking
+   * each once serves them all. Each reader also keeps the few frames it read last.
+   */
+  static void setDecodeCacheFrames(size_t frames);
+  /** "frames=... bytes=... hits=... decodes=..." of the shared unpacked frames, for the log. */
+  static std::string decodeCacheReport();
 
   /**
    * @brief Reduce one full ActiveWindow output frame into typed endpoint runs.

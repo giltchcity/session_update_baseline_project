@@ -65,6 +65,15 @@ class PresentSurface {
     // instance not yet told to be an object): shown with the background this round only. They
     // enter no volume and no vote.
     const Surface* pending = nullptr;
+    // The surfaces the object reasoning holds of the objects it shows (their states' geometry,
+    // with the physical id of every face): a face of the present within one object voxel of one
+    // is that object's.
+    const Surface* object_geometry = nullptr;
+    // The identities whose current state began in this session, with the stamp it began at (its
+    // first sighting): what the main table's states restrict a frame by (README section 5). Here
+    // they restrict no frame (the present takes no pixel of a physical instance); they only tell
+    // which support an instance's own pixels gave is no longer counted (instance_support_).
+    std::map<size_t, TimeStamp> instance_starts;
     // Optional diagnostics (KHRONOS_REFUSION_DUMP): the terminal round writes the frame
     // archive (archive.kfa), the present with its face identities (present.ply) and
     // its report (refusion_report.json) there, for refusion_replay.
@@ -88,6 +97,15 @@ class PresentSurface {
   void integrate(const FrameData& data);
   /** A segment's volume that is the background's after all joins it at the next round. */
   void absorb(std::shared_ptr<hydra::VolumetricMap> volume);
+
+  /**
+   * Keep what every frame votes by place: as a frame is read (once, in its round), each cell of
+   * half a voxel in its view counts the frame's vote on a face that would lie there, by the rule
+   * a frame votes on a face (support within the tolerance of the reading, free before it). A
+   * face that comes to be reads its cell: the votes of every earlier frame of the session, as
+   * when every frame was kept and read again, with none kept.
+   */
+  void setPlaceVotes(bool on) { place_votes_ = on; }
 
   /** The instances the object reasoning holds a state of (told by it, asked by the mapper). */
   void setInstancesWithState(std::vector<size_t> instances);
@@ -197,9 +215,11 @@ class PresentSurface {
    * Kept frame `index` as the TSDF counts it, decoded: `range` without the
    * pixels the current states take; with `limit`, the free limit it was
    * measured with, kept from its integration or its last move (it changes only
-   * when it moves). False if the frame cannot be decoded.
+   * when it moves). With `instance`, each counted pixel's physical instance (0: none). False if
+   * the frame cannot be decoded.
    */
-  bool counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit) const;
+  bool counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit,
+               std::vector<uint16_t>* instance = nullptr) const;
   /** Record the endpoints of the frames kept since the last call. */
   void recordEndpoints();
   /** Bring the TSDF to `next`: move every kept frame whose domain differs to its new domain. */
@@ -232,10 +252,30 @@ class PresentSurface {
     int32_t support = 0, free = 0;
   };
   std::vector<std::pair<uint64_t, Votes>> votes_;
+  // The support among those votes that a physical instance's own pixels gave (per instance, with
+  // the stamps of the frames it spans). counted() reads a frame without an instance's pixels once
+  // the instance's current state begins after the frame (it was elsewhere then): such support is
+  // withdrawn when that state begins, as a frame read again would no longer give it. So a face that
+  // stood on an object's readings goes once the object has left and a frame sees through it.
+  struct InstanceSupport {
+    uint16_t id = 0;
+    int32_t support = 0;
+    TimeStamp first = 0, last = 0;
+  };
+  std::vector<std::pair<uint64_t, std::vector<InstanceSupport>>> instance_support_;
   std::vector<std::pair<uint64_t, int32_t>> read_points_;
   std::vector<int64_t> residuals_;
   size_t voted_ = 0;
   size_t released_ = 0;  // frames before it gave up what they read
+  // The votes kept by place: per block of the present volume (by its key), per cell, how many
+  // frames supported a face there and how many saw through it (saturating).
+  struct PlaceBlock {
+    std::vector<uint16_t> support, free;
+    // The support of `support` an instance's pixels gave, by cell (sparse), as votes_ keep it.
+    std::unordered_map<uint32_t, std::vector<InstanceSupport>> instance;
+  };
+  std::unordered_map<uint64_t, PlaceBlock> places_;
+  bool place_votes_ = false;
   std::vector<Eigen::Vector3f> residual_position_, residual_normal_;
   std::vector<uint32_t> residual_at_;
   // The previous round's answers, kept where nothing they read can have changed (sorted by key):

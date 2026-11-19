@@ -304,22 +304,26 @@ void testOnlineSurface() {
   require(near_kept,"the present keeps what it measured when a volume returns");
   require(far_joined,"a returned volume's surface joins the present");
 
-  // Fill: an archived window face stays where a counted frame measured it (the
-  // one valid pixel, (1,1) at 1 m), and only there.
+  // Fill: an archived window face is decided at its own pixel by the frames the present
+  // counts (the one valid pixel, (1,1) at 1 m): one they measure is filled in, one they see
+  // through is not, and one no frame reads either way stays shown, as a memory face (cc262a3).
   PresentSurface sparse(mapConfig(),integrationConfig(),meshConfig());
   sparse.integrate(camera,frame(1000000000ULL,1.f,true));
   auto observed=graph();
-  const Eigen::Vector3f measured(-.625f,-.465f,1.f);
+  const Eigen::Vector3f measured(-.625f,-.465f,1.f),seen_through(-.3125f,-.2325f,.5f);
   observed->mesh()->points={{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f},
-                            measured,{-.615f,-.465f,1.f},{-.62f,-.455f,1.f}};
-  observed->mesh()->faces={{0,1,2},{3,4,5}};
+                            measured,{-.615f,-.465f,1.f},{-.62f,-.455f,1.f},
+                            seen_through,{-.3075f,-.2325f,.5f},{-.31f,-.2275f,.5f}};
+  observed->mesh()->faces={{0,1,2},{3,4,5},{6,7,8}};
   sparse.compose(*observed,1000000000ULL,{}, {},false);
-  bool filled=false;
+  bool filled=false,unread_kept=false;
   for (const auto& point:observed->mesh()->points) {
-    require(point.x()<10.f,"an archived face no frame measured is not filled in");
+    require(point!=seen_through,"an archived face a counted frame sees through is not filled in");
     filled|=point==measured;
+    unread_kept|=point.x()>10.f;
   }
   require(filled,"an archived face a counted frame measured is filled in");
+  require(unread_kept,"an archived face no frame reads either way stays shown");
 
   // One volume holds one surface per place: a shown face behind the present's
   // layer within the truncation, facing the same way, with no direct majority
@@ -358,9 +362,10 @@ void testOnlineSurface() {
   require(shows(.2f,1.2f),"a shown face beyond the truncation stays");
 }
 
-// States changing over rounds -- appearing, their start moving later and earlier, disappearing,
-// their measured voxels growing -- leave the volume as composing once under the last round's
-// states does: incremental moves and rebuilds are exact.
+// Objects leaving and arriving over rounds leave the volume as composing once does: the present
+// never takes a pixel of a physical instance, so no state restricts a frame (BackendSession
+// composes under none) and no frame is read again; the archive holds the frames between two
+// rounds only.
 void testStateChanges() {
   FrameArchive::Camera camera;
   camera.width=W; camera.height=H; camera.fx=camera.fy=50.f;
@@ -395,26 +400,21 @@ void testStateChanges() {
     dsg->setMesh(std::make_shared<spark_dsg::Mesh>(false,false,false,false));
     return dsg;
   };
-  const std::vector<std::pair<int,std::map<size_t,TimeStamp>>> rounds={
-      {3,{}},
-      {5,{{8,stamp(4)}}},
-      {7,{{7,stamp(2)},{8,stamp(4)},{9,stamp(6)}}},
-      {9,{{8,stamp(3)},{9,stamp(8)}}},
-      {9,{{7,stamp(1)},{9,stamp(7)}}}};
+  const std::vector<int> rounds={3,5,7,9,9};
   PresentSurface steps(mapConfig(),integrationConfig(),meshConfig());
   int integrated=0;
-  for (const auto& [last,starts]:rounds) {
+  for (const int last:rounds) {
     while (integrated<last) steps.integrate(camera,frame(++integrated));
     auto dsg=graph();
-    steps.compose(*dsg,stamp(last),starts,{},false);
+    steps.compose(*dsg,stamp(last),{},{},false);
   }
   PresentSurface once(mapConfig(),integrationConfig(),meshConfig());
   for (int s=1;s<=integrated;++s) once.integrate(camera,frame(s));
   auto a=graph(),b=graph();
-  steps.compose(*a,stamp(rounds.back().first),rounds.back().second,{},false);
-  once.compose(*b,stamp(rounds.back().first),rounds.back().second,{},false);
+  steps.compose(*a,stamp(rounds.back()),{},{},false);
+  once.compose(*b,stamp(rounds.back()),{},{},false);
   require(!a->mesh()->faces.empty() && a->mesh()->points==b->mesh()->points && a->mesh()->faces==b->mesh()->faces,
-          "changed states leave the surface composing once under them gives");
+          "objects leaving and arriving over rounds leave the surface composing once gives");
 }
 
 void testArchive() {

@@ -42,6 +42,7 @@
 #include <unordered_set>
 
 #include <hydra/reconstruction/mesh_integrator.h>
+#include <hydra/utils/nearest_neighbor_utilities.h>
 
 #include "khronos/active_window/object_extraction/segment_volumes.h"
 #include "khronos/utils/geometry_utils.h"
@@ -332,9 +333,11 @@ void mergeVolume(std::shared_ptr<hydra::VolumetricMap>& into,
   }
 }
 
-// What a state shows: the surface of its volume, and the faces of `geometry` (in `box`) where
-// the volume holds no surface within a voxel (a state an earlier session left, seen again only
-// in part). False without a volume surface: `geometry` is the state's surface as it is.
+// What a state shows: the faces of its volume within a voxel of its geometry (the reconstructions
+// of its segments, which the object reasoning holds: they tell which faces are the object's, as
+// an object's mesh tells which faces of the present volume are), and of a piece without a volume
+// (a state an earlier session left) the faces of its geometry where no such face lies within a
+// voxel. False without a volume surface: `geometry` is the state's surface as it is.
 struct StatePiece {
   const std::shared_ptr<hydra::VolumetricMap>* volume;
   const spark_dsg::Mesh* geometry;
@@ -352,11 +355,10 @@ bool shownSurface(const std::vector<StatePiece>& pieces, const TimeStamp first, 
     if (volumes == 1) volume = *piece.volume;
     else mergeVolume(volume, *piece.volume);
   }
-  // The surface is the voxels the object's own readings carry (the vote of the frames of all
-  // its segments), read off a copy: the volume keeps its readings and votes.
-  const auto voted = SegmentVolumes::voted(*volume);
-  hydra::MeshIntegrator(hydra::MeshIntegratorConfig()).generateMesh(*voted, false, false);
-  const auto fused = utils::combineMeshLayer(voted->getMeshLayer());
+  // The volume as its frames built it, read off a copy (the volume keeps its mesh layer untouched).
+  const auto built = volume->clone();
+  hydra::MeshIntegrator(hydra::MeshIntegratorConfig()).generateMesh(*built, false, false);
+  const auto fused = utils::combineMeshLayer(built->getMeshLayer());
   if (fused.points.empty() || fused.faces.empty()) return false;
   const float voxel = volume->config.voxel_size;
   const auto key = [voxel](const Point& p, const int dx, const int dy, const int dz) {
@@ -365,21 +367,48 @@ bool shownSurface(const std::vector<StatePiece>& pieces, const TimeStamp first, 
     };
     return (c(p.x(), dx) << 42) | (c(p.y(), dy) << 21) | c(p.z(), dz);
   };
-  std::unordered_set<uint64_t> held;
-  for (const auto& p : fused.points) {
-    for (int dx = -1; dx <= 1; ++dx) for (int dy = -1; dy <= 1; ++dy) for (int dz = -1; dz <= 1; ++dz) {
-      held.insert(key(p, dx, dy, dz));
+  // The centres of the geometry's faces: a face of the volume is the object's within a voxel of one.
+  std::vector<Eigen::Vector3f> geometry_centres;
+  for (const auto& piece : pieces) {
+    const auto& g = *piece.geometry;
+    const size_t n = g.numVertices();
+    for (const auto& f : g.faces) {
+      if (f[0] >= n || f[1] >= n || f[2] >= n) continue;
+      geometry_centres.push_back((piece.box->pointToWorldFrame(g.pos(f[0])) + piece.box->pointToWorldFrame(g.pos(f[1])) +
+                                  piece.box->pointToWorldFrame(g.pos(f[2]))) / 3.f);
     }
   }
-  std::vector<Point> points(fused.points.begin(), fused.points.end());
-  std::vector<spark_dsg::Mesh::Face> faces(fused.faces.begin(), fused.faces.end());
+  if (geometry_centres.empty()) return false;
+  const hydra::PointNeighborSearch geometry_search(geometry_centres);
+  std::vector<Point> points;
+  std::vector<spark_dsg::Mesh::Face> faces;
+  std::unordered_set<uint64_t> held;   // the cells within a voxel of a shown face of the volume
   // Colours as the meshes carry them (a reader of the map reads one per vertex).
   const auto colourOf = [](const spark_dsg::Mesh& m, const size_t i) {
     return (m.has_colors && m.colors.size() == m.points.size()) ? m.colors[i] : spark_dsg::Color();
   };
-  std::vector<spark_dsg::Color> colours(points.size());
-  for (size_t i = 0; i < points.size(); ++i) colours[i] = colourOf(fused, i);
+  std::vector<spark_dsg::Color> colours;
+  for (const auto& f : fused.faces) {
+    const Point centre = (fused.points[f[0]] + fused.points[f[1]] + fused.points[f[2]]) / 3.f;
+    float nearest_sq = 0.f;
+    size_t nearest = 0;
+    if (!geometry_search.search(centre, nearest_sq, nearest) || nearest_sq > voxel * voxel) continue;
+    // A face the object's own readings do not carry is another's surface in its blocks (built from
+    // the frames of its segments alone): the present's, which every frame built, shows it.
+    if (!SegmentVolumes::carries(*volume, centre)) continue;
+    const size_t base = points.size();
+    for (int k = 0; k < 3; ++k) {
+      points.push_back(fused.points[f[k]]);
+      colours.push_back(colourOf(fused, f[k]));
+    }
+    faces.push_back({base, base + 1, base + 2});
+    for (int dx = -1; dx <= 1; ++dx) for (int dy = -1; dy <= 1; ++dy) for (int dz = -1; dz <= 1; ++dz) {
+      held.insert(key(centre, dx, dy, dz));
+    }
+  }
+  if (faces.empty()) return false;
   for (const auto& piece : pieces) {
+    if (*piece.volume) continue;   // its geometry told which of the volume's faces are the object's
     const auto& g = *piece.geometry;
     const size_t n = g.numVertices();
     for (const auto& f : g.faces) {
@@ -1554,6 +1583,32 @@ std::optional<PersistentObjectState::FragmentView> PersistentObjectState::observ
     return std::nullopt;
   }
   return viewOf(*it->second.observed_new);
+}
+
+void PersistentObjectState::appendShownGeometry(std::vector<Eigen::Vector3f>& vertices,
+                                                std::vector<std::array<uint32_t, 3>>& faces,
+                                                std::vector<uint32_t>& face_physical) const {
+  const auto append = [&](const Fragment& fragment, const size_t id) {
+    const auto& mesh = fragment.geometry;
+    const uint32_t offset = static_cast<uint32_t>(vertices.size());
+    for (size_t i = 0; i < mesh.numVertices(); ++i) {
+      vertices.push_back(fragment.bbox.pointToWorldFrame(mesh.pos(i)));
+    }
+    for (const auto& f : mesh.faces) {
+      if (f[0] >= mesh.numVertices() || f[1] >= mesh.numVertices() || f[2] >= mesh.numVertices()) continue;
+      faces.push_back({static_cast<uint32_t>(f[0]) + offset, static_cast<uint32_t>(f[1]) + offset,
+                       static_cast<uint32_t>(f[2]) + offset});
+      face_physical.push_back(static_cast<uint32_t>(id));
+    }
+  };
+  for (const auto& [id, state] : states_) {
+    if (!state.current) continue;
+    append(state.fragments[*state.current], id);
+    // The current-session state shown with the inherited one (the last materialization).
+    if (state.session_state_shown && state.b_session && state.b_session->current) {
+      append(state.b_session->fragments[*state.b_session->current], id);
+    }
+  }
 }
 
 void PersistentObjectState::appendPendingSurfaces(

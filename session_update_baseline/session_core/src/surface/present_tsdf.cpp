@@ -346,6 +346,17 @@ void PresentTsdf::invalidate(const Changes& changes) {
   }
 }
 
+std::vector<Eigen::Vector3f> PresentTsdf::blockOrigins() const {
+  std::vector<Eigen::Vector3f> origins;
+  const float size = blockSize();
+  for (const auto& index : map_.getTsdfLayer().allocatedBlockIndices()) {
+    origins.emplace_back(index.x() * size, index.y() * size, index.z() * size);
+  }
+  return origins;
+}
+
+float PresentTsdf::blockSize() const { return map_.config.voxel_size * map_.config.voxels_per_side; }
+
 float PresentTsdf::behind() const {
   const float extra=integrator_.config.extra_integration_distance;
   return map_.config.truncation_distance+(extra<0.f?-extra*map_.config.voxel_size:extra);

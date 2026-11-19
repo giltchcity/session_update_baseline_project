@@ -39,11 +39,15 @@
 
 #include <set>
 #include <atomic>
+#include <condition_variable>
 #include <deque>
+#include <exception>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -68,6 +72,72 @@
 
 namespace khronos {
 
+/**
+ * One thread for the session that runs a job beside its caller (the window's reconstruction of a
+ * frame beside the objects' fusion of it). A thread started for every frame would leave the memory
+ * allocator an arena of its own each time.
+ */
+class BesideWorker {
+ public:
+  ~BesideWorker() {
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      stop_ = true;
+    }
+    cv_.notify_all();
+    if (thread_.joinable()) thread_.join();
+  }
+  /** Start `job` on the worker; wait() before the next start. */
+  void start(std::function<void()> job) {
+    if (!thread_.joinable()) thread_ = std::thread([this] { loop(); });
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      job_ = std::move(job);
+      done_ = false;
+    }
+    cv_.notify_all();
+  }
+  /** Wait for the job started last; rethrows what it threw. */
+  void wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    cv_.wait(lock, [this] { return done_; });
+    if (error_) {
+      const auto error = error_;
+      error_ = nullptr;
+      std::rethrow_exception(error);
+    }
+  }
+
+ private:
+  void loop() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    while (true) {
+      cv_.wait(lock, [this] { return stop_ || static_cast<bool>(job_); });
+      if (!job_) return;
+      auto job = std::move(job_);
+      job_ = nullptr;
+      lock.unlock();
+      std::exception_ptr error;
+      try {
+        job();
+      } catch (...) {
+        error = std::current_exception();
+      }
+      lock.lock();
+      error_ = error;
+      done_ = true;
+      cv_.notify_all();
+    }
+  }
+  std::thread thread_;
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  std::function<void()> job_;
+  bool done_ = true;
+  bool stop_ = false;
+  std::exception_ptr error_;
+};
+
 class ActiveWindow : public hydra::ActiveWindowModule {
  public:
   using KhronosSink = hydra::OutputSink<const FrameData&, const VolumetricMap&, const Tracks&>;
@@ -89,6 +159,19 @@ class ActiveWindow : public hydra::ActiveWindowModule {
 
     // If true, run object extraction in detached threads to avoid blocking the active window.
     bool detach_object_extraction = true;
+    // Whether the window's map takes the pixels of physical instances too, as upstream Khronos
+    // fuses every static pixel into it: its reconstruction (the background mesh the fill faces
+    // come from) then covers the objects as well. The present volume takes none either way, and
+    // an object's surface is its node's own.
+    bool window_fuses_object_pixels = false;
+    // Whether what every frame votes is kept by place (PresentSurface::setPlaceVotes): a face that
+    // comes to be then has the votes of all the session's frames before it without one of them
+    // being kept.
+    bool place_votes = false;
+    // How many unpacked frames the readers of the stored frame evidence share (the newest; 0:
+    // none): each frame is unpacked once for all the object states a round reads it for. Time
+    // for memory only; no result depends on it.
+    size_t evidence_decode_cache_frames = 128;
 
     // Configs of the sub-modules to create.
     hydra::ProjectiveIntegrator::Config projective_integrator;
@@ -234,6 +317,10 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   TimeStamp latest_stamp_;
   TimeStamp last_full_upated_ = 0;
   size_t num_frames_processed_ = 0;  // For info only.
+
+  // Runs the window's reconstruction of a frame beside the objects' fusion (spinOnce). Last, so
+  // that it is joined before any member its jobs use is destroyed.
+  BesideWorker window_worker_;
 
  private:
   inline static const auto registration_ = config::

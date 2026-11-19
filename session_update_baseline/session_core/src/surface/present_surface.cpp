@@ -13,6 +13,7 @@
 #include <sstream>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <glog/logging.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
@@ -651,13 +652,30 @@ void PresentSurface::measure(const States& states, size_t index, std::vector<uin
   limit = apply(r, range, runs);
 }
 
-bool PresentSurface::counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit) const {
+bool PresentSurface::counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit,
+                             std::vector<uint16_t>* instance) const {
   std::vector<uint16_t> excluded;  // the states are ordered by id: sorted
   const auto& frame = frames_.frame(index);
   for (const auto& [id, state] : states_) {
     if (state.restricts(frame.stamp)) excluded.push_back(id);
   }
-  if (!frame.decodeExcluding(ray_norm_.size(), excluded, range)) return false;
+  if (!instance) {
+    if (!frame.decodeExcluding(ray_norm_.size(), excluded, range)) return false;
+  } else {
+    // As decodeExcluding, telling each counted pixel's instance on the way.
+    thread_local std::vector<FrameArchive::InstanceRun> runs;
+    if (!frame.decode(ray_norm_.size(), range, runs)) return false;
+    instance->assign(range.size(), 0);
+    uint32_t begin = 0;
+    for (const auto& run : runs) {
+      if (run.id && std::binary_search(excluded.begin(), excluded.end(), run.id)) {
+        std::fill(range.begin() + begin, range.begin() + run.end, 0);
+      } else if (run.id) {
+        std::fill(instance->begin() + begin, instance->begin() + run.end, run.id);
+      }
+      begin = run.end;
+    }
+  }
   if (limit) CHECK(frame.keptLimit(range.size(), *limit));
   return true;
 }
@@ -1222,16 +1240,72 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     centroid[f] = ((a + b + c) / 3.0).cast<float>();
   }
 
-  // The present holds the background only: a pixel of a physical instance never enters it (the
-  // instance's own reconstruction is its surface, kept by its node), so every present face is
-  // the background's.
+  // Identity of every present face: the object whose surface (as the object reasoning holds it,
+  // inputs.object_geometry) lies within one object voxel of its centroid (the nearest), or the
+  // background. A pixel a frame reads as a physical instance's never enters the present (the
+  // instance's own reconstruction takes it); a frame that does not tell the instance leaves its
+  // pixels to the present, and the face they build on the object's surface is the object's, as
+  // every present face there was.
+  // An object's node shows its own reconstruction's faces already: a present face within that
+  // voxel of one of them is the same surface a second time and is shown by no one (`doubled`).
   const float v_f = static_cast<float>(voxel_);
   std::vector<uint32_t> face_id(Fp.size(), 0);
+  std::vector<uint8_t> doubled(Fp.size(), 0);
   std::vector<uint64_t> present_key(Fp.size());
   const size_t identities_reused = 0;
   parallelFor(Fp.size(), num_threads_, [&](size_t, size_t b, size_t e) {
     for (size_t f = b; f < e; ++f) present_key[f] = triangleKey(Vp[Fp[f][0]], Vp[Fp[f][1]], Vp[Fp[f][2]]);
   });
+  size_t present_of_objects = 0, present_doubled = 0;
+  // Where on an object's surface the present holds a face (the cell, of an object voxel, of the
+  // nearest point of the object's surface, by object): there the present's face is the object's, as
+  // the main table shows it, and the object's own reconstruction shows none (it is the present's
+  // own view of the same place, from fewer frames). The own reconstruction shows the surface only
+  // where the present holds none: the object's own pixels, which never enter the present.
+  std::unique_ptr<TriangleGrid> object_surface;
+  std::unordered_set<uint64_t> present_on_object;
+  const auto surfaceCell = [v_f](const uint32_t id, const Eigen::Vector3f& p, const int dx, const int dy, const int dz) {
+    const auto c = [v_f](const float x, const int d) {
+      return static_cast<uint64_t>(static_cast<int64_t>(std::floor(x / v_f)) + d) & 0xFFFFull;
+    };
+    return (static_cast<uint64_t>(id) << 48) | (c(p.x(), dx) << 32) | (c(p.y(), dy) << 16) | c(p.z(), dz);
+  };
+  if (inputs.object_geometry && !inputs.object_geometry->faces.empty() && !Fp.empty()) {
+    const auto& G = *inputs.object_geometry;
+    object_surface = std::make_unique<TriangleGrid>(G.vertices, G.faces, nullptr, 4.f * v_f);
+    const TriangleGrid& objects = *object_surface;
+    std::vector<Eigen::Vector3f> on_surface(Fp.size());
+    parallelFor(Fp.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+      for (size_t f = b; f < e; ++f) {
+        float d;
+        Eigen::Vector3f closest;
+        uint32_t hit;
+        if (!objects.closest(centroid[f], v_f, d, closest, hit)) continue;
+        const uint32_t id = G.face_physical[hit];
+        if (!slot_of_label.count(id)) continue;
+        face_id[f] = id;
+        on_surface[f] = closest;
+      }
+    });
+    for (size_t f = 0; f < Fp.size(); ++f) {
+      if (!face_id[f]) continue;
+      ++present_of_objects;
+      present_on_object.insert(surfaceCell(face_id[f], on_surface[f], 0, 0, 0));
+    }
+  }
+  // Whether own face f of object `id` lies where the present holds a face on the object's surface.
+  const auto presentHolds = [&](const uint32_t f, const uint32_t id) {
+    if (!object_surface || present_on_object.empty()) return false;
+    const Eigen::Vector3f c = ((pos[faces[f][0]] + pos[faces[f][1]] + pos[faces[f][2]]) / 3.f);
+    float d;
+    Eigen::Vector3f closest;
+    uint32_t hit;
+    if (!object_surface->closest(c, 2.f * v_f, d, closest, hit)) return false;
+    for (int dx = -1; dx <= 1; ++dx) for (int dy = -1; dy <= 1; ++dy) for (int dz = -1; dz <= 1; ++dz) {
+      if (present_on_object.count(surfaceCell(id, closest, dx, dy, dz))) return true;
+    }
+    return false;
+  };
 
   // ------------------------------------ memory and fill: surfaces built from
   // earlier observations. Memory is the previous final map as it showed it;
@@ -1552,15 +1626,57 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   }
   const double sigma_s = since();
 
+  // The support each tested element has from a physical instance's own pixels (instance_support_),
+  // and the frames of this round that gave such support.
+  struct InstanceEvent {
+    uint32_t element = 0;
+    uint16_t id = 0;
+    TimeStamp stamp = 0;
+  };
+  std::vector<std::vector<InstanceSupport>> tested_instance(tested_centroid.size());
+  auto addSupport = [](std::vector<InstanceSupport>& records, uint16_t id, int32_t support, TimeStamp first,
+                       TimeStamp last) {
+    for (auto& r : records) {
+      if (r.id != id) continue;
+      r.support += support;
+      r.first = std::min(r.first, first);
+      r.last = std::max(r.last, last);
+      return;
+    }
+    records.push_back({id, support, first, last});
+  };
+  // The part of record r that the instance's current state no longer counts, taken out of r: a
+  // frame from before that state began read the instance where it is no longer (counted() reads
+  // such a frame without the instance's pixels). All of it where every frame of r is older than the
+  // state; where r's frames span the state's beginning, their share of r's time before it.
+  auto withdraw = [&](InstanceSupport& r) -> int32_t {
+    const auto state = inputs.instance_starts.find(r.id);
+    if (state == inputs.instance_starts.end() || r.first >= state->second) return 0;
+    const TimeStamp start = state->second;
+    int32_t out = r.support;
+    if (r.last >= start) {
+      const double share = static_cast<double>(start - r.first) / static_cast<double>(r.last - r.first);
+      out = static_cast<int32_t>(std::lround(share * r.support));
+      r.first = start;
+    }
+    r.support -= out;
+    return out;
+  };
+  size_t instance_withdrawn = 0, place_instance_withdrawn = 0;
+
   // One frame's vote on tested element k, read from its counted range `rng` and free limit
-  // `limit` (null: none): +1 support, -1 free, 0 none.
-  auto voteOn = [&](uint32_t k, const FrameCam& c, const uint16_t* rng, const float* limit) {
+  // `limit` (null: none): +1 support, -1 free, 0 none. `by`: the physical instance of the pixel
+  // that voted, from `instance` (null: none told).
+  auto voteOn = [&](uint32_t k, const FrameCam& c, const uint16_t* rng, const float* limit,
+                    const uint16_t* instance, uint16_t& by) {
+    by = 0;
     int u, v;
     float q;
     if (!project(tested_centroid[k], c, u, v, q)) return 0;
     const size_t pix = static_cast<size_t>(v) * W + u;
     const uint16_t d = rng[pix];
     if (!d) return 0;
+    if (instance) by = instance[pix];
     const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, q) / kRangeBin));
     const float tau = std::max(h, sigma[bin]);
     const float r = d * 1e-3f - q;
@@ -1592,9 +1708,10 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     const Cells element_cells(element_at, cell_size), point_cells(point_at, cell_size);
     std::vector<std::vector<Votes>> worker_ev(num_threads_, std::vector<Votes>(elements.size()));
     std::vector<std::vector<int32_t>> worker_reads(num_threads_, std::vector<int32_t>(points.size(), 0));
+    std::vector<std::vector<InstanceEvent>> worker_supports(num_threads_);
     std::atomic<size_t> decoded{0};
     parallelFor(last - first, num_threads_, [&](size_t w, size_t b, size_t e) {
-      std::vector<uint16_t> frame_rng;
+      std::vector<uint16_t> frame_rng, frame_instance;
       std::vector<float> free_limit;
       std::vector<uint32_t> seen_elements, seen_points;
       for (size_t i = first + b; i < first + e; ++i) {
@@ -1604,17 +1721,20 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
         element_cells.forEachInView(c, K, [&](uint32_t j) { seen_elements.push_back(j); });
         point_cells.forEachInView(c, K, [&](uint32_t j) { seen_points.push_back(j); });
         if (seen_elements.empty() && seen_points.empty()) continue;
-        if (!counted(i, frame_rng, &free_limit)) {
+        if (!counted(i, frame_rng, &free_limit, &frame_instance)) {
           LOG(ERROR) << "[PresentSurface] kept frame " << frames_.frame(i).stamp << " cannot be decoded.";
           continue;
         }
         ++decoded;
         const float* limit = free_limit.empty() ? nullptr : free_limit.data();
+        const TimeStamp frame_stamp = frames_.frame(i).stamp;
         for (const uint32_t j : seen_points) worker_reads[w][j] += readsPoint(points[j], c, frame_rng.data());
         for (const uint32_t j : seen_elements) {
-          const int vote = voteOn(elements[j], c, frame_rng.data(), limit);
+          uint16_t by = 0;
+          const int vote = voteOn(elements[j], c, frame_rng.data(), limit, frame_instance.data(), by);
           worker_ev[w][j].support += vote > 0;
           worker_ev[w][j].free += vote < 0;
+          if (vote > 0 && by) worker_supports[w].push_back({j, by, frame_stamp});
         }
       }
     }, 4);
@@ -1624,6 +1744,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
         tested_ev[elements[j]].free += worker_ev[w][j].free;
       }
       for (size_t j = 0; j < points.size(); ++j) reads[points[j]] += worker_reads[w][j];
+      for (const InstanceEvent& event : worker_supports[w]) {
+        addSupport(tested_instance[elements[event.element]], event.id, 1, event.stamp, event.stamp);
+      }
     }
     return decoded.load();
   };
@@ -1660,8 +1783,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
           int u, v;
           float q;
           if (!project(element_at[j], c, u, v, q) || !changed[static_cast<size_t>(v) * W + u]) return;
-          const int now = voteOn(elements[j], c, rng_now.data(), now_limit);
-          const int then = voteOn(elements[j], c, rng_then.data(), limit_then.data());
+          uint16_t by = 0;
+          const int now = voteOn(elements[j], c, rng_now.data(), now_limit, nullptr, by);
+          const int then = voteOn(elements[j], c, rng_then.data(), limit_then.data(), nullptr, by);
           worker_ev[w][j].support += (now > 0) - (then > 0);
           worker_ev[w][j].free += (now < 0) - (then < 0);
         }, &frame.window);
@@ -1681,15 +1805,20 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   };
   // An element or point the last round decided keeps what the frames before this round gave it (an
   // earlier session's face by its index, a fill face by its vertices, a point by its position).
-  // All of them read this round's frames, and no others: a new one starts without votes (shown,
-  // until the frames to come outvote it), since no frame is kept beyond the round that used it.
+  // All of them read this round's frames, and no others: no frame is kept beyond the round that
+  // used it. A new one starts with what every frame before this round voted where it lies, kept
+  // by place (setPlaceVotes; without that, without votes: shown until the frames to come outvote it).
   std::vector<uint64_t> point_key(memory_objects.size());
   for (size_t k = 0; k < memory_objects.size(); ++k) point_key[k] = keyOf(memory_points[k].data(), 3);
   std::vector<uint32_t> all_elements, all_points, new_elements, new_points, old_elements, old_points;
   for (uint32_t k = 0; k < element_key.size(); ++k) {
     all_elements.push_back(k);
     const Votes* known = findKey(votes_, element_key[k]);
-    if (known) tested_ev[k] = *known;
+    if (known) {
+      tested_ev[k] = *known;
+      const auto* records = findKey(instance_support_, element_key[k]);
+      if (records) tested_instance[k] = *records;
+    }
     (known ? old_elements : new_elements).push_back(k);
   }
   for (uint32_t k = 0; k < point_key.size(); ++k) {
@@ -1703,13 +1832,146 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   moved_.clear();
   const size_t fresh_decoded = readFrames(first_fresh, num_frames, all_elements, all_points);
   const size_t history_decoded = 0;
+  // The votes kept by place, in cells of half a voxel within the present volume's blocks.
+  const float place_cell = h;
+  const float place_block = tsdf_.blockSize();
+  const int place_n = std::max(1, static_cast<int>(std::lround(place_block / place_cell)));
+  size_t place_voted = 0, place_support = 0, place_free = 0;
+  if (place_votes_) {
+    for (const uint32_t k : new_elements) {
+      const Eigen::Vector3f& p = tested_centroid[k];
+      const Eigen::Vector3f origin = (p / place_block).array().floor() * place_block;
+      const auto it = places_.find(voxelKey(origin + Eigen::Vector3f::Constant(0.5f * place_block), place_block));
+      if (it == places_.end()) continue;
+      const Eigen::Vector3i cell =
+          ((p - origin) / place_cell).array().floor().cast<int>().cwiseMax(0).cwiseMin(place_n - 1);
+      const size_t index = (static_cast<size_t>(cell.z()) * place_n + cell.y()) * place_n + cell.x();
+      const uint16_t support = it->second.support[index], free = it->second.free[index];
+      tested_ev[k].support += support;
+      tested_ev[k].free += free;
+      place_voted += (support | free) != 0;
+      place_support += support;
+      place_free += free;
+      // Of that support, what an instance's pixels gave: withdrawn from the cell where the
+      // instance's current state no longer counts it, the rest kept with the element as with the cell.
+      const auto by_instance = it->second.instance.find(static_cast<uint32_t>(index));
+      if (by_instance == it->second.instance.end()) continue;
+      auto& records = by_instance->second;
+      for (auto r = records.begin(); r != records.end();) {
+        const int32_t out = withdraw(*r);
+        if (out) {
+          tested_ev[k].support -= out;
+          uint16_t& total = it->second.support[index];
+          total = static_cast<uint16_t>(std::max<int32_t>(0, static_cast<int32_t>(total) - out));
+          place_instance_withdrawn += out;
+        }
+        if (r->support <= 0) {
+          r = records.erase(r);
+          continue;
+        }
+        addSupport(tested_instance[k], r->id, r->support, r->first, r->last);
+        ++r;
+      }
+      if (records.empty()) it->second.instance.erase(by_instance);
+    }
+  }
+  // What the instances' current states no longer count, withdrawn from every element's votes.
+  for (size_t k = 0; k < tested_instance.size(); ++k) {
+    auto& records = tested_instance[k];
+    for (auto r = records.begin(); r != records.end();) {
+      const int32_t out = withdraw(*r);
+      tested_ev[k].support -= out;
+      instance_withdrawn += out;
+      r = r->support <= 0 ? records.erase(r) : r + 1;
+    }
+  }
   votes_.clear();
   for (size_t k = 0; k < element_key.size(); ++k) votes_.emplace_back(element_key[k], tested_ev[k]);
   std::sort(votes_.begin(), votes_.end(), byKey<Votes>);
+  instance_support_.clear();
+  size_t instance_records = 0;
+  for (size_t k = 0; k < element_key.size(); ++k) {
+    if (tested_instance[k].empty()) continue;
+    instance_records += tested_instance[k].size();
+    instance_support_.emplace_back(element_key[k], std::move(tested_instance[k]));
+  }
+  std::sort(instance_support_.begin(), instance_support_.end(), byKey<std::vector<InstanceSupport>>);
   read_points_.clear();
   for (size_t k = 0; k < point_key.size(); ++k) read_points_.emplace_back(point_key[k], reads[k]);
   std::sort(read_points_.begin(), read_points_.end(), byKey<int32_t>);
   voted_ = num_frames;
+  // The frames of this round vote by place, once: every cell of the present volume's blocks in a
+  // frame's view, by the rule voteOn tells a face's vote by (without a rival: a cell is no face).
+  if (place_votes_ && first_fresh < num_frames) {
+    const size_t nf = num_frames - first_fresh;
+    std::vector<std::vector<uint16_t>> frame_ranges(nf), frame_instances(nf);
+    std::vector<FrameCam> cams(nf);
+    std::vector<TimeStamp> stamps(nf);
+    std::vector<uint8_t> read(nf, 0);
+    parallelFor(nf, num_threads_, [&](size_t, size_t b, size_t e) {
+      for (size_t i = b; i < e; ++i) {
+        read[i] = counted(first_fresh + i, frame_ranges[i], nullptr, &frame_instances[i]);
+        cams[i] = frameCam(frames_.frame(first_fresh + i).world_T_sensor);
+        stamps[i] = frames_.frame(first_fresh + i).stamp;
+      }
+    }, 1);
+    const auto origins = tsdf_.blockOrigins();
+    const size_t cells = static_cast<size_t>(place_n) * place_n * place_n;
+    std::vector<PlaceBlock*> blocks(origins.size());
+    for (size_t o = 0; o < origins.size(); ++o) {
+      PlaceBlock& block = places_[voxelKey(origins[o] + Eigen::Vector3f::Constant(0.5f * place_block), place_block)];
+      if (block.support.empty()) {
+        block.support.assign(cells, 0);
+        block.free.assign(cells, 0);
+      }
+      blocks[o] = &block;
+    }
+    const float radius = 0.5f * std::sqrt(3.f) * place_block;
+    const float half_u = 0.5f * W / K.fx, half_v = 0.5f * H / K.fy;
+    parallelFor(origins.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+      for (size_t o = b; o < e; ++o) {
+        PlaceBlock& block = *blocks[o];
+        const Eigen::Vector3f centre = origins[o] + Eigen::Vector3f::Constant(0.5f * place_block);
+        for (size_t i = 0; i < nf; ++i) {
+          if (!read[i]) continue;
+          const FrameCam& c = cams[i];
+          // (A block wholly outside the frame's view has no cell in it.)
+          const Eigen::Vector3f in_camera = c.R.transpose() * (centre - c.t);
+          const float reach = in_camera.z() + radius;
+          if (reach <= 0.1f || std::abs(in_camera.x()) > 2.f * reach * half_u + radius ||
+              std::abs(in_camera.y()) > 2.f * reach * half_v + radius) {
+            continue;
+          }
+          const uint16_t* rng = frame_ranges[i].data();
+          const uint16_t* instance = frame_instances[i].data();
+          size_t index = 0;
+          for (int z = 0; z < place_n; ++z) {
+            for (int y = 0; y < place_n; ++y) {
+              for (int x = 0; x < place_n; ++x, ++index) {
+                const Eigen::Vector3f p = origins[o] + place_cell * Eigen::Vector3f(x + 0.5f, y + 0.5f, z + 0.5f);
+                int u, v;
+                float q;
+                if (!project(p, c, u, v, q)) continue;
+                const size_t pix = static_cast<size_t>(v) * W + u;
+                const uint16_t d = rng[pix];
+                if (!d) continue;
+                const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, q) / kRangeBin));
+                const float r = d * 1e-3f - q;
+                const bool supports = std::abs(r) <= std::max(h, sigma[bin]);
+                if (!supports && !(r > 0.f)) continue;   // behind the reading: no vote
+                uint16_t& count = supports ? block.support[index] : block.free[index];
+                if (count != std::numeric_limits<uint16_t>::max()) ++count;
+                // (Support an instance's pixel gave, as voteOn's votes keep it.)
+                if (supports && instance[pix]) {
+                  addSupport(block.instance[static_cast<uint32_t>(index)], instance[pix], 1, stamps[i], stamps[i]);
+                }
+              }
+            }
+          }
+        }
+      }
+    }, 8);
+  }
   // Every frame through this round is integrated, recorded and has voted: what it read is given
   // up (the archive holds the frames between two rounds, never a session).
   const size_t archive_bytes_before = frames_.numBytes();
@@ -1802,6 +2064,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   std::vector<std::vector<uint32_t>> present_of_slot(slots.size()), kept_of_slot(slots.size());
   size_t present_unassigned = 0;
   for (uint32_t f = 0; f < Fp.size(); ++f) {
+    if (doubled[f]) continue;
     const auto it = face_id[f] ? slot_of_label.find(face_id[f]) : slot_of_label.end();
     if (it != slot_of_label.end()) {
       present_of_slot[it->second].push_back(f);
@@ -1843,13 +2106,28 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   for (uint32_t s = 0; s < slots.size(); ++s) {
     const Slot& slot = slots[s];
     auto& mesh = *slot.mesh;
-    const auto& kept = kept_of_slot[s];
     const auto& present = present_of_slot[s];
-    if (!slot.background) {
+    if (!slot.background && present.empty()) {
       // An object's surface is its own reconstruction as the object reasoning keeps it.
       object_faces_out += mesh.numFaces();
       continue;
     }
+    if (!slot.background) {
+      // And the present's faces on its surface (above), with the faces of its own where the
+      // present holds none.
+      auto& own = kept_of_slot[s];
+      own.clear();
+      for (uint32_t f = 0; f < faces.size(); ++f) {
+        if (fslot[f] != s) continue;
+        if (slot.physical != 0 && presentHolds(f, slot.physical)) {
+          ++present_doubled;
+          continue;
+        }
+        own.push_back(f);
+      }
+      object_faces_out += own.size() + present.size();
+    }
+    const auto& kept = kept_of_slot[s];
     const size_t old_n = mesh.numVertices();
     // New vertex list: vertices of kept faces (original order), then present vertices.
     std::vector<int64_t> kept_new(old_n, -1);
@@ -1950,6 +2228,12 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " outvoted=" << shown_outvoted << " covered=" << shown_covered
             << " fill_kept=" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "/"
             << fill.size() << " inside_retired=" << num_retired
+            << " present_faces_of_objects(own_faces_given_way)=" << present_of_objects << "(" << present_doubled << ")"
+            << " place_votes(new_elements_voted/support/free/blocks/bytes)=" << place_voted << "/" << place_support
+            << "/" << place_free << "/" << places_.size() << "/"
+            << places_.size() * 2 * sizeof(uint16_t) * static_cast<size_t>(place_n) * place_n * place_n
+            << " instance_support(records/withdrawn/withdrawn_by_place)=" << instance_records << "/"
+            << instance_withdrawn << "/" << place_instance_withdrawn
             << " guarded_objects=" << guarded << " reused(identities/rivals)=" << identities_reused << "/"
             << rivals_reused << " archive_bytes(before_release/after/peak)=" << archive_bytes_before
             << "/" << frames_.numBytes() << "/" << frames_.peakBytes()

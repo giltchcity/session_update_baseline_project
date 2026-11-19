@@ -72,6 +72,9 @@ class PresentTsdf {
   void invalidate(const Changes& changes);
   // Bounds of the marked voxels (whole voxels), one per block holding any.
   std::vector<Eigen::AlignedBox3f> marked() const;
+  // The minimum corners (world) of the blocks the volume holds, and a block's edge length.
+  std::vector<Eigen::Vector3f> blockOrigins() const;
+  float blockSize() const;
   // How far behind a reading the native integrator updates: the truncation and its extra band.
   float behind() const;
   // What a rebuild read and integrated: frames, seconds reading them (concurrently), seconds integrating.

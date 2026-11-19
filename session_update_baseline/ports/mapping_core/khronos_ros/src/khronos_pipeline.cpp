@@ -105,10 +105,14 @@ void KhronosPipeline::init() {
       const auto& window = khronos_active_window_->config;
       auto present = std::make_shared<PresentSurface>(
           window.volumetric_map, window.projective_integrator, window.mesh_integrator);
+      present->setPlaceVotes(window.place_votes);
+      PhysicalEvidenceStore::setDecodeCacheFrames(window.evidence_decode_cache_frames);
       khronos_active_window_->setPresentSurface(present);
       khronos_backend_->setPresentSurface(present);
       LOG(INFO) << "[PresentSurface] native Hydra voxel " << window.volumetric_map.voxel_size
-                << " truncation " << window.volumetric_map.truncation_distance;
+                << " truncation " << window.volumetric_map.truncation_distance
+                << " place_votes " << (window.place_votes ? 1 : 0)
+                << " evidence_decode_cache_frames " << window.evidence_decode_cache_frames;
     }
     khronos_backend_->setHighMobilitySemanticLabels(
         khronos_backend_->config.high_mobility_semantic_labels);

@@ -386,6 +386,11 @@ class PersistentObjectState {
    * replacement candidate, and a current-session state beside an inherited one it was not
    * shown with. Shown with the background until decided, as their pixels always were.
    */
+  // The geometry of the states shown (world frame), with the physical id of every face: what
+  // tells which faces of the present volume are an object's.
+  void appendShownGeometry(std::vector<Eigen::Vector3f>& vertices,
+                           std::vector<std::array<uint32_t, 3>>& faces,
+                           std::vector<uint32_t>& face_physical) const;
   void appendPendingSurfaces(std::vector<Eigen::Vector3f>& vertices,
                              std::vector<std::array<uint32_t, 3>>& faces) const;
 

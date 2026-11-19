@@ -53,6 +53,11 @@ active_window:
   # (semantic_id << 16) | physical_instance_id. Ordinary semantic-only configs
   # leave this false even though Hydra normalizes their images to CV_32SC1.
   input_labels_are_packed: true
+  # true: the window map takes the pixels of physical instances too (upstream Khronos), so its
+  # reconstruction (the fill faces) covers the objects; the present volume takes none either way.
+  window_fuses_object_pixels: true
+  # Keep what every frame votes by place, for the faces that come to be later (no frame is kept).
+  place_votes: true
   min_output_separation: 0.4 # s
   # The canonical mapping core always excludes configured object and dynamic
   # labels from the background TSDF. Their current geometry is materialized by

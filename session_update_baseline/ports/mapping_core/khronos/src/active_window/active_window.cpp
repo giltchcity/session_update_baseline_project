@@ -60,6 +60,9 @@ void declare_config(ActiveWindow::Config& config) {
   field(config.verbosity, "verbosity");
   field(config.input_labels_are_packed, "input_labels_are_packed");
   field(config.detach_object_extraction, "detach_object_extraction");
+  field(config.window_fuses_object_pixels, "window_fuses_object_pixels");
+  field(config.place_votes, "place_votes");
+  field(config.evidence_decode_cache_frames, "evidence_decode_cache_frames");
   field(config.min_output_separation, "min_output_separation", "s");
   field(config.projective_integrator, "projective_integrator");
   field(config.tracking_integrator, "tracking_integrator");
@@ -113,8 +116,12 @@ ActiveWindow::ActiveWindow(const Config& config, const OutputQueue::Ptr& output_
       extraction_worker_(config.extraction_worker, config.object_extractor.create()),
       sinks_(KhronosSink::instantiate(config.khronos_sinks)),
       frame_data_buffer_(config.frame_data_buffer) {
-  // Objects are integrated, as their frames arrive, with the map's truncation distance.
-  extraction_worker_.setFrameTruncation(config.volumetric_map.truncation_distance);
+  // Objects are integrated, as their frames arrive, in the band the buffered reconstruction of an
+  // object uses (two voxels; MeshObjectExtractor::segmentVolume). The map's wider band was tried
+  // (11-19): the same frames, fused with it, put a third of a thin object's surface more than
+  // 5 cm off (a wider band lets a reading reach farther behind the surface it measured, into what
+  // other frames measure of the other side), a tenth with two voxels.
+  LOG(INFO) << "WINDOW_FUSES_OBJECT_PIXELS " << (config.window_fuses_object_pixels ? 1 : 0);
   // Create member processors as specified in the configs.
   motion_detector_ = config.motion_detector.create();
   if (!motion_detector_) {
@@ -179,6 +186,24 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   // throughout frames.
   tracker_->processInput(map_, *data);
 
+  // The window's own reconstruction of the frame. Where the window takes every static pixel
+  // (window_fuses_object_pixels) it does not read which pixels the objects take, and the two write
+  // apart (the window's map; each object's segment volume and the frame's fused image), so it
+  // runs beside the objects' fusion below instead of after it. Otherwise it masks those pixels
+  // and waits for them.
+  // (On the session's one worker; the guard waits for it however this frame's processing ends.)
+  struct WaitFor {
+    BesideWorker* worker;
+    ~WaitFor() {
+      if (!worker) return;
+      try {
+        worker->wait();
+      } catch (...) {
+      }
+    }
+  } window_update{config.window_fuses_object_pixels ? &window_worker_ : nullptr};
+  if (window_update.worker) window_worker_.start([this, &data] { updateMap(*data); });
+
   // A physical instance's own pixels build its reconstruction as the frames
   // arrive: each frame enters the segment its track is observing.
   if (!data->instance_image.empty()) {
@@ -211,7 +236,12 @@ hydra::ActiveWindowOutput::Ptr ActiveWindow::spinOnce(const hydra::InputPacket& 
   }
 
   // Volumetric reconstruction in active window map.
-  updateMap(*data);
+  if (window_update.worker) {
+    window_update.worker = nullptr;
+    window_worker_.wait();
+  } else {
+    updateMap(*data);
+  }
 
   // Save the frame for later use and free-up memory of frames no longer used.
   frame_data_buffer_.trimBuffer(tracker_->getTracks());
@@ -328,8 +358,11 @@ void ActiveWindow::updateMap(const FrameData& data) {
   hydra::maskNonZero(data.dynamic_image, integration_mask);
   // A pixel that entered an object's segment builds that object, not the
   // background: an object that leaves takes its surface with it and one that
-  // arrives meets no earlier free space.
-  hydra::maskNonZero(data.fused_image, integration_mask);
+  // arrives meets no earlier free space. (Unless the window is configured to take every static
+  // pixel as upstream does, Config::window_fuses_object_pixels.)
+  if (!config.window_fuses_object_pixels) {
+    hydra::maskNonZero(data.fused_image, integration_mask);
+  }
   integrator_.updateMap(data.input, map_, true, integration_mask);
 
   // Update the tracking information for all touched blocks. This resets

@@ -280,6 +280,17 @@ void Backend::sessionAfterReconcile(
   const std::map<size_t, TimeStamp> state_starts;
   PresentSurface::Inputs inputs;
   inputs.shown = shown_memory_.get();
+  // The identities whose current state began in this session, from that state's first sighting on
+  // (the registry's track_first_seen, else its birth), as the main table's states take them: the
+  // support their own pixels gave before it is the instance's at a place it has left.
+  {
+    const TimeStamp session_start = present_surface_->firstStamp();
+    for (const size_t id : persistent_objects_.trackedIds()) {
+      const auto current = persistent_objects_.currentFragment(id);
+      if (!current || current->birth_time < session_start) continue;
+      inputs.instance_starts[id] = current->track_first_seen > 0 ? current->track_first_seen : current->birth_time;
+    }
+  }
   // The state layer already knows which states closed. The shown memory reads the
   // same ownership, so a closed state's old-site faces follow its death atomically
   // instead of waiting for the per-face evidence to see through every pixel.
@@ -358,6 +369,10 @@ void Backend::sessionAfterReconcile(
     }
   }
   inputs.pending = &pending;
+  PresentSurface::Surface object_geometry;
+  persistent_objects_.appendShownGeometry(object_geometry.vertices, object_geometry.faces,
+                                          object_geometry.face_physical);
+  inputs.object_geometry = &object_geometry;
   LOG(INFO) << "PENDING_SURFACES stamp=" << stamp << " vertices=" << pending.vertices.size()
             << " faces=" << pending.faces.size() << " held_faces=" << held_faces
             << " held_faces_shown_by_their_state=" << held_shown_by_state;

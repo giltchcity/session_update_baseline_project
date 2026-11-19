@@ -11,6 +11,9 @@
 #include <cstdint>
 #include <limits>
 #include <map>
+#include <mutex>
+#include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -41,43 +44,28 @@ struct FrameEvidence {
   Eigen::Isometry3f sensor_T_world = Eigen::Isometry3f::Identity();
   hydra::Sensor::ConstPtr sensor;
   std::vector<Run> runs;
-  // The range of every pixel in millimetres (0: invalid / unavailable), packed as the frame
-  // archive packs a frame's ranges (differences to the previous pixel, LZ4): real depth differs
-  // from pixel to pixel, so runs of equal range are one pixel long.
-  FrameArchive::Frame depth;
-  // Identifies this frame's packed ranges to the readers' caches (held, so never reused).
-  std::shared_ptr<const std::vector<uint8_t>> packed_key;
-  // The frame's ranges, unpacked (row-major). A reader keeps the frames it last read.
-  std::shared_ptr<const std::vector<uint16_t>> ranges() const;
+  // The range of every pixel in millimetres (0: invalid / unavailable), row-major, as read: a
+  // frame is kept once per window output (min_output_separation), ~1 MB each, and every reader
+  // looks pixels up in it directly (unpacking one for a pixel cost the change detection most of
+  // its time).
+  std::shared_ptr<const std::vector<uint16_t>> range_mm;
+  std::shared_ptr<const std::vector<uint16_t>> ranges() const { return range_mm; }
   // DIAG (Stage 0, derivation_joint_sensor_20261006): the label code of pixels without valid range,
   // kInvalidCode where the range is valid. `runs` keeps kInvalidCode for those pixels as before.
   std::vector<Run> no_depth_label_runs;
 };
 
-std::shared_ptr<const std::vector<uint16_t>> FrameEvidence::ranges() const {
-  // A round reads its few new frames for one object state after another: each thread keeps the
-  // frames it read last (the evidence itself is immutable and shared between snapshots).
-  struct Read {
-    std::shared_ptr<const std::vector<uint8_t>> key;   // the packed bytes this was read from
-    std::shared_ptr<const std::vector<uint16_t>> range_mm;
-  };
-  constexpr size_t kKept = 8;
-  thread_local std::vector<Read> kept;
-  for (size_t i = 0; i < kept.size(); ++i) {
-    if (kept[i].key == packed_key) {
-      std::rotate(kept.begin(), kept.begin() + i, kept.begin() + i + 1);
-      return kept.front().range_mm;
-    }
-  }
-  PhaseClock clock(Phase::kEvidenceDecode);
-  auto range_mm = std::make_shared<std::vector<uint16_t>>();
-  std::vector<FrameArchive::InstanceRun> unused;
-  if (!depth.decode(static_cast<size_t>(width) * height, *range_mm, unused)) {
-    range_mm->assign(static_cast<size_t>(width) * height, 0);
-  }
-  if (kept.size() >= kKept) kept.pop_back();
-  kept.insert(kept.begin(), Read{packed_key, range_mm});
-  return range_mm;
+// The unpacked frames the readers share: the newest by stamp, up to the configured number.
+struct SharedRanges {
+  std::mutex mutex;
+  size_t capacity = 0;
+  std::map<TimeStamp, std::pair<std::shared_ptr<const std::vector<uint8_t>>,
+                                std::shared_ptr<const std::vector<uint16_t>>>> frames;
+  size_t bytes = 0, peak_bytes = 0, hits = 0, decodes = 0;
+};
+SharedRanges& sharedRanges() {
+  static SharedRanges shared;
+  return shared;
 }
 
 bool sameSize(const cv::Mat& image, int rows, int cols) {
@@ -177,9 +165,10 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   }
 
   float measured_depth = std::numeric_limits<float>::quiet_NaN();
-  const auto ranges = frame.ranges();
-  if (index < ranges->size() && (*ranges)[index] > 0) {
-    measured_depth = static_cast<float>((*ranges)[index]) / 1000.0f;
+  // (Read in place: a copy of the shared pointer per point is an atomic every reader thread contends for.)
+  const std::vector<uint16_t>& ranges = *frame.range_mm;
+  if (index < ranges.size() && ranges[index] > 0) {
+    measured_depth = static_cast<float>(ranges[index]) / 1000.0f;
   }
 
   ProjectedEndpointEvidence projection;
@@ -228,6 +217,25 @@ size_t PhysicalEvidenceStore::Snapshot::numFrames() const {
 
 size_t PhysicalEvidenceStore::Snapshot::numRuns() const {
   return storage_ ? storage_->num_runs : 0;
+}
+
+void PhysicalEvidenceStore::setDecodeCacheFrames(const size_t frames) {
+  auto& shared = sharedRanges();
+  std::lock_guard<std::mutex> lock(shared.mutex);
+  shared.capacity = frames;
+  while (shared.frames.size() > shared.capacity) {
+    shared.bytes -= shared.frames.begin()->second.second->size() * sizeof(uint16_t);
+    shared.frames.erase(shared.frames.begin());
+  }
+}
+
+std::string PhysicalEvidenceStore::decodeCacheReport() {
+  auto& shared = sharedRanges();
+  std::lock_guard<std::mutex> lock(shared.mutex);
+  std::ostringstream out;
+  out << "capacity_frames=" << shared.capacity << " frames=" << shared.frames.size() << " bytes=" << shared.bytes
+      << " peak_bytes=" << shared.peak_bytes << " hits=" << shared.hits << " decodes=" << shared.decodes;
+  return out.str();
 }
 
 PhysicalEvidenceStore::PhysicalEvidenceStore()
@@ -325,9 +333,7 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   }
   frame->runs.shrink_to_fit();
   frame->no_depth_label_runs.shrink_to_fit();
-  frame->depth = FrameArchive::Frame::pack(input.timestamp_ns, input.getSensorPose(), frame->width, range_mm,
-                                           {{static_cast<uint32_t>(range_mm.size()), 0}});
-  frame->packed_key = std::make_shared<const std::vector<uint8_t>>();
+  frame->range_mm = std::make_shared<const std::vector<uint16_t>>(std::move(range_mm));
 
   std::lock_guard<std::mutex> lock(mutex_);
   auto next = std::make_shared<Storage>(*storage_);

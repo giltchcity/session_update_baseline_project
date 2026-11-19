@@ -100,6 +100,37 @@ class SegmentVolumes {
     return copy;
   }
 
+  //! Whether the object's own readings carry the surface of `volume` at `point`: a voxel within one
+  //! voxel of it, inside the surface, whose readings were the object's by the configured share --
+  //! what voted() keeps (a surface no such voxel carries is another's: the object's volume takes
+  //! every reading in its blocks, and votes which of them were the object's).
+  static bool carries(const hydra::VolumetricMap& volume, const Eigen::Vector3f& point) {
+    float min_confidence = 0.f, min_observations = 0.f;
+    {
+      auto& self = instance();
+      std::lock_guard<std::mutex> lock(self.mutex_);
+      min_confidence = self.min_confidence_;
+      min_observations = self.min_observations_;
+    }
+    const auto* votes = volume.getSemanticLayer();
+    if (!votes) return true;
+    const auto& tsdf = volume.getTsdfLayer();
+    const spatial_hash::GlobalIndex centre = tsdf.getGlobalVoxelIndex(point);
+    for (int dx = -1; dx <= 1; ++dx) for (int dy = -1; dy <= 1; ++dy) for (int dz = -1; dz <= 1; ++dz) {
+      const spatial_hash::GlobalIndex index = centre + spatial_hash::GlobalIndex(dx, dy, dz);
+      const auto* voxel = tsdf.getVoxelPtr(index);
+      if (!voxel || !(voxel->weight > 0.f) || voxel->distance > 0.f) continue;
+      const auto* vote = votes->getVoxelPtr(index);
+      float confidence = 0.f;   // no vote at all: not the object's
+      if (vote && !vote->empty) {
+        const float total = vote->semantic_likelihoods(0) + vote->semantic_likelihoods(1);
+        confidence = total < min_observations ? -1.f : vote->semantic_likelihoods(1) / total;
+      }
+      if (confidence >= min_confidence) return true;
+    }
+    return false;
+  }
+
   //! The surfaces (world frame) of the volumes tracks hold before their first hand-over, by
   //! instance: shown with the background until handed over, as their pixels always were.
   struct Held {
