@@ -18,10 +18,11 @@ namespace khronos {
  *                    closed state, and an identity's node keeps the surfaces of its closed states
  *                    (with no current state it stays present with them; a succeeded state's surface
  *                    stays beside its successor's)
- *   no_element_rule  the element-level evidence (every counted frame's vote on a tested face, the
- *                    INSIDE reads) is still accumulated, but its ends are not applied: no memory or
- *                    fill face is hidden for being seen through, and INSIDE retires no memory vertex;
- *                    without a majority either way the volume's one-surface rule applies as before
+ *   no_element_rule  the element-level evidence on the earlier visits' map (every counted frame's
+ *                    vote on a face of it, the INSIDE reads) is still accumulated, but its ends are not
+ *                    applied: no earlier visit's face is hidden for being seen through, and INSIDE
+ *                    retires no memory vertex; this visit's own fill and, without a majority either
+ *                    way, the volume's one-surface rule are decided as before
  * A set switch logs "ABLATION: mechanism ..." once.
  */
 struct MechanismAblation {

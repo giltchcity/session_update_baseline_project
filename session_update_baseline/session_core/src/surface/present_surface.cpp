@@ -1765,12 +1765,13 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   const double evidence_s = since();
 
   // The fusion's verdict on element k: 1 shown, 0 not, -1 no evidence either way.
-  // (Ablation no_element_rule: the votes are counted, but a majority against an element does not
-  // end it; without a majority the volume's one-surface rule decides as before.)
+  // (Ablation no_element_rule: the votes on an earlier visit's face are counted, but a majority
+  // against it does not end it; this visit's fill is decided as before, and without a majority the
+  // volume's one-surface rule decides as before.)
   const bool element_ends = !mechanismAblation().no_element_rule;
   auto verdict = [&](size_t k) {
     const Votes& ev = tested_ev[k];
-    if (ev.support != ev.free) return ev.support > ev.free || !element_ends ? 1 : 0;
+    if (ev.support != ev.free) return ev.support > ev.free || (!element_ends && k < tested.size()) ? 1 : 0;
     return covered[k] ? 0 : -1;
   };
   std::vector<uint8_t> fill_kept(fill.size(), 0);
