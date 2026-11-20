@@ -36,6 +36,7 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/backend/backend.h"
+#include "session_core/state/mechanism_ablation.h"
 #include "session_core/surface/closed_object_background.h"
 #include "session_core/surface/triangle_grid.h"
 #include <algorithm>
@@ -228,7 +229,8 @@ void Backend::sessionBeforeReconcile(
   if (finalize_pending) {
     persistent_objects_.finalizePendingAbsences(stamp);
   }
-  if (dsg->hasMesh()) {
+  // (Ablation no_object_rule: a closed state's old-site background stays.)
+  if (dsg->hasMesh() && !mechanismAblation().no_object_rule) {
     const auto closed_surfaces = closedStateSurfaces(persistent_objects_, stamp);
     markClosedObjectBackground(*dsg->mesh(), closed_surfaces,
                                object_surface_resolution_,
@@ -257,7 +259,7 @@ void Backend::sessionAfterReconcile(
     const size_t terminal_closed = verifyCurrentObjectStates(stamp);
     persistent_objects_.finalizePendingAbsences(stamp);
     Changes terminal_changes;
-    if (dsg->hasMesh()) {
+    if (dsg->hasMesh() && !mechanismAblation().no_object_rule) {
       const auto closed_surfaces = closedStateSurfaces(persistent_objects_, stamp);
       const auto background_closed = markClosedObjectBackground(
           *dsg->mesh(), closed_surfaces, object_surface_resolution_,
@@ -292,9 +294,12 @@ void Backend::sessionAfterReconcile(
   // The state layer already knows which states closed. The shown memory reads the
   // same ownership, so a closed state's old-site faces follow its death atomically
   // instead of waiting for the per-face evidence to see through every pixel.
-  for (const auto& state : closedStateSurfaces(persistent_objects_, stamp)) {
-    inputs.closed_memory.insert(inputs.closed_memory.end(), state.points.begin(),
-                                state.points.end());
+  // (Ablation no_object_rule: the shown memory is not hidden for a closed state.)
+  if (!mechanismAblation().no_object_rule) {
+    for (const auto& state : closedStateSurfaces(persistent_objects_, stamp)) {
+      inputs.closed_memory.insert(inputs.closed_memory.end(), state.points.begin(),
+                                  state.points.end());
+    }
   }
   if (finalize_pending) {
     if (const char* dump = std::getenv("KHRONOS_REFUSION_DUMP")) inputs.dump_dir = dump;

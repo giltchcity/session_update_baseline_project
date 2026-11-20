@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <functional>
 #include <map>
 #include <memory>
@@ -122,10 +124,22 @@ class PresentSurface {
       std::vector<uint32_t> triangles, voxels;
     };
     std::vector<Cell> cells;
+    /** Ablation switch: SESSION_CORE_VALID_DOMAINS=0 turns valid domains off (no state restricts any
+     *  frame: every archived frame contributes its full ray, and no state change rebuilds a block).
+     *  Unset or any other value: the method as it is. */
+    static bool validDomains() {
+      static const bool on = [] {
+        const char* v = std::getenv("SESSION_CORE_VALID_DOMAINS");
+        const bool off = v && std::string(v) == "0";
+        if (off) std::fprintf(stderr, "[PresentSurface] ABLATION: valid domains off (SESSION_CORE_VALID_DOMAINS=0)\n");
+        return !off;
+      }();
+      return on;
+    }
     /** Whether the state restricts a frame at `t`: older than t_l. */
-    bool restricts(TimeStamp t) const { return current && t < start; }
+    bool restricts(TimeStamp t) const { return validDomains() && current && t < start; }
     /** The latest frame stamp the state can restrict. */
-    TimeStamp horizon() const { return current ? start : TimeStamp(0); }
+    TimeStamp horizon() const { return validDomains() && current ? start : TimeStamp(0); }
     /** The same state for the volume: current, from the same t_l (its surface may have grown). */
     bool operator==(const State& other) const;
   };

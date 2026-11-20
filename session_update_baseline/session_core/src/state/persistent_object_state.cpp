@@ -36,6 +36,7 @@
  * -------------------------------------------------------------------------- */
 
 #include "session_core/state/persistent_object_state.h"
+#include "session_core/state/mechanism_ablation.h"
 
 #include <array>
 #include <map>
@@ -956,6 +957,17 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
 
   state.last_merged_observation_first = observationFirstStamp(merged);
 
+  // Ablation no_object_rule: no state end acts on the map, so the surfaces of the identity's closed
+  // states stay in its node (the B-session's closed states too).
+  const bool keep_closed = mechanismAblation().no_object_rule;
+  const auto add_closed = [&](const PhysicalState& of, std::optional<size_t> skip) {
+    for (size_t f = 0; f < of.fragments.size(); ++f) {
+      const Fragment& fragment = of.fragments[f];
+      if ((skip && f == *skip) || !fragment.death_time || fragment.geometry.numVertices() == 0) continue;
+      appendMeshUnion(merged.mesh, merged.bounding_box, fragment.geometry, fragment.bbox);
+    }
+  };
+
   // Only the CURRENT fragment is materialized. While an inherited A state and
   // an independent B-session state coexist, materialize their union so the
   // timeline shows A+B refinement online; the registry still owns them
@@ -992,6 +1004,11 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
         frames += b_current.reconstruction_frames;
       }
     }
+    if (keep_closed) {
+      add_closed(state, state.current);
+      if (state.b_session) add_closed(*state.b_session, state.b_session->current);
+      merged.position = merged.bounding_box.world_P_center.cast<double>();
+    }
     merged.details[kReconstructionFramesDetail] = {frames};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
     // Presence follows the registry's state decision (one decision criterion): an identity with a
@@ -999,6 +1016,24 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
     // (P58). A finite right edge of the newest native segment (the reconciler's estimate for that
     // segment alone) must not end it: in L2_FINAL real B it hid live, GT-present objects for
     // 2-13 s (inst 2, 3, 4, 6, 7, 10, 11) until the next segment reopened the interval.
+    if (!merged.last_observed_ns.empty()) {
+      merged.last_observed_ns.back() = std::numeric_limits<TimeStamp>::max();
+    }
+  } else if (!state.fragments.empty() && keep_closed) {
+    // Ablation no_object_rule: the identity's last state ended, and it stays present with the
+    // surfaces of its states (the last one's first).
+    size_t last = 0;
+    for (size_t f = 0; f < state.fragments.size(); ++f) {
+      const auto& d = state.fragments[f].death_time;
+      if (d && (!state.fragments[last].death_time || *d > *state.fragments[last].death_time)) last = f;
+    }
+    merged.mesh = state.fragments[last].geometry;
+    merged.bounding_box = state.fragments[last].bbox;
+    add_closed(state, last);
+    if (state.b_session) add_closed(*state.b_session, state.b_session->current);
+    merged.position = merged.bounding_box.world_P_center.cast<double>();
+    merged.details[kReconstructionFramesDetail] = {state.fragments[last].reconstruction_frames};
+    merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
     if (!merged.last_observed_ns.empty()) {
       merged.last_observed_ns.back() = std::numeric_limits<TimeStamp>::max();
     }

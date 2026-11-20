@@ -1,4 +1,5 @@
 #include "session_core/surface/present_surface.h"
+#include "session_core/state/mechanism_ablation.h"
 
 #include <algorithm>
 #include <array>
@@ -503,8 +504,24 @@ bool PresentSurface::reaches(size_t index, const Eigen::AlignedBox3f& box, float
          nearest <= frame.farthestIn(camera_.width, window.u0, window.u1, window.v0, window.v1) * 1e-3f + beyond;
 }
 
+namespace {
+// Ablation switch: SESSION_CORE_FREE_LIMIT=0 drops the free-space limit lambda_o of eq. (3): an earlier frame's
+// free space runs past an object that arrived later; rays that hit an ended state are still excluded in full.
+// Unset or any other value: the method as it is.
+bool freeLimits() {
+  static const bool on = [] {
+    const char* v = std::getenv("SESSION_CORE_FREE_LIMIT");
+    const bool off = v && std::string(v) == "0";
+    if (off) std::fprintf(stderr, "[PresentSurface] ABLATION: free-space limit lambda_o off (SESSION_CORE_FREE_LIMIT=0)\n");
+    return !off;
+  }();
+  return on;
+}
+}  // namespace
+
 void PresentSurface::limitBy(const State& state, Scratch& s, std::vector<float>& limit,
                              const Window& window, const std::vector<uint8_t>* mask) const {
+  if (!freeLimits()) return;
   if (state.triangles.empty() && state.voxels.empty()) return;
   const int W = static_cast<int>(camera_.width);
   Eigen::Vector3f X[8];
@@ -1742,9 +1759,12 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   const double evidence_s = since();
 
   // The fusion's verdict on element k: 1 shown, 0 not, -1 no evidence either way.
+  // (Ablation no_element_rule: the votes are counted, but a majority against an element does not
+  // end it; without a majority the volume's one-surface rule decides as before.)
+  const bool element_ends = !mechanismAblation().no_element_rule;
   auto verdict = [&](size_t k) {
     const Votes& ev = tested_ev[k];
-    if (ev.support != ev.free) return ev.support > ev.free ? 1 : 0;
+    if (ev.support != ev.free) return ev.support > ev.free || !element_ends ? 1 : 0;
     return covered[k] ? 0 : -1;
   };
   std::vector<uint8_t> fill_kept(fill.size(), 0);
@@ -1770,8 +1790,9 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   for (size_t k = 0; k < memory_objects.size(); ++k) {
     if (in_view[k]) inside_candidates.push_back(memory_objects[k]);
   }
+  // (Ablation no_element_rule: INSIDE retires nothing.)
   const std::vector<uint8_t> retired =
-      inside_candidates.empty()
+      inside_candidates.empty() || !element_ends
           ? std::vector<uint8_t>(inside_pos.size(), 0)
           : insideMemory(inside_pos, inside_candidates, Vp, Fp, face_id, face_normal, v_f, num_threads_);
   const size_t num_retired = std::count(retired.begin(), retired.end(), 1);
