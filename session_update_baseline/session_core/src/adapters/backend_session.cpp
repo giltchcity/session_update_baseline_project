@@ -338,6 +338,17 @@ void Backend::sessionAfterReconcile(
     };
   }
   auto round = present_surface_->compose(*dsg, stamp, state_starts, inputs, finalize_pending);
+  // (Ablation no_object_rule: the composition rebuilt every current object's mesh from the present;
+  // the surfaces of its closed states stay beside it.)
+  if (mechanismAblation().no_object_rule && dsg->hasLayer(DsgLayers::OBJECTS)) {
+    for (const auto& [node_id, node] : dsg->getLayer(DsgLayers::OBJECTS).nodes()) {
+      auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+      if (!attrs) continue;
+      if (const auto physical = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs)) {
+        persistent_objects_.appendClosedGeometry(*physical, *attrs);
+      }
+    }
+  }
   if (!finalize_pending) return;
   if (inputs.is_memory) {
     std::string v, s;

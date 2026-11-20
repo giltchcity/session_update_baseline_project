@@ -1379,6 +1379,12 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       if (p > 0) {
         const auto it = slot_of_label.find(p);
         if (it == slot_of_label.end() || state_starts.count(p)) {
+          // (Ablation no_object_rule: no state change acts on the map, so the earlier visit's surface of
+          // this identity stays where it was, with its node if there is one, untested.)
+          if (mechanismAblation().no_object_rule) {
+            const int32_t keep = it != slot_of_label.end() ? static_cast<int32_t>(it->second) : bg_slot;
+            if (keep >= 0) shown_slot[f] = keep;
+          }
           ++shown_object_state;
           continue;
         }

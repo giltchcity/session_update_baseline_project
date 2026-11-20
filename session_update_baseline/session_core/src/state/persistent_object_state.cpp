@@ -1004,11 +1004,8 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
         frames += b_current.reconstruction_frames;
       }
     }
-    if (keep_closed) {
-      add_closed(state, state.current);
-      if (state.b_session) add_closed(*state.b_session, state.b_session->current);
-      merged.position = merged.bounding_box.world_P_center.cast<double>();
-    }
+    // (Ablation no_object_rule: the closed states' surfaces are put beside this one after the
+    // round's composition, appendClosedGeometry, which rebuilds a current object's mesh.)
     merged.details[kReconstructionFramesDetail] = {frames};
     merged.details[kHasDynamicHistoryDetail] = {state.has_dynamic_history ? 1u : 0u};
     // Presence follows the registry's state decision (one decision criterion): an identity with a
@@ -1070,6 +1067,22 @@ void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph
   }
   merged.details[kMobilityChangesDetail] = {state.mobility_changes};
   merged.details[kMobilityContinuationsDetail] = {state.mobility_continuations};
+}
+
+void PersistentObjectState::appendClosedGeometry(const size_t physical_instance_id,
+                                                 KhronosObjectAttributes& attrs) const {
+  const auto it = states_.find(physical_instance_id);
+  if (it == states_.end() || !it->second.current) return;
+  const auto add = [&](const PhysicalState& of, std::optional<size_t> skip) {
+    for (size_t f = 0; f < of.fragments.size(); ++f) {
+      const Fragment& fragment = of.fragments[f];
+      if ((skip && f == *skip) || !fragment.death_time || fragment.geometry.numVertices() == 0) continue;
+      appendMeshUnion(attrs.mesh, attrs.bounding_box, fragment.geometry, fragment.bbox);
+    }
+  };
+  add(it->second, it->second.current);
+  if (it->second.b_session) add(*it->second.b_session, it->second.b_session->current);
+  attrs.position = attrs.bounding_box.world_P_center.cast<double>();
 }
 
 bool PersistentObjectState::reportCurrentContradicted(const size_t physical_instance_id,

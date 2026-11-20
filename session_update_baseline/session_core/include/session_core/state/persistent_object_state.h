@@ -224,6 +224,13 @@ class PersistentObjectState {
    * no candidate promoted is absent: its node keeps no surface and its presence
    * ends at the midpoint of (last support, closure].
    */
+  /**
+   * Ablation no_object_rule: union the surfaces of the identity's closed states (its B-session's
+   * too) into `attrs`, for an identity with a current state (the round's composition rebuilds a
+   * current object's mesh from the present; a closed state's surface stays beside it).
+   */
+  void appendClosedGeometry(size_t physical_instance_id, KhronosObjectAttributes& attrs) const;
+
   void applyPhysicalGeometry(const DynamicSceneGraph& graph,
                              const std::vector<NodeId>& nodes,
                              KhronosObjectAttributes& merged);
