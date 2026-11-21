@@ -78,6 +78,8 @@ class PresentTsdf {
   Rebuilt rebuild(const Camera& camera, const std::vector<float>& ray_norm,
                   const std::vector<size_t>& frames, const FramePose& pose, const ReadFrame& read);
   void extractMesh(std::vector<Eigen::Vector3f>& vertices, std::vector<Face>& faces);
+  // Empty the volume (SESSION_CORE_ROUND_HANDOVER: the present starts again at every round).
+  void clear();
 
   static std::vector<float> rayNorm(const Camera& camera);
   static void depthFromRange(const std::vector<float>& ray_norm, const std::vector<uint16_t>& range_mm,

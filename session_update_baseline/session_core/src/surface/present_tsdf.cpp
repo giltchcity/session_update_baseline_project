@@ -416,6 +416,13 @@ void PresentTsdf::extractMesh(std::vector<Eigen::Vector3f>& vertices,std::vector
   }
 }
 
+void PresentTsdf::clear() {
+  map_.removeBlocks(map_.getTsdfLayer().allocatedBlockIndices());
+  map_.getMeshLayer().clear();
+  impl_->dirty.clear();
+  impl_->removed.clear();
+}
+
 std::vector<float> PresentTsdf::rayNorm(const Camera& camera) {
   std::vector<float> result(static_cast<size_t>(camera.width)*camera.height);
   for (uint32_t v=0;v<camera.height;++v) for (uint32_t u=0;u<camera.width;++u) {

@@ -17,6 +17,7 @@
 #include <Eigen/Geometry>
 #include <spark_dsg/dynamic_scene_graph.h>
 
+#include "session_core/state/mechanism_ablation.h"
 #include "khronos/common/common_types.h"
 #include "session_core/surface/frame_archive.h"
 #include "session_core/surface/present_tsdf.h"
@@ -103,6 +104,9 @@ class PresentSurface {
                  const Inputs& inputs,
                  bool terminal);
 
+  /** Identity `gone` is `keep`'s (online front): its recorded endpoint voxels become keep's. */
+  void mergeIdentity(size_t gone, size_t keep);
+
   /** Stamp of the session's first kept frame (0 before any). */
   TimeStamp firstStamp() const;
 
@@ -134,7 +138,7 @@ class PresentSurface {
         if (off) std::fprintf(stderr, "[PresentSurface] ABLATION: valid domains off (SESSION_CORE_VALID_DOMAINS=0)\n");
         return !off;
       }();
-      return on;
+      return on && !roundHandover();   // (round handover: no frame is fused twice)
     }
     /** Whether the state restricts a frame at `t`: older than t_l. */
     bool restricts(TimeStamp t) const { return validDomains() && current && t < start; }
@@ -252,6 +256,14 @@ class PresentSurface {
   std::vector<std::pair<uint64_t, Rival>> rivals_;
   std::vector<std::pair<uint64_t, uint8_t>> memory_vertices_;
   uint64_t closed_key_ = 0;
+  // SESSION_CORE_ROUND_HANDOVER: the shown memory, with the surfaces the present handed over at the
+  // earlier rounds of this visit after the earlier visit's map.
+  Surface handed_;
+  // Per handed face: the start of its identity's state it was handed with (0: a state not begun in this
+  // visit), or kEarlierVisit for the earlier visit's faces.
+  static constexpr TimeStamp kEarlierVisit = std::numeric_limits<TimeStamp>::max();
+  std::vector<TimeStamp> handed_state_;
+  bool handed_init_ = false;
   std::vector<uint8_t> closed_owned_;
   // A kept frame (read before) whose domain moved: its pixels whose reading or free limit changed,
   // with the reading and limit it was read with, and their bounds.

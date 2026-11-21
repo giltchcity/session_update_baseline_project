@@ -1,4 +1,5 @@
 #pragma once
+#include "khronos/active_window/online_front.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -74,7 +75,12 @@ class FrameArchive {
     /** The kept free limit (num_pixels values; empty: none). False if corrupt. */
     bool keptLimit(size_t num_pixels, std::vector<float>& free_limit) const;
     /** Whether the frame has a reading on a pixel of `id`. */
-    bool sees(uint16_t id) const { return std::binary_search(seen.begin(), seen.end(), id); }
+    bool sees(uint16_t id) const {
+      if (std::binary_search(seen.begin(), seen.end(), id)) return true;
+      if (!PhysicalIdAliases::instance().active()) return false;  // merged identities (online front)
+      return std::any_of(seen.begin(), seen.end(),
+                         [id](uint16_t s) { return PhysicalIdAliases::instance().root(s) == id; });
+    }
     /** Bound [mm] of the readings on columns [u0, u1] by rows [v0, v1]: the farthest of their tiles. */
     uint16_t farthestIn(uint32_t width, int u0, int u1, int v0, int v1) const;
   };

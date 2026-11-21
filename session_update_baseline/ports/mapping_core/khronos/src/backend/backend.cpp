@@ -271,6 +271,7 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // version.
   // TODO(lschmid): Currently always reset the change detection to avoid rare (but possible) hiccups
   // from deleted active vertices. Fix this by only resetting the active window mesh.
+  if (session_extensions_enabled_) sessionApplyIdentityMerges(dsg);
   change_detector_->setDsg(dsg);
   auto changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);

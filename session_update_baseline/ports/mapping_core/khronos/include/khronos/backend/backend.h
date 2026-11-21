@@ -205,6 +205,9 @@ class Backend : public hydra::BackendModule {
   // Project adapters: implementation resides in session_core/src/adapters.
   // The plain Khronos backend runs independently of unfinished project algorithms.
   bool session_extensions_enabled_ = false;
+  // Online front (KHRONOS_ONLINE_FRONT=semantic_merge): its identity merges reach the layer, the present and the round's
+  // graph (every object node by its merged id) before the round's change detection.
+  void sessionApplyIdentityMerges(const DynamicSceneGraph::Ptr& dsg);
   void sessionBeforeReconcile(const DynamicSceneGraph::Ptr& dsg, Changes& changes,
                               TimeStamp stamp, bool finalize_pending);
   void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,

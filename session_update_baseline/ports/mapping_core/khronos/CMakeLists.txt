@@ -31,6 +31,7 @@ include(GNUInstallDirs)
 
 add_library(${PROJECT_NAME}
         src/active_window/active_window.cpp
+        src/active_window/online_front.cpp
         src/active_window/data/frame_data_buffer.cpp
         src/active_window/data/track.cpp
         src/active_window/integration/object_integrator.cpp

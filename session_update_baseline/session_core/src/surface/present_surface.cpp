@@ -776,6 +776,18 @@ void PresentSurface::recordEndpoints() {
   recorded_ = n;
 }
 
+void PresentSurface::mergeIdentity(const size_t gone, const size_t keep) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto g = endpoints_.find(static_cast<uint16_t>(gone));
+  if (g == endpoints_.end()) return;
+  auto& into = endpoints_[static_cast<uint16_t>(keep)];
+  for (const auto& [key, stamp] : g->second) {
+    auto& latest = into[key];
+    latest = std::max(latest, stamp);
+  }
+  endpoints_.erase(static_cast<uint16_t>(gone));
+}
+
 void PresentSurface::updateStates(States next) {
   const auto start = std::chrono::steady_clock::now();
   // The identities whose state differs from the one the TSDF reflects.
@@ -1043,8 +1055,21 @@ void writePly(const std::string& path,
 PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg,
                                                const TimeStamp stamp,
                                                const std::map<size_t, TimeStamp>& state_starts,
-                                               const Inputs& inputs,
+                                               const Inputs& given_inputs,
                                                const bool terminal) {
+  // (SESSION_CORE_ROUND_HANDOVER: the shown memory is the earlier visit's map with the surfaces the
+  // present handed over at the earlier rounds of this visit after it.)
+  Inputs handed_inputs;
+  if (roundHandover()) {
+    if (!handed_init_) {
+      if (given_inputs.shown) handed_ = *given_inputs.shown;
+      handed_state_.assign(handed_.faces.size(), kEarlierVisit);
+      handed_init_ = true;
+    }
+    handed_inputs = given_inputs;
+    handed_inputs.shown = &handed_;
+  }
+  const Inputs& inputs = roundHandover() ? handed_inputs : given_inputs;
   Result result;
   const auto start = std::chrono::steady_clock::now();
 
@@ -1378,7 +1403,16 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       int32_t target = bg_slot;
       if (p > 0) {
         const auto it = slot_of_label.find(p);
-        if (it == slot_of_label.end() || state_starts.count(p)) {
+        // A surface this visit handed over (round handover) stays its identity's while the state it was
+        // handed with continues; the earlier visit's surface gives way to a state begun in this visit.
+        const auto state_start = state_starts.find(p);
+        const TimeStamp handed_with =
+            roundHandover() && f < handed_state_.size() ? handed_state_[f] : kEarlierVisit;
+        const bool replaced =
+            handed_with == kEarlierVisit
+                ? state_start != state_starts.end()
+                : (state_start == state_starts.end() ? TimeStamp(0) : state_start->second) != handed_with;
+        if (it == slot_of_label.end() || replaced) {
           // (Ablation no_object_rule: no state change acts on the map, so the earlier visit's surface of
           // this identity stays where it was, with its node if there is one, untested.)
           if (mechanismAblation().no_object_rule) {
@@ -1989,6 +2023,21 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " phases_s(integrate/states/mesh/assign/sigma/votes/rest)="
             << integrate_s << "/" << states_s << "/" << mesh_s << "/" << assign_s << "/" << sigma_s << "/"
             << evidence_s << "/" << since() << " elapsed_s=" << elapsed;
+  if (roundHandover() && !terminal) {
+    // The present hands this round's surface over, each face with its identity, and starts again
+    // (after the round's composition, which read the shown memory as it was).
+    std::lock_guard<std::mutex> relock(mutex_);
+    const uint32_t offset = static_cast<uint32_t>(handed_.vertices.size());
+    handed_.vertices.insert(handed_.vertices.end(), Vp.begin(), Vp.end());
+    for (size_t f = 0; f < Fp.size(); ++f) {
+      handed_.faces.push_back({offset + static_cast<uint32_t>(Fp[f][0]), offset + static_cast<uint32_t>(Fp[f][1]),
+                               offset + static_cast<uint32_t>(Fp[f][2])});
+      handed_.face_physical.push_back(face_id[f]);
+      const auto state_start = face_id[f] ? state_starts.find(face_id[f]) : state_starts.end();
+      handed_state_.push_back(state_start == state_starts.end() ? TimeStamp(0) : state_start->second);
+    }
+    tsdf_.clear();
+  }
   return result;
 }
 

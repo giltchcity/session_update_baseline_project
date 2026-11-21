@@ -4,6 +4,7 @@
  * -------------------------------------------------------------------------- */
 
 #include "session_core/evidence/physical_evidence_store.h"
+#include "khronos/active_window/online_front.h"
 
 #include <algorithm>
 #include <cmath>
@@ -187,7 +188,7 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
         label.type = EndpointClass::kBackground;
       } else if (nd_it->value > 0) {
         label.type = EndpointClass::kPhysical;
-        label.physical_id = nd_it->value;
+        label.physical_id = PhysicalIdAliases::instance().root(nd_it->value);
       }
     }
     return projection;
@@ -202,7 +203,7 @@ ProjectedEndpointEvidence PhysicalEvidenceStore::Snapshot::project(
   }
   if (run_it->value > 0) {
     result.type = EndpointClass::kPhysical;
-    result.physical_id = run_it->value;
+    result.physical_id = PhysicalIdAliases::instance().root(run_it->value);
   }
   return projection;
 }

@@ -17,6 +17,74 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import cv2
+# NSS_ONLINE_FRONT=<state file> (bedroom_finetune_20261121): the front runs here, frame by frame (online_front.py), and
+# gives each frame's physical ids and their classes; no instance images and no catalog in advance. NSS_ONLINE_SESSION=a|b|c.
+ONLINE_FRONT = os.environ.get("NSS_ONLINE_FRONT")
+# NSS_INSTANCES_FROM_MAPPER=1: the mapper's own online front (KHRONOS_ONLINE_FRONT) makes the ids; the instance channel
+# is sent empty, and no instance images or catalog are read.
+FROM_MAPPER = os.environ.get("NSS_INSTANCES_FROM_MAPPER") == "1"
+# NSS_LAG_FRONT=<libonline_front.so>: the C++ front (KHRONOS_ONLINE_FRONT=semantic_merge, its state and intrinsics as for the
+# mapper) runs here NSS_LAG_S seconds ahead of the frame published, which carries its ids as they are by then (merges made
+# within the lag are applied before the map gets the frame: a fixed-lag front). Classes come from the front.
+LAG_FRONT = os.environ.get("NSS_LAG_FRONT")
+
+
+class LagFront:
+    def __init__(self, frames, run_dir, label_files, world_transform, session_start_ns, base_dataset_ns):
+        import ctypes, zlib, yaml
+        self.zlib = zlib
+        self.lib = ctypes.CDLL(LAG_FRONT)
+        c = ctypes
+        self.lib.front_create.restype = c.c_void_p
+        self.lib.front_create.argtypes = [c.POINTER(c.c_int), c.c_int, c.c_double]
+        self.lib.front_process.argtypes = [c.c_void_p, c.c_void_p, c.c_void_p, c.c_int, c.c_int, c.c_void_p, c.c_longlong, c.c_void_p]
+        self.lib.front_roots.argtypes = [c.c_void_p, c.c_void_p, c.c_longlong]
+        self.lib.front_class.argtypes = [c.c_void_p, c.c_int]
+        self.lib.front_class.restype = c.c_int
+        self.lib.front_save.argtypes = [c.c_void_p]
+        # the front's configuration, for this process only (the mapper's own front stays off)
+        os.environ["KHRONOS_ONLINE_FRONT"] = "semantic_merge"
+        os.environ["KHRONOS_ONLINE_FRONT_STATE"] = os.environ["NSS_LAG_STATE"]
+        os.environ["KHRONOS_ONLINE_FRONT_INTRINSICS"] = str(run_dir / "Intrinsics.txt")
+        os.environ["KHRONOS_ONLINE_FRONT_STEP"] = "2"
+        space = yaml.safe_load(open(os.environ["NSS_LAG_LABELSPACE"]))
+        objects = [int(x) for x in space["object_labels"] if int(x) not in set(space.get("dynamic_labels", []))]
+        arr = (c.c_int * len(objects))(*objects)
+        self.front = self.lib.front_create(arr, len(objects), float(os.environ.get("NSS_LAG_VOXEL", "0.05")))
+        self.frames, self.run_dir, self.label_files, self.T = frames, run_dir, label_files, world_transform
+        self.start, self.base = session_start_ns, base_dataset_ns
+        self.lag_ns = int(float(os.environ.get("NSS_LAG_S", "120")) * 1e9)
+        self.ahead, self.store = 0, {}
+
+    def stamp(self, k):
+        return self.start + (self.frames[k][1] - self.base)
+
+    def _feed(self, k):
+        image_id = self.frames[k][0]
+        depth = cv2.imread(str(self.run_dir / f"{image_id}_depth.tiff"), cv2.IMREAD_UNCHANGED)[::2, ::2]
+        depth = np.ascontiguousarray(depth, dtype=np.float32)
+        sem = np.ascontiguousarray(cv2.imread(str(self.label_files[image_id]), cv2.IMREAD_UNCHANGED)[::2, ::2], dtype=np.int32)
+        pose = self.T @ np.loadtxt(self.run_dir / f"{image_id}_pose.txt", dtype=np.float64).reshape(4, 4)
+        pose = np.ascontiguousarray(pose, dtype=np.float64)
+        ids = np.zeros(sem.shape, np.int32)
+        self.lib.front_process(self.front, depth.ctypes.data, sem.ctypes.data, sem.shape[0], sem.shape[1],
+                               pose.ctypes.data, self.stamp(k), ids.ctypes.data)
+        self.store[k] = (sem.shape, self.zlib.compress(ids.astype(np.uint16).tobytes(), 1))
+
+    def ids(self, k):
+        """Frame k's ids (full resolution, uint16) as they are NSS_LAG_S later, and their classes."""
+        while self.ahead < len(self.frames) and (self.ahead <= k or self.stamp(self.ahead) <= self.stamp(k) + self.lag_ns):
+            self._feed(self.ahead)
+            self.ahead += 1
+        shape, blob = self.store.pop(k)
+        ids = np.frombuffer(self.zlib.decompress(blob), np.uint16).astype(np.int32).reshape(shape).copy()
+        self.lib.front_roots(self.front, ids.ctypes.data, ids.size)
+        classes = {int(i): int(self.lib.front_class(self.front, int(i))) for i in np.unique(ids) if i > 0}
+        full = np.repeat(np.repeat(ids.astype(np.uint16), 2, 0), 2, 1)
+        return full, classes
+
+    def save(self):
+        self.lib.front_save(self.front)
 import numpy as np
 import rclpy
 from cv_bridge import CvBridge
@@ -237,7 +305,8 @@ def load_physical_catalog(path: Path | None) -> dict[str, object] | None:
         mapping[instance_id] = semantic_id
         names[instance_id] = str(item["name"])
     if not mapping:
-        raise ValueError(f"physical catalog is empty: {path}")
+        if not (ONLINE_FRONT or FROM_MAPPER or LAG_FRONT):  # the online front gives the classes with the frames
+            raise ValueError(f"physical catalog is empty: {path}")
     semantic_bounds = payload.get("semantic_id_range", [0, 0xFFFF])
     if any(not semantic_bounds[0] <= value <= semantic_bounds[1] for value in mapping.values()):
         raise ValueError(f"catalog semantic ID outside declared range: {path}")
@@ -268,6 +337,8 @@ def preflight_session_inputs(
     checked and evenly spaced frames are decoded.  Streaming still hard-fails
     any malformed frame, while the outer runner keeps such output transactional.
     """
+    if ONLINE_FRONT or FROM_MAPPER or LAG_FRONT:
+        return {"online_front": ONLINE_FRONT, "frame_count": len(frames), "physical_semantic_contract": {}}
     if semantic_dir.resolve() == instance_dir.resolve():
         raise ValueError("semantic and physical-instance directories must be different")
     catalog = load_physical_catalog(catalog_path)
@@ -566,7 +637,19 @@ class NssFlatPlayer(Node):
             frames = frames[self.args.frame_start:]
         if self.args.frame_limit > 0:
             frames = frames[: self.args.frame_limit]
-        frame_inputs = validate_frame_inputs(frames, self.args.label_dir, self.args.instance_dir)
+        frame_inputs = validate_frame_inputs(frames, self.args.label_dir, None if (ONLINE_FRONT or FROM_MAPPER or LAG_FRONT) else self.args.instance_dir)
+        online = None
+        if ONLINE_FRONT:
+            import sys as _sys
+            _sys.path.insert(0, os.environ.get("NSS_ONLINE_FRONT_DIR", "/home/jixian/Desktop/FT/wt_takeover_runs/bedroom_finetune_20261121"))
+            from online_front import OnlineFront
+            online = OnlineFront(os.environ["NSS_ONLINE_SESSION"], self.args.label_dir, ONLINE_FRONT)
+        lag = None
+        if LAG_FRONT:
+            lag = LagFront(frames, self.args.run_dir, frame_inputs["semantic_files"], load_world_transform(self.args.world_transform),
+                           int(resolve_session_time_contract(self.args.run_dir, frames, self.args.session_start_ns)["session_start_ns"]),
+                           int(resolve_session_time_contract(self.args.run_dir, frames, self.args.session_start_ns)["base_dataset_ns"]))
+            lag_index = {image_id: k for k, (image_id, _) in enumerate(frames)}
         catalog = load_physical_catalog(self.args.physical_catalog)
         if self.args.instance_dir is not None and catalog is None:
             raise RuntimeError("packed instance input requires --physical-catalog")
@@ -639,7 +722,14 @@ class NssFlatPlayer(Node):
                 str(semantic_files[image_id]), cv2.IMREAD_UNCHANGED
             )
             instances = None
-            if self.args.instance_dir is not None:
+            classes = None
+            if lag is not None:
+                instances, classes = lag.ids(lag_index[image_id])
+            elif online is not None:
+                instances, classes = online.ids(image_id)
+            elif FROM_MAPPER:
+                instances = np.zeros(labels.shape, np.uint16)
+            elif self.args.instance_dir is not None:
                 instances = cv2.imread(
                     str(instance_files[image_id]),
                     cv2.IMREAD_UNCHANGED,
@@ -655,7 +745,7 @@ class NssFlatPlayer(Node):
                 raise RuntimeError(f"pose has an invalid last row for frame {image_id}")
             if not np.isclose(np.linalg.det(pose[:3, :3]), 1.0, atol=1.0e-3):
                 raise RuntimeError(f"pose rotation is invalid for frame {image_id}")
-            return color, depth, labels, instances, pose
+            return color, depth, labels, instances, pose, classes
 
         pending = loader.submit(read_frame, frames[0][0]) if frames else None
 
@@ -669,7 +759,9 @@ class NssFlatPlayer(Node):
             stamp_ns = session_start_ns + (dataset_ns - base_dataset_ns)
             stamp = rclpy.time.Time(nanoseconds=stamp_ns).to_msg()
             _t_loader = time.perf_counter()
-            color, depth, labels, instances, pose = pending.result()
+            color, depth, labels, instances, pose, classes = pending.result()
+            if classes:
+                instance_to_semantic.update(classes)
             _loader_wait_total += time.perf_counter() - _t_loader
             if index + 1 < len(frames):
                 pending = loader.submit(read_frame, frames[index + 1][0])
@@ -832,6 +924,10 @@ class NssFlatPlayer(Node):
         # explicit finish ACK below separately proves the downstream queues were
         # drained and the terminal shared Update was serialized.
         loader.shutdown(wait=False)
+        if online is not None:
+            online.save()
+        if lag is not None:
+            lag.save()
         _elapsed = time.perf_counter() - _loop_start
         if published:
             _known = (

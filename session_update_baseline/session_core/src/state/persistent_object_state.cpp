@@ -1392,6 +1392,97 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg) 
   }
 }
 
+void PersistentObjectState::uniteFragment(Fragment& into, Fragment&& from) {
+  // Two observations of one state: the union of the surfaces, the earliest birth, the latest support (absorbObservedThrough).
+  appendMeshUnion(into.geometry, into.bbox, from.geometry, from.bbox);
+  into.position = into.bbox.world_P_center.cast<double>();
+  into.reconstruction_frames += from.reconstruction_frames;
+  into.last_support_time = std::max(into.last_support_time, from.last_support_time);
+  into.last_confirmed_support = std::max(into.last_confirmed_support, from.last_confirmed_support);
+  into.birth_time = std::min(into.birth_time, from.birth_time);
+  into.track_first_seen = std::min(into.track_first_seen, from.track_first_seen);
+  into.looks.insert(into.looks.end(), from.looks.begin(), from.looks.end());
+  std::stable_sort(into.looks.begin(), into.looks.end(),
+                   [](const Fragment::Look& a, const Fragment::Look& b) { return a.stamp < b.stamp; });
+}
+
+void PersistentObjectState::mergeStates(PhysicalState& k, PhysicalState&& g) {
+  // closed history of `g`
+  for (size_t i = 0; i < g.fragments.size(); ++i) {
+    if (g.current && i == *g.current) continue;
+    k.fragments.push_back(std::move(g.fragments[i]));
+  }
+  if (g.current) {
+    Fragment gc = std::move(g.fragments[*g.current]);
+    if (!k.current) {
+      k.fragments.push_back(std::move(gc));
+      k.current = k.fragments.size() - 1;
+    } else {
+      Fragment& kc = k.fragments[*k.current];
+      const bool k_inherited = kc.requires_current_session_support;
+      const bool g_inherited = gc.requires_current_session_support;
+      if (k_inherited == g_inherited) {
+        uniteFragment(kc, std::move(gc));
+      } else {
+        // the inherited state stays current; this visit's state is its session state
+        Fragment session = std::move(gc);
+        if (g_inherited) std::swap(kc, session);
+        if (!k.b_session) k.b_session = std::make_unique<PhysicalState>();
+        PhysicalState one;
+        one.fragments.push_back(std::move(session));
+        one.current = 0;
+        mergeStates(*k.b_session, std::move(one));
+      }
+    }
+  }
+  if (g.observed_new) {
+    if (!k.observed_new) {
+      k.observed_new = std::move(g.observed_new);
+    } else {
+      uniteFragment(*k.observed_new, std::move(*g.observed_new));
+    }
+  }
+  if (g.b_session) {
+    if (!k.b_session) {
+      k.b_session = std::move(g.b_session);
+    } else {
+      mergeStates(*k.b_session, std::move(*g.b_session));
+    }
+  }
+  if (k.pending_absence_stamp == 0) k.pending_absence_stamp = g.pending_absence_stamp;
+  k.last_support_rays += g.last_support_rays;
+  k.last_contradiction_rays += g.last_contradiction_rays;
+  k.last_surface_samples += g.last_surface_samples;
+  k.last_session_reliable_samples += g.last_session_reliable_samples;
+  if (k.last_merged_observation_first == 0 ||
+      (g.last_merged_observation_first != 0 && g.last_merged_observation_first < k.last_merged_observation_first)) {
+    k.last_merged_observation_first = g.last_merged_observation_first;
+  }
+  k.ingested_intervals.insert(g.ingested_intervals.begin(), g.ingested_intervals.end());
+  k.has_dynamic_history = k.has_dynamic_history || g.has_dynamic_history;
+  k.mobility_changes += g.mobility_changes;
+  k.mobility_continuations += g.mobility_continuations;
+}
+
+void PersistentObjectState::mergeIdentity(const size_t gone, const size_t keep) {
+  if (gone == keep) return;
+  auto g = states_.find(gone);
+  if (g == states_.end()) return;
+  PhysicalState from = std::move(g->second);
+  states_.erase(g);
+  event_history_.erase(gone);
+  auto k = states_.find(keep);
+  if (k == states_.end()) {
+    states_.emplace(keep, std::move(from));
+  } else {
+    mergeStates(k->second, std::move(from));
+  }
+  const auto& s = states_.at(keep);
+  LOG(INFO) << "IDENTITY_MERGE gone=" << gone << " keep=" << keep << " fragments=" << s.fragments.size()
+            << " current=" << (s.current ? 1 : 0) << " session=" << (s.b_session ? 1 : 0)
+            << " observed_new=" << (s.observed_new ? 1 : 0);
+}
+
 void PersistentObjectState::clear() {
   states_.clear();
   event_history_.clear();

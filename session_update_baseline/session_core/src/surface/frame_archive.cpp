@@ -1,4 +1,5 @@
 #include "session_core/surface/frame_archive.h"
+#include "khronos/active_window/online_front.h"
 
 #include <algorithm>
 #include <cmath>
@@ -124,6 +125,7 @@ bool FrameArchive::Frame::decode(size_t num_pixels, std::vector<uint16_t>& range
     InstanceRun r;
     std::memcpy(&r.end, &raw[k], sizeof(r.end));
     std::memcpy(&r.id, &raw[k + sizeof(r.end)], sizeof(r.id));
+    r.id = static_cast<uint16_t>(PhysicalIdAliases::instance().root(r.id));  // merged identities (online front)
     r.end = std::max(start, std::min<uint32_t>(r.end, static_cast<uint32_t>(num_pixels)));
     runs.push_back(r);
     start = r.end;

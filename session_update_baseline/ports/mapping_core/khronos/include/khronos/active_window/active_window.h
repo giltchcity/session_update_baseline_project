@@ -54,6 +54,7 @@
 #include <hydra/reconstruction/projective_integrator.h>
 
 #include "khronos/active_window/data/frame_data.h"
+#include "khronos/active_window/online_front.h"
 #include "khronos/active_window/data/frame_data_buffer.h"
 #include "khronos/active_window/data/reconstruction_types.h"
 #include "khronos/active_window/integration/tracking_integrator.h"
@@ -216,6 +217,9 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   KhronosSink::List sinks_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
   PresentSurface::Ptr present_surface_;
+  // KHRONOS_ONLINE_FRONT (semantic | semantic_merge): physical ids from semantics, frame by frame (online_front.h).
+  mutable std::unique_ptr<OnlineFront> online_front_;
+  mutable size_t online_front_frames_ = 0;
 
   // Internal processing.
   // Keep frames in buffer for later extraction of objects.

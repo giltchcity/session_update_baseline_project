@@ -36,6 +36,7 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/backend/backend.h"
+#include "khronos/active_window/online_front.h"
 #include "session_core/state/mechanism_ablation.h"
 #include "session_core/surface/closed_object_background.h"
 #include "session_core/surface/triangle_grid.h"
@@ -212,6 +213,31 @@ void Backend::releaseSessionEvidence() {
   // was the last reader of the stored evidence frames.
   if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
+}
+
+void Backend::sessionApplyIdentityMerges(const DynamicSceneGraph::Ptr& dsg) {
+  auto& aliases = PhysicalIdAliases::instance();
+  if (!aliases.active()) return;
+  for (const auto& [gone, keep] : aliases.takeNew()) {
+    // the merge as registered (its ids may have merged further since: the layer folds them in order)
+    persistent_objects_.mergeIdentity(gone, keep);
+    if (present_surface_) present_surface_->mergeIdentity(gone, keep);
+  }
+  if (!dsg->hasLayer(DsgLayers::OBJECTS)) return;
+  size_t relabelled = 0;
+  for (const auto& [node_id, node] : dsg->getLayer(DsgLayers::OBJECTS).nodes()) {
+    (void)node_id;
+    auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    if (!attrs) continue;
+    auto it = attrs->details.find("instance_id");
+    if (it == attrs->details.end() || it->second.size() != 1 || it->second.front() == 0) continue;
+    const size_t root = aliases.root(static_cast<size_t>(it->second.front()));
+    if (root != static_cast<size_t>(it->second.front())) {
+      it->second.front() = root;
+      ++relabelled;
+    }
+  }
+  if (relabelled) LOG(INFO) << "IDENTITY_RELABEL nodes=" << relabelled;
 }
 
 void Backend::sessionBeforeReconcile(

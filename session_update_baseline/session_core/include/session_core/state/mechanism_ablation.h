@@ -52,4 +52,21 @@ inline const MechanismAblation& mechanismAblation() {
   return ablation;
 }
 
+/**
+ * SESSION_CORE_ROUND_HANDOVER=1 (a comparison, not a component of the method): the present hands its
+ * surface over at every round as a visit hands its map to the next one. At the end of a round the
+ * present's faces join the shown memory, decided by the later rounds' votes like an earlier
+ * visit's faces, and the present volume starts again empty; no frame is fused twice, so valid
+ * domains are off. Logs "ABLATION: round handover" once.
+ */
+inline bool roundHandover() {
+  static const bool on = [] {
+    const char* value = std::getenv("SESSION_CORE_ROUND_HANDOVER");
+    const bool set = value && std::string(value) == "1";
+    if (set) LOG(WARNING) << "ABLATION: round handover (the present's surface handed over every round)";
+    return set;
+  }();
+  return on;
+}
+
 }  // namespace khronos

@@ -356,6 +356,15 @@ class PersistentObjectState {
    */
   void initializeFromObjects(const DynamicSceneGraph& dsg);
 
+  /**
+   * The online front decided that identity `gone` is the object of identity `keep` (KHRONOS_ONLINE_FRONT=semantic_merge):
+   * every state of `gone` becomes `keep`'s, by the rules the layer applies to two observations of one identity. Closed
+   * states join the history; two current states of the same kind (both of this visit, or both inherited) are one state
+   * (their geometry united); a current state of this visit beside an inherited one is that one's session state
+   * (b_session), the inherited one stays current; the replacement candidates and the session states unite the same way.
+   */
+  void mergeIdentity(size_t gone, size_t keep);
+
   /** Drop all registry state. */
   void clear();
 
@@ -638,6 +647,8 @@ class PersistentObjectState {
 
   /** Make the accumulated observed_new slot CURRENT and clear the slot. */
   static void promoteObservedNew(PhysicalState& state);
+  static void uniteFragment(Fragment& into, Fragment&& from);
+  static void mergeStates(PhysicalState& into, PhysicalState&& from);
 
   /** Persistence history of one identity as resolved before the open event. */
   struct HistoryRecord {

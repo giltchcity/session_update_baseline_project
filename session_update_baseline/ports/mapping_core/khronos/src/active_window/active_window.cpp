@@ -37,6 +37,9 @@
 
 #include "khronos/active_window/active_window.h"
 
+#include <algorithm>
+#include <cmath>
+
 #include <cstdint>
 
 #include <hydra/common/global_info.h>
@@ -109,6 +112,14 @@ ActiveWindow::ActiveWindow(const Config& config, const OutputQueue::Ptr& output_
       extraction_worker_(config.extraction_worker, config.object_extractor.create()),
       sinks_(KhronosSink::instantiate(config.khronos_sinks)),
       frame_data_buffer_(config.frame_data_buffer) {
+  {  // KHRONOS_ONLINE_FRONT: the label space's object labels without its dynamic ones, the map's voxel
+    const auto& labels = hydra::GlobalInfo::instance().getLabelSpaceConfig();
+    std::vector<int> objects;
+    for (const auto l : labels.object_labels)
+      if (!std::count(labels.dynamic_labels.begin(), labels.dynamic_labels.end(), l)) objects.push_back(static_cast<int>(l));
+    const double voxel = std::round(static_cast<double>(config.volumetric_map.voxel_size) * 1e6) / 1e6;
+    online_front_ = OnlineFront::fromEnvironment(objects, voxel);
+  }
   // Create member processors as specified in the configs.
   motion_detector_ = config.motion_detector.create();
   if (!motion_detector_) {
@@ -409,6 +420,17 @@ std::unique_ptr<FrameData> ActiveWindow::createData(const hydra::InputPacket& in
   if (!decodeSemanticInstanceLabels(
           input_data->label_image, instances, config.input_labels_are_packed)) {
     return nullptr;
+  }
+
+  if (online_front_) {  // physical ids from the frame's semantics (the input's instance channel is not read)
+    cv::Mat depth = input_data->depth_image;
+    if (depth.type() == CV_16UC1) depth.convertTo(depth, CV_32FC1, 1.0e-3);
+    cv::Mat semantics = input_data->label_image;
+    if (semantics.type() != CV_32SC1) semantics.convertTo(semantics, CV_32SC1);
+    instances = online_front_->process(depth, semantics, input_data->getSensorPose(),
+                                       static_cast<int64_t>(input_data->timestamp_ns));
+    input_data->label_image = semantics;
+    if (++online_front_frames_ % 200 == 0) online_front_->save();
   }
 
   // Allocate other data internally carried by Khronos.
