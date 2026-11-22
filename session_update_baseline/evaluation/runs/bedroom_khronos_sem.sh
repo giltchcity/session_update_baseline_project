@@ -39,7 +39,7 @@ while read -r visit first last; do
   [[ "$visit" == a ]] || prior=(--prior "$map")
   stage "Scoring visit $visit, snapshots $first through $last"
   (cd "$ft" && ionice -c3 nice -n 19 taskset -c 0-9 \
-    /home/jixian/Desktop/miniconda3/bin/python "$here/bedroom_eval_disk_exports.py" "$output/score_work" "$ft/eval_fast/run.py" \
+    /home/jixian/Desktop/miniconda3/bin/python "$ft/eval_fast/run.py" \
     --map "$map" --moments "$first:$last" --session "$visit" --name khronos_sem \
     --mode full --out "$output/real_${visit}_eval" "${prior[@]}") \
     > "$output/score_$visit.log" 2>&1
