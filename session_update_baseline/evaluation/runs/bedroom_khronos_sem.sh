@@ -32,11 +32,14 @@ export EVAL_GT_BASELINE="$bedroom/gt_renamed4/baseline"
 export EVAL_REVIEWED_CLASSES=7,10,24,33,35,41,74,75,92,112,115,139
 export SESSION_UPDATE_CANONICAL_PREFIX="$ft/wt_takeover_build/canonical/install"
 while read -r visit first last; do
+  if [[ -s "$output/real_${visit}_eval/PROVENANCE.json" && -s "$output/real_${visit}_eval/real_abc/summary/khronos_sem_${visit}/SUMMARY.json" ]]; then
+    continue
+  fi
   prior=()
   [[ "$visit" == a ]] || prior=(--prior "$map")
   stage "Scoring visit $visit, snapshots $first through $last"
   (cd "$ft" && ionice -c3 nice -n 19 taskset -c 0-9 \
-    /home/jixian/Desktop/miniconda3/bin/python eval_fast/run.py \
+    /home/jixian/Desktop/miniconda3/bin/python "$here/bedroom_eval_disk_exports.py" "$output/score_work" "$ft/eval_fast/run.py" \
     --map "$map" --moments "$first:$last" --session "$visit" --name khronos_sem \
     --mode full --out "$output/real_${visit}_eval" "${prior[@]}") \
     > "$output/score_$visit.log" 2>&1
