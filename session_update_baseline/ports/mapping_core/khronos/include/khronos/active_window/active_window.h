@@ -217,7 +217,7 @@ class ActiveWindow : public hydra::ActiveWindowModule {
   KhronosSink::List sinks_;
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
   PresentSurface::Ptr present_surface_;
-  // KHRONOS_ONLINE_FRONT (semantic | semantic_merge): physical ids from semantics, frame by frame (online_front.h).
+  // KHRONOS_ONLINE_FRONT (semantic | predicted): physical ids from semantics, frame by frame (online_front.h).
   mutable std::unique_ptr<OnlineFront> online_front_;
   mutable size_t online_front_frames_ = 0;
 

@@ -357,7 +357,7 @@ class PersistentObjectState {
   void initializeFromObjects(const DynamicSceneGraph& dsg);
 
   /**
-   * The online front decided that identity `gone` is the object of identity `keep` (KHRONOS_ONLINE_FRONT=semantic_merge):
+   * The online front decided that identity `gone` is the object of identity `keep` (KHRONOS_ONLINE_FRONT=predicted):
    * every state of `gone` becomes `keep`'s, by the rules the layer applies to two observations of one identity. Closed
    * states join the history; two current states of the same kind (both of this visit, or both inherited) are one state
    * (their geometry united); a current state of this visit beside an inherited one is that one's session state

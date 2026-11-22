@@ -113,10 +113,9 @@ for directory in "${RUN_DIR}" "${SEMANTIC_DIR}" "${INSTANCE_DIR}"; do
   [[ -d "${directory}" ]] || die "missing input directory: ${directory}"
 done
 
-# (11-22) Which front a session's inputs may go through. Annotated instances go through no front (with any front on,
-# --instance-dir must not be the dataset's instance_labels*/). Annotated semantics may go through the fronts that port
-# the Python semantic fronts (KHRONOS_ONLINE_FRONT=semantic|semantic_merge, NSS_ONLINE_FRONT, NSS_LAG_FRONT), never
-# through the front for predicted semantics (KHRONOS_ONLINE_FRONT=predicted). Without a front nothing changes.
+# (11-22) Two inputs, two fronts. Annotated semantics: KHRONOS_ONLINE_FRONT=semantic (the TESSE route) and nothing else.
+# Predicted semantics: KHRONOS_ONLINE_FRONT=predicted. Annotated instances: no front (with a front on, --instance-dir must
+# not be the dataset's instance_labels*/). Any other front or input pairing stops here. Without a front nothing changes.
 dataset_dir() {  # the directory is under the dataset (holding --run-dir) at one of the given top-level names
   local root dir name
   root="$(realpath -m "${RUN_DIR}/../..")"; dir="$(realpath -m "$1")"; shift
@@ -124,12 +123,20 @@ dataset_dir() {  # the directory is under the dataset (holding --run-dir) at one
   return 1
 }
 annotated_instance_dir() { dataset_dir "$1" instance_labels instance_labels_validdepth; }
-if [[ -n "${KHRONOS_ONLINE_FRONT:-}" && "${KHRONOS_ONLINE_FRONT}" != off ]] || [[ -n "${NSS_ONLINE_FRONT:-}" ]] || \
-   [[ -n "${NSS_LAG_FRONT:-}" ]]; then
+case "${KHRONOS_ONLINE_FRONT:-off}" in
+  off|semantic|predicted) ;;
+  *) die "KHRONOS_ONLINE_FRONT must be off, semantic (annotated semantics) or predicted (predicted semantics), got: ${KHRONOS_ONLINE_FRONT}" ;;
+esac
+[[ -z "${NSS_ONLINE_FRONT:-}" && -z "${NSS_LAG_FRONT:-}" ]] || die "NSS_ONLINE_FRONT and NSS_LAG_FRONT were removed; the front is KHRONOS_ONLINE_FRONT"
+if [[ "${KHRONOS_ONLINE_FRONT:-off}" != off ]]; then
   annotated_instance_dir "${INSTANCE_DIR}" && \
     die "annotated instances go through no front; --instance-dir is the dataset's annotation: ${INSTANCE_DIR}"
 fi
-if [[ "${KHRONOS_ONLINE_FRONT:-}" == predicted ]]; then
+if [[ "${KHRONOS_ONLINE_FRONT:-off}" == semantic ]]; then
+  dataset_dir "${SEMANTIC_DIR}" semantics || \
+    die "KHRONOS_ONLINE_FRONT=semantic is for the dataset's annotated semantics; --semantic-dir is not: ${SEMANTIC_DIR}"
+fi
+if [[ "${KHRONOS_ONLINE_FRONT:-off}" == predicted ]]; then
   dataset_dir "${SEMANTIC_DIR}" semantics instance_labels instance_labels_validdepth && \
     die "KHRONOS_ONLINE_FRONT=predicted is for predicted semantics; --semantic-dir is the dataset's annotation: ${SEMANTIC_DIR}"
 fi

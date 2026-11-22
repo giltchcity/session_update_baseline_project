@@ -91,15 +91,15 @@ int main() {
   }
   std::remove(config.state_path.c_str());
   std::remove((config.state_path + ".catalog.json").c_str());
-  {  // SEMANTIC_MERGE (annotated semantics) is the Python front: none of the rules for predicted semantics applies, the
-     // bed named clothes over and over is an object there
+  {  // SEMANTIC (annotated semantics) is the TESSE route's Python front: none of the rules for predicted semantics applies,
+     // the bed named clothes over and over is an object there
     khronos::OnlineFront::Config original = config;
-    original.mode = khronos::OnlineFront::Mode::SEMANTIC_MERGE;
+    original.mode = khronos::OnlineFront::Mode::SEMANTIC;
     khronos::OnlineFront front(original, camera);
     for (int i = 0; i < 20; ++i) look(front, bed, bed, false, false);
     int patch = 0;
     for (int i = 0; i < 12; ++i) patch = look(front, clothes, bed, false, false).at<int>(8, 8);
-    require(patch > 0, "SEMANTIC_MERGE applied a rule of the predicted front");
+    require(patch > 0, "SEMANTIC applied a rule of the predicted front");
   }
   std::remove(config.state_path.c_str());
   std::remove((config.state_path + ".catalog.json").c_str());

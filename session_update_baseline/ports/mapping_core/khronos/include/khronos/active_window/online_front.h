@@ -1,19 +1,17 @@
 #pragma once
 // Online object front (11-21): physical ids from semantics inside the mapper, frame by frame, one front through the
-// visits of a chain (its state in a file between visits). A C++ port of the Python fronts it was checked against:
-//   SEMANTIC        tesse_semantic_front.py --3d (the TESSE rows' semv5), on real BedRoom front_real.py: each frame's
-//                   object-class pixels cut into 3-D regions (ConnectedSemantics: 0.1 m cells, 26-connected; pixels
-//                   without depth take their image region's), named by front.py's tracking (MaxIoUTracker over 0.2 m
-//                   voxels in a 3 s window, then re-identification: a cluster whose voxels lie by half in an earlier
-//                   track's), an id written once its surface seen again is measured more often than seen through;
-//   SEMANTIC_MERGE  front_real3.py: the same with re-identification by half of the smaller of cluster and track, and online
-//                   merging (a cluster overlapping two tracks of its class by half of the smaller set makes them one).
-//   PREDICTED       (11-22, for predicted semantics only: a segmentation network's masks, not annotated semantics)
-//                   SEMANTIC_MERGE with re-identification by the cluster's own share in a track, merges in which the
-//                   confirmed track keeps its id, a confirmation that also needs a new look at the track's own id and a
-//                   surface that is not another class's object seen at least as long (surface cells, see Cell).
-//                   SEMANTIC and SEMANTIC_MERGE do none of this: they stay the ports of the Python fronts.
-// The input with annotated instances needs no front (OFF). KHRONOS_ONLINE_FRONT=off|semantic|semantic_merge|predicted,
+// visits of a chain (its state in a file between visits). Two inputs, two modes:
+//   SEMANTIC   annotated semantics: the TESSE route, a C++ port of tesse_semantic_front.py --3d (the TESSE rows' semv5),
+//              on real BedRoom front_real.py, and nothing else: each frame's object-class pixels cut into 3-D regions
+//              (ConnectedSemantics: 0.1 m cells, 26-connected; pixels without depth take their image region's), named by
+//              front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s window, then re-identification: a cluster whose
+//              voxels lie by half in an earlier track's), an id written once its surface seen again is measured more often
+//              than seen through. Pixel by pixel the Python front's output.
+//   PREDICTED  predicted semantics (a segmentation network's masks) only: SEMANTIC with online merging (a cluster overlapping
+//              two tracks of its class by half of the smaller set makes them one; the confirmed track keeps its id), a
+//              confirmation that also needs a new look at the track's own id and a surface that is not another class's
+//              object seen at least as long (surface cells, see Cell), and the map's retired identities (<state>.retired).
+// The input with annotated instances needs no front (OFF). KHRONOS_ONLINE_FRONT=off|semantic|predicted,
 // KHRONOS_ONLINE_FRONT_STATE (state file), KHRONOS_ONLINE_FRONT_INTRINSICS (the recording's Intrinsics.txt) and
 // KHRONOS_ONLINE_FRONT_STEP (its pixels per input pixel, 2 at image scale 0.5).
 #include <cstdint>
@@ -33,7 +31,7 @@
 namespace khronos {
 
 /**
- * Identity merges of the online front (SEMANTIC_MERGE), process-wide: the front registers that output id `gone` is the
+ * Identity merges of the online front (PREDICTED), process-wide: the front registers that output id `gone` is the
  * object of id `keep` (gone > keep) the moment it decides it; the map applies them at its next round (its states, its
  * nodes, its stored per-pixel identities read through root()). Empty unless the online front merges.
  */
@@ -56,7 +54,7 @@ class PhysicalIdAliases {
 
 class OnlineFront {
  public:
-  enum class Mode { OFF, SEMANTIC, SEMANTIC_MERGE, PREDICTED };
+  enum class Mode { OFF, SEMANTIC, PREDICTED };
   struct Intrinsics {
     int width = 0, height = 0;
     double fx = 0, fy = 0, cx = 0, cy = 0, offset = 0;
@@ -70,20 +68,6 @@ class OnlineFront {
     double grid = 0.1;                   // ConnectedSemantics cells
     double surface_tolerance = 0.05;     // the map's voxel (naming: on the surface vs seen through)
     std::string state_path;
-    // KHRONOS_ONLINE_FRONT_FUSE=1 (11-22): semantic fusion before the cut into objects. Every map voxel (fuse_voxel)
-    // counts the object classes its pixels were given, frame by frame; a pixel of an object class takes its voxel's
-    // majority object class once the voxel has fuse_min votes (a part of an object named another object class now and
-    // then joins the object). Object classes only: no pixel moves between object and background.
-    bool fuse = false;
-    double fuse_voxel = 0.05;
-    int fuse_min = 3;
-    double fuse_tau_s = 3.0;  // the votes decay with this time constant (a moved or replaced object's old votes fade)
-    // KHRONOS_ONLINE_FRONT_MIN_OBS=N (11-22): a track is written only once it (with the tracks merged into it) was
-    // observed in N frames, besides its surface being measured more often than seen through; 0 = as before.
-    int min_observations = 0;
-    // KHRONOS_ONLINE_FRONT_MIN_PLACES=N (11-22): ... and once N of its surface places (surface_tolerance cells) were
-    // measured (a piece too small to be an object is never written); 0 = as before.
-    int min_places = 0;
   };
 
   // From the environment (nullptr when KHRONOS_ONLINE_FRONT is unset or off); object classes from the label space.
@@ -95,9 +79,6 @@ class OnlineFront {
   // Returns the frame's physical ids (CV_32SC1, 0 none) and writes each id pixel's class into `semantics`.
   cv::Mat process(const cv::Mat& depth, cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera, int64_t stamp_ns);
   void save() const;
-  // An output id (track + 1) by what it is now (fixed-lag output), and an id's class.
-  int rootId(int id) const { return id > 0 ? root(id - 1) + 1 : 0; }
-  int classOf(int id) const { return id > 0 && id <= static_cast<int>(tracks_.size()) ? tracks_[id - 1].semantic : 0; }
   const Config& config() const { return config_; }
 
  private:
@@ -138,7 +119,6 @@ class OnlineFront {
   bool onOtherSurface(const Points& surface, int candidate) const;
   int64_t seen(int track) const;  // the frames it was observed in
   void release(const cv::Mat& depth, const Eigen::Isometry3d& world_T_camera);
-  void fuse(const cv::Mat& depth, cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera, int64_t stamp_ns);
   cv::Mat segments(const cv::Mat& depth, const cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera) const;
   std::vector<Cluster> clusters(const cv::Mat& depth, const cv::Mat& segments, const cv::Mat& semantics,
                                 const Eigen::Isometry3d& world_T_camera) const;
@@ -155,8 +135,6 @@ class OnlineFront {
   std::vector<std::pair<int, Points>> pending_;          // insertion order, as the Python dict
   std::map<int, std::pair<int64_t, int64_t>> evidence_;  // track -> (supported, seen through)
   std::map<int, int> alias_;                             // merged track -> the track it joined
-  struct Votes { int64_t stamp = 0; std::vector<std::pair<int, double>> weight; };  // decayed to `stamp`
-  std::unordered_map<int64_t, Votes> votes_;  // voxel -> object class weights (fuse; not kept between visits)
   // PREDICTED only
   std::unordered_map<int64_t, Cell> cells_;              // surface cell -> its owner
   std::map<int, int> confirmed_visit_;                   // confirmed track -> the visit it was confirmed in
@@ -165,10 +143,6 @@ class OnlineFront {
   // tracks the map closed at an earlier visit's end as another object's surface named wrongly (<state>.retired, written
   // by the map): never written again, never merged
   std::set<int> retired_;
- public:
-  struct Merge { int64_t stamp; int gone, keep; };
-  std::vector<Merge> merges_;                            // every merge, in order (fixed-lag output)
- private:
 };
 
 }  // namespace khronos
