@@ -346,11 +346,10 @@ cv::Mat OnlineFront::segments(const cv::Mat& depth, const cv::Mat& sem, const Ei
   const int H = depth.rows, W = depth.cols;
   cv::Mat out = cv::Mat::zeros(H, W, CV_32SC1);
   int n = 0;
-  if ((config_.mode == Mode::SEMANTIC && !config_.tesse) || config_.mode == Mode::PREDICTED) {
-    // SEMANTIC (annotated semantics) and PREDICTED (predicted semantics): a region of one class is a whole object, the
-    // instance image without its number (BedRoom, annotated semantics: with the 0.1 m cells one object was 2+ segments
-    // in 33-38 % of the frames, cut where its depth jumps; whole regions: Obj. 89.5 -> 95.7, Chg. 93.3 -> 96.7). Each
-    // object class's 8-connected image regions are the segments, pixels with and without depth alike.
+  if (config_.mode == Mode::SEMANTIC && !config_.tesse) {
+    // SEMANTIC (annotated semantics): an annotated region is a whole object, the instance image without its number
+    // (BedRoom: with the 0.1 m cells one annotated object was 2+ segments in 33-38 % of the frames, cut where its depth
+    // jumps). Each object class's 8-connected image regions are the segments, pixels with and without depth alike.
     for (const int c : config_.object_semantics) {
       std::vector<int> cls;
       for (int i = 0; i < H * W; ++i)
