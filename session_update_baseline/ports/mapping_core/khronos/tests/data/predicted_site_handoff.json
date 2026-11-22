@@ -1,0 +1,14 @@
+{
+  "schema": "predicted_site_handoff/v1",
+  "source_stamp_ns": 10,
+  "resolution_m": 0.05,
+  "disputed_sites": [{
+    "source_id": 3,
+    "source_class": 8,
+    "explaining_id": 9,
+    "explaining_class": 14,
+    "points_world_m": [[0, 0, 1], [0.20, 0, 1], [0.30, 0, 1]],
+    "shared_indices": [0],
+    "independent_indices": [1]
+  }]
+}

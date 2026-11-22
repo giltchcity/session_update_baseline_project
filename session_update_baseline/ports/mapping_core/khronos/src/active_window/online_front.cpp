@@ -1,4 +1,5 @@
 #include "khronos/active_window/online_front.h"
+#include "khronos/active_window/predicted_site_handoff.h"
 
 #include <algorithm>
 #include <cmath>
@@ -147,6 +148,14 @@ std::unique_ptr<OnlineFront> OnlineFront::fromEnvironment(const std::vector<int>
 OnlineFront::OnlineFront(const Config& config, const Intrinsics& intrinsics)
     : config_(config), K_(intrinsics), objects_(config.object_semantics.begin(), config.object_semantics.end()) {
   load();
+  if (config_.mode == Mode::PREDICTED) {
+    const char* path = std::getenv("KHRONOS_PREDICTED_SITE_HANDOFF");
+    if (path && *path) {
+      site_handoff_ = std::make_unique<PredictedSiteHandoff>(path);
+      LOG(INFO) << "Predicted site handoff: " << site_handoff_->size()
+                << " disputed sites from " << site_handoff_->sourceStamp();
+    }
+  }
 }
 
 OnlineFront::~OnlineFront() { save(); }
@@ -642,6 +651,7 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
 cv::Mat OnlineFront::processPredicted(const cv::Mat& depth_in, cv::Mat& semantics, const Eigen::Isometry3d& T,
                                       int64_t stamp) {
   CHECK(depth_in.type() == CV_32FC1 && semantics.type() == CV_32SC1);
+  const cv::Mat raw = site_handoff_ ? semantics.clone() : cv::Mat{};
   cv::Mat depth = depth_in.clone();  // FlatSession: depth outside [min_range, max_range] is no reading
   for (int v = 0; v < depth.rows; ++v)
     for (int u = 0; u < depth.cols; ++u) {
@@ -705,6 +715,7 @@ cv::Mat OnlineFront::processPredicted(const cv::Mat& depth_in, cv::Mat& semantic
       }
       semantics.at<int32_t>(v, u) = tracks_[t].semantic;  // the catalog contract: the id's class
     }
+  if (site_handoff_) site_handoff_->applyFrame(depth, raw, out, semantics, K_, T, stamp);
   return out;
 }
 

@@ -32,6 +32,7 @@ include(GNUInstallDirs)
 add_library(${PROJECT_NAME}
         src/active_window/active_window.cpp
         src/active_window/online_front.cpp
+        src/active_window/predicted_site_handoff.cpp
         src/active_window/data/frame_data_buffer.cpp
         src/active_window/data/track.cpp
         src/active_window/integration/object_integrator.cpp
@@ -91,6 +92,10 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../session_core"
 
 include(CTest)
 if(BUILD_TESTING)
+  add_executable(test_predicted_site_handoff tests/test_predicted_site_handoff.cpp)
+  target_link_libraries(test_predicted_site_handoff PRIVATE ${PROJECT_NAME})
+  add_test(NAME predicted_site_handoff COMMAND test_predicted_site_handoff
+           "${CMAKE_CURRENT_SOURCE_DIR}/tests/data/predicted_site_handoff.json")
   add_executable(test_frame_data_buffer tests/test_frame_data_buffer.cpp)
   target_link_libraries(test_frame_data_buffer PRIVATE ${PROJECT_NAME})
   add_test(NAME frame_data_buffer COMMAND test_frame_data_buffer)

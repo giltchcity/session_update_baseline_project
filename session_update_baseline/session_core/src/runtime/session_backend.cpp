@@ -1,6 +1,11 @@
 #include <array>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <map>
+#include <string_view>
+#include <unordered_set>
+#include "khronos/active_window/predicted_site_handoff.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
 #include "session_update_baseline/runtime/session_backend.h"
 
@@ -15,6 +20,55 @@
 #include <khronos/utils/khronos_attribute_utils.h>
 
 namespace session_update::runtime {
+
+namespace {
+
+// Materialize the predicted front's independent surfaces into the new visit.
+// The source snapshot still provides the previous observation for change detection.
+size_t applyPredictedHandoff(const khronos::PredictedSiteHandoff& sites, uint64_t stamp,
+                             spark_dsg::DynamicSceneGraph& graph) {
+  std::map<int, int> classes;
+  std::vector<spark_dsg::NodeId> inactive;
+  if (!graph.hasLayer(khronos::DsgLayers::OBJECTS)) {
+    sites.validateSeed(stamp, classes);
+    return 0;
+  }
+  const auto& nodes = graph.getLayer(khronos::DsgLayers::OBJECTS).nodes();
+  for (const auto& [id, node] : nodes) {
+    const auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
+    if (!attrs || !khronos::hasCurrentObjectMesh(*attrs) || !khronos::isPresent(*attrs, stamp)) continue;
+    const auto physical = khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
+    if (physical) classes.emplace(*physical, attrs->semantic_label);
+  }
+  sites.validateSeed(stamp, classes);
+  for (const auto& [id, node] : nodes) {
+    auto* attrs = node->tryAttributes<khronos::KhronosObjectAttributes>();
+    if (!attrs || !khronos::hasCurrentObjectMesh(*attrs) || !khronos::isPresent(*attrs, stamp)) continue;
+    const auto physical = khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
+    if (!physical) continue;
+    const auto original_box = attrs->bounding_box;
+    auto& mesh = attrs->mesh;
+    std::unordered_set<size_t> pending;
+    for (size_t i = 0; i < mesh.numVertices(); ++i) {
+      const auto world = original_box.pointToWorldFrame(mesh.pos(i));
+      if (!sites.keepInheritedVertex(*physical, attrs->semantic_label, world.cast<double>())) pending.insert(i);
+    }
+    if (pending.empty()) continue;
+    if (pending.size() == mesh.numVertices()) {
+      inactive.push_back(id);
+      continue;
+    }
+    mesh.eraseVertices(pending);
+    for (auto& p : mesh.points) p = original_box.pointToWorldFrame(p);
+    attrs->bounding_box = khronos::BoundingBox(mesh.points);
+    for (auto& p : mesh.points) p = attrs->bounding_box.pointToBoxFrame(p);
+    attrs->position = attrs->bounding_box.world_P_center.cast<double>();
+  }
+  for (const auto id : inactive) graph.removeNode(id);
+  return inactive.size();
+}
+
+}  // namespace
 
 void declare_config(SessionBackend::Config& config) {
   using namespace config;
@@ -74,6 +128,18 @@ void SessionBackend::loadInputState(const std::string& state_path) {
   // session's observations.
   initializeHiddenChangeWorkingDsgPair(
       seed, *private_dsg_->graph, *unmerged_graph_);
+  const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
+  if (mode && std::string_view(mode) == "predicted") {
+    const char* path = std::getenv("KHRONOS_PREDICTED_SITE_HANDOFF");
+    if (path && *path) {
+      const khronos::PredictedSiteHandoff sites(path);
+      const auto pending = applyPredictedHandoff(sites, prior_stamp, *private_dsg_->graph);
+      const auto unmerged_pending = applyPredictedHandoff(sites, prior_stamp, *unmerged_graph_);
+      CHECK_EQ(pending, unmerged_pending);
+      LOG(INFO) << "Resumed " << sites.size() << " disputed predicted sites from " << prior_stamp
+                << "; " << pending << " have no independent geometry at entry";
+    }
+  }
   CHECK_EQ(private_dsg_->graph->mesh().get(), unmerged_graph_->mesh().get())
       << "Session reseed must preserve Hydra's shared live-mesh invariant";
 

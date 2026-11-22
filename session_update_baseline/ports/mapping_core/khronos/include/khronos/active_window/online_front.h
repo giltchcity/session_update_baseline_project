@@ -32,6 +32,8 @@
 
 namespace khronos {
 
+class PredictedSiteHandoff;
+
 /**
  * Identity merges of the online front (SEMANTIC_MERGE), process-wide: the front registers that output id `gone` is the
  * object of id `keep` (gone > keep) the moment it decides it; the map applies them at its next round (its states, its
@@ -149,6 +151,7 @@ class OnlineFront {
 
   Config config_;
   Intrinsics K_;
+  std::unique_ptr<PredictedSiteHandoff> site_handoff_;
   std::set<int> objects_;
   std::vector<Track> tracks_;
   std::set<int> named_;

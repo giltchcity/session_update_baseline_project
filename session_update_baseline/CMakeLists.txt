@@ -208,6 +208,10 @@ set_tests_properties(fastdds_ack_runtime_contract PROPERTIES
     "RMW_IMPLEMENTATION=rmw_fastrtps_cpp;FASTRTPS_DEFAULT_PROFILES_FILE=${CMAKE_CURRENT_SOURCE_DIR}/configs/fastdds_session_update_ack.xml;RMW_FASTRTPS_USE_QOS_FROM_XML=1;FASTDDS_DEFAULT_PROFILES_FILE=;ROS_DOMAIN_ID=229;ROS_HOME=${CMAKE_CURRENT_BINARY_DIR}/fastdds_ack_test_logs;ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/fastdds_ack_test_logs"
 )
 
+add_executable(export_site_meshes
+  evaluation/semantic_front/site_handoff/export_site_meshes.cpp)
+target_link_libraries(export_site_meshes PRIVATE khronos::khronos nlohmann_json::nlohmann_json)
+
 add_executable(test_session_state_semantics
   app/test_session_state_semantics.cpp
 )
