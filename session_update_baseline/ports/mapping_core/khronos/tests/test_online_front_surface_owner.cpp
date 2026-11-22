@@ -1,4 +1,4 @@
-// The online front's surface ownership: a confirmed object's surface named another class is not a new object, in the
+// The online front's surface ownership (PREDICTED): a confirmed object's surface named another class is not a new object, in the
 // visit it was confirmed in and in a later one; a real object that appears on it in a later visit is one, also when it is
 // first named as the surface under it; and it is one again where it is moved to, while its old place shows the surface.
 // A first name seen for a few looks gives way to the object its surface is seen as for longer.
@@ -22,7 +22,7 @@ int main() {
   const cv::Rect left(4, 4, 12, 12), right(48, 4, 12, 12);
   const khronos::OnlineFront::Intrinsics camera{64, 24, 150, 150, 32, 12, 0};
   khronos::OnlineFront::Config config;
-  config.mode = khronos::OnlineFront::Mode::SEMANTIC_MERGE;
+  config.mode = khronos::OnlineFront::Mode::PREDICTED;
   config.object_semantics = {bed, bag, clothes};
   config.state_path = std::string("/tmp/test_online_front_surface_owner_") + std::to_string(::getpid()) + ".state";
   std::remove(config.state_path.c_str());
@@ -72,6 +72,18 @@ int main() {
     int now = 0;
     for (int i = 0; i < 12; ++i) now = look(front, bed, bag, false, true).at<int>(8, 50);
     require(now > 0 && now != clothes_id, "a first name seen briefly kept the surface of the object seen longer");
+  }
+  std::remove(config.state_path.c_str());
+  std::remove((config.state_path + ".catalog.json").c_str());
+  {  // SEMANTIC_MERGE (annotated semantics) is the Python front: none of the rules for predicted semantics applies, the
+     // bed named clothes over and over is an object there
+    khronos::OnlineFront::Config original = config;
+    original.mode = khronos::OnlineFront::Mode::SEMANTIC_MERGE;
+    khronos::OnlineFront front(original, camera);
+    for (int i = 0; i < 20; ++i) look(front, bed, bed, false, false);
+    int patch = 0;
+    for (int i = 0; i < 12; ++i) patch = look(front, clothes, bed, false, false).at<int>(8, 8);
+    require(patch > 0, "SEMANTIC_MERGE applied a rule of the predicted front");
   }
   std::remove(config.state_path.c_str());
   std::remove((config.state_path + ".catalog.json").c_str());

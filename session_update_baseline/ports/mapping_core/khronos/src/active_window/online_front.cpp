@@ -98,10 +98,21 @@ std::unique_ptr<OnlineFront> OnlineFront::fromEnvironment(const std::vector<int>
   const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
   if (!mode || std::string(mode).empty() || std::string(mode) == "off") return nullptr;
   Config config;
-  CHECK(std::string(mode) == "semantic_merge") << "KHRONOS_ONLINE_FRONT must be off or semantic_merge, got '" << mode << "'";
-  config.mode = Mode::SEMANTIC_MERGE;
+  if (std::string(mode) == "semantic") {
+    config.mode = Mode::SEMANTIC;
+  } else if (std::string(mode) == "semantic_merge") {
+    config.mode = Mode::SEMANTIC_MERGE;
+  } else if (std::string(mode) == "predicted") {
+    config.mode = Mode::PREDICTED;
+  } else {
+    LOG(FATAL) << "KHRONOS_ONLINE_FRONT must be off, semantic, semantic_merge or predicted, got '" << mode << "'";
+  }
   config.object_semantics = object_semantics;
   config.surface_tolerance = map_voxel;
+  if (const char* f = std::getenv("KHRONOS_ONLINE_FRONT_FUSE")) config.fuse = std::atoi(f) != 0;
+  config.fuse_voxel = map_voxel;
+  if (const char* m = std::getenv("KHRONOS_ONLINE_FRONT_MIN_OBS")) config.min_observations = std::atoi(m);
+  if (const char* m = std::getenv("KHRONOS_ONLINE_FRONT_MIN_PLACES")) config.min_places = std::atoi(m);
   const char* state = std::getenv("KHRONOS_ONLINE_FRONT_STATE");
   const char* intrinsics = std::getenv("KHRONOS_ONLINE_FRONT_INTRINSICS");
   const char* step = std::getenv("KHRONOS_ONLINE_FRONT_STEP");
@@ -128,7 +139,7 @@ std::unique_ptr<OnlineFront> OnlineFront::fromEnvironment(const std::vector<int>
   K.fy = values.at("f_y") / s;
   K.cx = values.at("u") / s;
   K.cy = values.at("v") / s;
-  LOG(WARNING) << "ONLINE FRONT: mode " << mode << ", " << object_semantics.size() << " object classes, step " << s
+  LOG(WARNING) << "ONLINE FRONT: mode " << mode << (config.fuse ? " + semantic fusion (decaying votes)" : "") << ", min observations " << config.min_observations << ", min places " << config.min_places << ", " << object_semantics.size() << " object classes, step " << s
                << ", state " << config.state_path;
   return std::make_unique<OnlineFront>(config, K);
 }
@@ -151,7 +162,59 @@ int OnlineFront::root(int t) const {
   return t;
 }
 
-void OnlineFront::judge(const cv::Mat& depth, const cv::Mat& observed_ids, const Eigen::Isometry3d& T) {
+void OnlineFront::judge(const cv::Mat& depth, const Eigen::Isometry3d& T) {
+  // SemanticFront._judge: a pending track's surface (the mean point per 0.05 m place of what it got) seen again.
+  const Eigen::Matrix3d Rt = T.linear().transpose();
+  const Eigen::Vector3d t = T.translation();
+  const double tol = config_.surface_tolerance;
+  std::vector<int> done;
+  for (auto& [r, P] : pending_) {
+    std::map<int64_t, std::pair<Eigen::Vector3d, int>> places;
+    for (const auto& p : P) {
+      auto it = places.find(key(p, config_.surface_tolerance));
+      if (it == places.end()) it = places.emplace(key(p, config_.surface_tolerance), std::make_pair(Eigen::Vector3d::Zero().eval(), 0)).first;
+      auto& e = it->second;
+      e.first += p;
+      e.second += 1;
+    }
+    Points S;
+    S.reserve(places.size());
+    for (const auto& [k, e] : places) S.push_back(e.first / e.second);
+    P = S;
+    auto& ev = evidence_[r];
+    for (const auto& s : S) {
+      const Eigen::Vector3d cam = Rt * (s - t);
+      const double z = cam.z();
+      const double uf = std::floor(K_.fx * cam.x() / z + K_.cx - K_.offset + 0.5);
+      const double vf = std::floor(K_.fy * cam.y() / z + K_.cy - K_.offset + 0.5);
+      if (!(z > 0) || !std::isfinite(uf) || !std::isfinite(vf) || uf < 0 || uf >= K_.width || vf < 0 ||
+          vf >= K_.height || !(z <= config_.max_range)) {
+        continue;
+      }
+      const double d = depth.at<float>(static_cast<int>(vf), static_cast<int>(uf));
+      if (!std::isfinite(d)) continue;
+      if (std::abs(d - z) <= tol) ++ev.first;
+      if (d > z + tol) ++ev.second;
+    }
+    if (std::getenv("KHRONOS_ONLINE_FRONT_DEBUG"))
+      std::cerr << "judge track " << r << ": " << P.size() << " places, evidence " << ev.first << "/" << ev.second << "\n";
+    int observed = 0;  // the track's frames with the tracks merged into it
+    if (config_.min_observations > 0)
+      for (size_t i = 0; i < tracks_.size(); ++i)
+        if (root(static_cast<int>(i)) == r) observed += tracks_[i].observations;
+    if (ev.first > ev.second && observed >= config_.min_observations && static_cast<int>(P.size()) >= config_.min_places) {
+      named_.insert(r);
+      done.push_back(r);
+    }
+  }
+  for (const int r : done) {
+    pending_.erase(std::remove_if(pending_.begin(), pending_.end(), [r](const auto& e) { return e.first == r; }),
+                   pending_.end());
+  }
+}
+
+void OnlineFront::judgePredicted(const cv::Mat& depth, const cv::Mat& observed_ids, const Eigen::Isometry3d& T) {
+  // PREDICTED: the confirmation of SEMANTIC_MERGE, and a new look at the track's own id, and not on another class's surface.
   // SemanticFront._judge: a pending track's surface (the mean point per 0.05 m place of what it got) seen again.
   const Eigen::Matrix3d Rt = T.linear().transpose();
   const Eigen::Vector3d t = T.translation();
@@ -284,6 +347,42 @@ void OnlineFront::release(const cv::Mat& depth, const Eigen::Isometry3d& T) {
   }
 }
 
+void OnlineFront::fuse(const cv::Mat& depth, cv::Mat& sem, const Eigen::Isometry3d& T, int64_t stamp) {
+  // the votes before this frame decide (decayed to now, time constant fuse_tau_s); this frame's classes are added after
+  const auto decay = [&](Votes& e) {
+    if (e.stamp == stamp) return;
+    const double f = std::exp(-static_cast<double>(stamp - e.stamp) * 1e-9 / config_.fuse_tau_s);
+    for (auto& [cls, w] : e.weight) w *= f;
+    e.stamp = stamp;
+  };
+  std::vector<std::pair<int64_t, int>> seen;
+  for (int v = 0; v < depth.rows; ++v)
+    for (int u = 0; u < depth.cols; ++u) {
+      const float z = depth.at<float>(v, u);
+      int32_t& c = sem.at<int32_t>(v, u);
+      if (!std::isfinite(z) || !objects_.count(c)) continue;
+      const int64_t k = key(backproject(u, v, z, T), config_.fuse_voxel);
+      seen.emplace_back(k, c);
+      const auto it = votes_.find(k);
+      if (it == votes_.end()) continue;
+      decay(it->second);
+      double total = 0, own = 0, most = -1;
+      int best = c;
+      for (const auto& [cls, w] : it->second.weight) {
+        total += w;
+        if (cls == c) own = w;
+        if (w > most || (w == most && cls < best)) best = cls, most = w;
+      }
+      if (total >= config_.fuse_min && best != c && most > own) c = best;
+    }
+  for (const auto& [k, c] : seen) {
+    auto& e = votes_[k];
+    if (e.weight.empty()) e.stamp = stamp; else decay(e);
+    auto it = std::find_if(e.weight.begin(), e.weight.end(), [c = c](const auto& x) { return x.first == c; });
+    if (it == e.weight.end()) e.weight.emplace_back(c, 1.0); else it->second += 1.0;
+  }
+}
+
 cv::Mat OnlineFront::segments(const cv::Mat& depth, const cv::Mat& sem, const Eigen::Isometry3d& T) const {
   // segments_3d: per object class, its pixels with depth in 0.1 m cells, 26-connected; a pixel without depth takes the
   // region (8-connected in the image) its depth pixels got most.
@@ -389,19 +488,21 @@ std::vector<OnlineFront::Cluster> OnlineFront::clusters(const cv::Mat& depth, co
     Cluster cl;
     cl.semantic = c;
     cl.pixels = px;
-    for (const int p : px) {
-      const Eigen::Vector3d x = backproject(p % W, p / W, depth.at<float>(p / W, p % W), T);
-      cl.voxels.insert(key(x, config_.voxel_size));
-    }
+    for (const int p : px)
+      cl.voxels.insert(key(backproject(p % W, p / W, depth.at<float>(p / W, p % W), T), config_.voxel_size));
     out.push_back(std::move(cl));
   }
   return out;
 }
 
 std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluster>& clusters, int64_t stamp) {
-  // front.py's steps 2-3: re-identification of a cluster lying by half in an earlier track's voxels (a cluster that only
-  // covers half of a smaller track is not that track: it would carry the track's id onto what lies around it), and
-  // online merging (a cluster overlapping two tracks of its class by half of the smaller set makes them one).
+  // SEMANTIC: front.py steps 2-3 (front_real.py). SEMANTIC_MERGE: front_real3.py: re-identification by half of the
+  // smaller of cluster and track, and online merging (a cluster overlapping two tracks of its class by half of the smaller
+  // set makes them one; every merge is recorded with its stamp, for a fixed-lag output).
+  // PREDICTED: SEMANTIC_MERGE, with re-identification by the cluster's own share in a track (a cluster that only covers half
+  // of a smaller track is not that track) and merges in which the confirmed track keeps its id (joining never confirms).
+  const bool predicted = config_.mode == Mode::PREDICTED;
+  const bool merge = config_.mode == Mode::SEMANTIC_MERGE || predicted;
   std::vector<std::pair<int, int>> claimed;
   std::vector<char> taken(clusters.size(), 0);
   const int64_t window = stamp - static_cast<int64_t>(config_.temporal_window_s * 1e9);
@@ -429,9 +530,9 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
     for (size_t ti = 0; ti < tracks_.size(); ++ti) {
       const auto& t = tracks_[ti];
       if (t.semantic != c.semantic) continue;
-      if (t.all_voxels.empty()) continue;
+      if (merge && t.all_voxels.empty()) continue;
       const double inter = static_cast<double>(intersection(c.voxels, t.all_voxels));
-      const double share = inter / c.voxels.size();
+      const double share = merge && !predicted ? inter / std::min(c.voxels.size(), t.all_voxels.size()) : inter / c.voxels.size();
       if (share >= best_share) best = static_cast<int>(ti), best_share = share;
     }
     if (best < 0) {
@@ -439,12 +540,14 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
       t.id = static_cast<int>(tracks_.size());
       t.semantic = c.semantic;
       t.last_seen = stamp;
+      t.first_seen = stamp;
       tracks_.push_back(std::move(t));
       best = static_cast<int>(tracks_.size()) - 1;
     }
     taken[ci] = 1;
     claimed.emplace_back(static_cast<int>(ci), best);
   }
+  if (!merge) return claimed;
   for (const auto& [ci, ti] : claimed) {
     const auto& c = clusters[ci];
     int r = root(ti);
@@ -453,17 +556,22 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
       const auto& u = tracks_[ui];
       if (ru == r || u.semantic != c.semantic || u.all_voxels.empty()) continue;
       if (intersection(c.voxels, u.all_voxels) >= config_.min_reid_share * std::min(c.voxels.size(), u.all_voxels.size())) {
-        // the confirmed track keeps its id (joining never confirms a track), of two alike the older
-        const bool r_named = named_.count(r) > 0, u_named = named_.count(ru) > 0;
-        const int keep = r_named != u_named ? (r_named ? r : ru) : std::min(r, ru), gone = keep == r ? ru : r;
+        int keep = std::min(r, ru), gone = std::max(r, ru);
+        if (predicted) {  // the confirmed track keeps its id, of two alike the older
+          const bool r_named = named_.count(r) > 0, u_named = named_.count(ru) > 0;
+          keep = r_named != u_named ? (r_named ? r : ru) : std::min(r, ru), gone = keep == r ? ru : r;
+        }
         alias_[gone] = keep;
+        merges_.push_back({stamp, gone, keep});
         PhysicalIdAliases::instance().add(static_cast<size_t>(gone) + 1, static_cast<size_t>(keep) + 1);
         const auto gone_voxels = tracks_[gone].all_voxels;
         tracks_[keep].all_voxels.insert(gone_voxels.begin(), gone_voxels.end());
-        if (const auto o = observations_.find(gone); o != observations_.end()) {
-          observations_[keep] += o->second;
-          observations_.erase(gone);
-        }
+        if (!predicted && named_.count(gone)) named_.insert(keep);
+        if (predicted)
+          if (const auto o = observations_.find(gone); o != observations_.end()) {
+            observations_[keep] += o->second;
+            observations_.erase(gone);
+          }
         r = keep;
       }
     }
@@ -473,6 +581,65 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
 }
 
 cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const Eigen::Isometry3d& T, int64_t stamp) {
+  if (config_.mode == Mode::PREDICTED) return processPredicted(depth_in, semantics, T, stamp);
+  CHECK(depth_in.type() == CV_32FC1 && semantics.type() == CV_32SC1);
+  cv::Mat depth = depth_in.clone();  // FlatSession: depth outside [min_range, max_range] is no reading
+  for (int v = 0; v < depth.rows; ++v)
+    for (int u = 0; u < depth.cols; ++u) {
+      float& z = depth.at<float>(v, u);
+      if (!std::isfinite(z) || z < config_.min_range || z > config_.max_range) z = std::numeric_limits<float>::quiet_NaN();
+    }
+  judge(depth, T);
+  cv::Mat fused = semantics;
+  if (config_.fuse) {
+    fused = semantics.clone();
+    fuse(depth, fused, T, stamp);
+  }
+  const cv::Mat seg = segments(depth, fused, T);
+  const auto cl = clusters(depth, seg, fused, T);
+  const auto claimed = associate(cl, stamp);
+  cv::Mat out = cv::Mat::zeros(depth.size(), CV_32SC1);
+  const int W = depth.cols;
+  for (const auto& [ci, ti] : claimed) {
+    auto& t = tracks_[ti];
+    t.last_seen = stamp;
+    t.last_voxels = cl[ci].voxels;
+    t.all_voxels.insert(cl[ci].voxels.begin(), cl[ci].voxels.end());
+    t.observations += 1;
+    for (const int p : cl[ci].pixels) out.at<int32_t>(p / W, p % W) = t.id + 1;
+  }
+  // SemanticFront.process: an unnamed track's measured points wait for its naming; only named tracks are written
+  std::map<int, Points> fresh;
+  for (int v = 0; v < depth.rows; ++v)
+    for (int u = 0; u < W; ++u) {
+      const int id = out.at<int32_t>(v, u);
+      const float z = depth.at<float>(v, u);
+      if (id <= 0 || !(z <= config_.max_range)) continue;
+      if (named_.count(id - 1)) continue;
+      fresh[id - 1].push_back(backproject(u, v, z, T));
+    }
+  for (auto& [t, P] : fresh) {
+    auto it = std::find_if(pending_.begin(), pending_.end(), [t = t](const auto& e) { return e.first == t; });
+    if (it == pending_.end()) {
+      pending_.emplace_back(t, std::move(P));
+    } else {
+      it->second.insert(it->second.end(), P.begin(), P.end());
+    }
+  }
+  for (int v = 0; v < depth.rows; ++v)
+    for (int u = 0; u < W; ++u) {
+      int32_t& id = out.at<int32_t>(v, u);
+      if (id > 0 && !named_.count(id - 1)) id = 0;
+      if (id > 0) {
+        semantics.at<int32_t>(v, u) = tracks_[id - 1].semantic;  // the catalog contract: the id's class
+        tracks_[id - 1].written = true;
+      }
+    }
+  return out;
+}
+
+cv::Mat OnlineFront::processPredicted(const cv::Mat& depth_in, cv::Mat& semantics, const Eigen::Isometry3d& T,
+                                      int64_t stamp) {
   CHECK(depth_in.type() == CV_32FC1 && semantics.type() == CV_32SC1);
   cv::Mat depth = depth_in.clone();  // FlatSession: depth outside [min_range, max_range] is no reading
   for (int v = 0; v < depth.rows; ++v)
@@ -507,7 +674,7 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
       if (e == labels.end()) labels.emplace_back(semantic, 1); else ++e->second;
     }
   }
-  judge(depth, out, T);  // out still contains provisional ids; fresh points enter pending_ below.
+  judgePredicted(depth, out, T);  // out still contains provisional ids; fresh points enter pending_ below.
   // SemanticFront.process: an unnamed track's measured points wait for its naming; only named tracks are written
   std::map<int, Points> fresh;
   for (int v = 0; v < depth.rows; ++v)
@@ -572,7 +739,7 @@ void OnlineFront::save() const {
   auto wd = [&](double x) { f.write(reinterpret_cast<const char*>(&x), sizeof(x)); };
   w(static_cast<int64_t>(tracks_.size()));
   for (const auto& t : tracks_) {
-    w(t.id), w(t.semantic), w(t.last_seen);
+    w(t.id), w(t.semantic), w(t.last_seen), w(t.observations), w(t.first_seen), w(t.written ? 1 : 0);
     w(static_cast<int64_t>(t.last_voxels.size()));
     for (const auto k : t.last_voxels) w(k);
     w(static_cast<int64_t>(t.all_voxels.size()));
@@ -589,15 +756,17 @@ void OnlineFront::save() const {
   for (const auto& [t, e] : evidence_) w(t), w(e.first), w(e.second);
   w(static_cast<int64_t>(alias_.size()));
   for (const auto& [a, b] : alias_) w(a), w(b);
-  // surface ownership (appended: a state without it reads as none)
-  w(static_cast<int64_t>(visit_ + 1));
-  w(static_cast<int64_t>(confirmed_visit_.size()));
-  for (const auto& [t, v] : confirmed_visit_) w(t), w(v);
-  w(static_cast<int64_t>(cells_.size()));
-  for (const auto& [k, c] : cells_)
-    w(k), w(c.owner), w(c.visit), w(c.hits), w(c.through), wd(c.point.x()), wd(c.point.y()), wd(c.point.z());
-  w(static_cast<int64_t>(observations_.size()));
-  for (const auto& [t, n] : observations_) w(t), w(n);
+  if (config_.mode == Mode::PREDICTED) {
+    // surface ownership (appended: a state without it reads as none)
+    w(static_cast<int64_t>(visit_ + 1));
+    w(static_cast<int64_t>(confirmed_visit_.size()));
+    for (const auto& [t, v] : confirmed_visit_) w(t), w(v);
+    w(static_cast<int64_t>(cells_.size()));
+    for (const auto& [k, c] : cells_)
+      w(k), w(c.owner), w(c.visit), w(c.hits), w(c.through), wd(c.point.x()), wd(c.point.y()), wd(c.point.z());
+    w(static_cast<int64_t>(observations_.size()));
+    for (const auto& [t, n] : observations_) w(t), w(n);
+  }
 
   // the catalog the front made, for the record (id -> class of its named tracks)
   std::ofstream c(config_.state_path + ".catalog.json");
@@ -620,7 +789,7 @@ void OnlineFront::load() {
   auto rd = [&]() { double x = 0; f.read(reinterpret_cast<char*>(&x), sizeof(x)); return x; };
   tracks_.resize(r());
   for (auto& t : tracks_) {
-    t.id = r(), t.semantic = r(), t.last_seen = r();
+    t.id = r(), t.semantic = r(), t.last_seen = r(), t.observations = r(), t.first_seen = r(), t.written = r() != 0;
     for (int64_t n = r(); n > 0; --n) t.last_voxels.insert(r());
     for (int64_t n = r(); n > 0; --n) t.all_voxels.insert(r());
   }
@@ -643,32 +812,34 @@ void OnlineFront::load() {
     const int a = r(), b = r();
     alias_[a] = b;
   }
-  visit_ = static_cast<int>(r());
-  for (int64_t n = r(); n > 0; --n) {
-    const int t = r();
-    confirmed_visit_[t] = static_cast<int>(r());
-  }
-  for (int64_t n = r(); n > 0; --n) {
-    const int64_t k = r();
-    Cell c;
-    c.owner = static_cast<int>(r());
-    c.visit = static_cast<int>(r());
-    c.hits = static_cast<int>(r());
-    c.through = static_cast<int>(r());
-    const double x = rd(), y = rd(), z = rd();
-    c.point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
-    cells_.emplace(k, c);
-  }
-  for (int64_t n = r(); n > 0; --n) {
-    const int t = r();
-    observations_[t] = r();
+  if (config_.mode == Mode::PREDICTED) {
+    visit_ = static_cast<int>(r());
+    for (int64_t n = r(); n > 0; --n) {
+      const int t = r();
+      confirmed_visit_[t] = static_cast<int>(r());
+    }
+    for (int64_t n = r(); n > 0; --n) {
+      const int64_t k = r();
+      Cell c;
+      c.owner = static_cast<int>(r());
+      c.visit = static_cast<int>(r());
+      c.hits = static_cast<int>(r());
+      c.through = static_cast<int>(r());
+      const double x = rd(), y = rd(), z = rd();
+      c.point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
+      cells_.emplace(k, c);
+    }
+    for (int64_t n = r(); n > 0; --n) {
+      const int t = r();
+      observations_[t] = r();
+    }
   }
 
   // an earlier visit's merges: its map already carries the merged ids; stored identities of this visit never had them
   for (const auto& [a, b] : alias_) PhysicalIdAliases::instance().add(static_cast<size_t>(a) + 1, static_cast<size_t>(b) + 1);
   PhysicalIdAliases::instance().takeNew();
-  LOG(WARNING) << "ONLINE FRONT: state of " << tracks_.size() << " tracks (" << named_.size() << " named, "
-               << cells_.size() << " surface cells) from " << config_.state_path << ", visit " << visit_;
+  LOG(WARNING) << "ONLINE FRONT: state of " << tracks_.size() << " tracks (" << named_.size() << " named) from "
+               << config_.state_path;
 }
 
 }  // namespace khronos
