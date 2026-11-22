@@ -99,11 +99,15 @@ class OnlineFront {
   // under another name and is not confirmed; a cell of an earlier visit is met within one cell (the visits are aligned to
   // a map voxel). A track confirmed over the cells of an object observed in fewer frames takes them (a first name seen
   // briefly gives way to the object seen longer). Kept between visits.
+  // An id is written on a cell of an object of another class only where, in this visit, its class was given there at
+  // least as often as the owner's: a laptop on a desk is called a laptop there, a part of the bed called a cabinet now and
+  // then is called the bed more often (an id carried there by association is not written).
   struct Cell {
     int owner = -1;
     int visit = 0;                                    // the visit its owner took it in
     int hits = 0, through = 0;                        // its surface measured again / seen through
     Eigen::Vector3f point = Eigen::Vector3f::Zero();  // where the owner's surface was measured
+    std::vector<std::pair<int, int>> labels;          // this visit: class -> its clusters' pixels here (not kept)
   };
 
   void judge(const cv::Mat& depth, const cv::Mat& observed_ids, const Eigen::Isometry3d& world_T_camera);
