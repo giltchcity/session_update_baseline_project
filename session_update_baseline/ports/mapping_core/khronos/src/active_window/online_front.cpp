@@ -532,6 +532,32 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
   return claimed;
 }
 
+void OnlineFront::consolidate() {
+  // SEMANTIC: merge_fragments.py's consolidation online (the TESSE front cuts one object into several ids, and a piece
+  // named apart stays where the object was when the object is moved: BedRoom B's old clothes and fan pieces). Two tracks
+  // of one class whose footprints (all_voxels: the 0.2 m voxels of every cluster they got) overlap by at least half of
+  // the smaller one are one object, the smaller id names it (the layer merges their nodes, PhysicalIdAliases). Checked
+  // for the tracks that got a cluster in the last frame, against every other track of their class.
+  for (const int t0 : touched_) {
+    int r = root(t0);
+    for (size_t ui = 0; ui < tracks_.size(); ++ui) {
+      const int u = static_cast<int>(ui);
+      if (root(u) != u || u == r || tracks_[u].semantic != tracks_[r].semantic) continue;
+      const auto& a = tracks_[r].all_voxels;
+      const auto& b = tracks_[u].all_voxels;
+      if (a.empty() || b.empty() || 2 * intersection(a, b) < std::min(a.size(), b.size())) continue;
+      const int keep = std::min(r, u), gone = std::max(r, u);
+      alias_[gone] = keep;
+      PhysicalIdAliases::instance().add(static_cast<size_t>(gone) + 1, static_cast<size_t>(keep) + 1);
+      const auto gone_voxels = tracks_[gone].all_voxels;
+      tracks_[keep].all_voxels.insert(gone_voxels.begin(), gone_voxels.end());
+      if (named_.count(gone)) named_.insert(keep);
+      r = keep;
+    }
+  }
+  touched_.clear();
+}
+
 cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const Eigen::Isometry3d& T, int64_t stamp) {
   if (config_.mode == Mode::PREDICTED) return processPredicted(depth_in, semantics, T, stamp);
   CHECK(depth_in.type() == CV_32FC1 && semantics.type() == CV_32SC1);
@@ -542,6 +568,7 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
       if (!std::isfinite(z) || z < config_.min_range || z > config_.max_range) z = std::numeric_limits<float>::quiet_NaN();
     }
   judge(depth, T);
+  consolidate();
   const cv::Mat seg = segments(depth, semantics, T);
   const auto cl = clusters(depth, seg, semantics, T);
   const auto claimed = associate(cl, stamp);
@@ -549,6 +576,7 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
   const int W = depth.cols;
   for (const auto& [ci, ti] : claimed) {
     auto& t = tracks_[ti];
+    touched_.insert(ti);
     t.last_seen = stamp;
     t.last_voxels = cl[ci].voxels;
     t.all_voxels.insert(cl[ci].voxels.begin(), cl[ci].voxels.end());

@@ -8,8 +8,9 @@
 //              front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s window, then re-identification: a cluster whose
 //              voxels lie by half in an earlier track's), an id written once its surface seen again is measured more often
 //              than seen through; re-identification by half of the smaller of cluster and track, and a cluster
-//              overlapping two tracks of its class by half of the smaller set makes them one (the older id stays). Pixel
-//              by pixel the Python front's output.
+//              overlapping two tracks of its class by half of the smaller set makes them one (the older id stays); and
+//              merge_fragments.py's consolidation online: two tracks of one class whose footprints (the 0.2 m voxels of
+//              all their clusters) overlap by half of the smaller one are one object, the smaller id names it.
 //   PREDICTED  predicted semantics (a segmentation network's masks) only: SEMANTIC with online merging (a cluster overlapping
 //              two tracks of its class by half of the smaller set makes them one; the confirmed track keeps its id), a
 //              confirmation that also needs a new look at the track's own id and a surface that is not another class's
@@ -127,6 +128,8 @@ class OnlineFront {
                                 const Eigen::Isometry3d& world_T_camera) const;
   std::vector<std::pair<int, int>> associate(const std::vector<Cluster>& clusters, int64_t stamp);
   int root(int t) const;
+  // SEMANTIC only: merge_fragments.py online, see consolidate() in online_front.cpp
+  void consolidate();
   Eigen::Vector3d backproject(int u, int v, float z, const Eigen::Isometry3d& world_T_camera) const;
   void load();
 
@@ -138,6 +141,7 @@ class OnlineFront {
   std::vector<std::pair<int, Points>> pending_;          // insertion order, as the Python dict
   std::map<int, std::pair<int64_t, int64_t>> evidence_;  // track -> (supported, seen through)
   std::map<int, int> alias_;                             // merged track -> the track it joined
+  std::set<int> touched_;                                // SEMANTIC: tracks that got a cluster in the last frame
   // PREDICTED only
   std::unordered_map<int64_t, Cell> cells_;              // surface cell -> its owner
   std::map<int, int> confirmed_visit_;                   // confirmed track -> the visit it was confirmed in
