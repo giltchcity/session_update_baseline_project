@@ -3,7 +3,7 @@
 // visits of a chain (its state in a file between visits). A C++ port of the Python fronts it was checked against:
 // front_real3.py: each frame's object-class pixels cut into 3-D regions (ConnectedSemantics: 0.1 m cells, 26-connected;
 // pixels without depth take their image region's), named by front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s
-// window, then re-identification by half of the smaller of cluster and track), online merging (a cluster overlapping two
+// window, then re-identification of a cluster lying by half in a track's voxels), online merging (a cluster overlapping two
 // tracks of its class by half of the smaller set makes them one; the confirmed one keeps its id), an id written once its
 // surface seen again is measured more often than seen through. To confirm a provisional track, its reprojected surface
 // must also match the same physical id in the current observation, and must not lie by more than half on surface cells
@@ -93,11 +93,15 @@ class OnlineFront {
   using Points = std::vector<Eigen::Vector3d>;
   // Surface ownership (11-22). A surface cell (surface_tolerance) belongs to the first confirmed track whose written pixels
   // reach it. A track confirmed in an earlier visit keeps the cells it held then and takes no new ones (what is new on a
-  // surface in a later visit is not the old object); a cell seen through belongs to no one (what stood there moved or
-  // went). A provisional track whose surface lies by more than half on cells of a track of another class is that track's
-  // surface under another name and is not confirmed. Kept between visits.
+  // surface in a later visit is not the old object); a cell whose surface is seen through more often than measured again
+  // belongs to no one (what stood there moved or went), the rule that names a track. A provisional track whose surface lies
+  // by more than half on cells of a track of another class is that track's surface under another name and is not
+  // confirmed; a cell of an earlier visit is met within one cell (the visits are aligned to a map voxel). Kept between
+  // visits.
   struct Cell {
     int owner = -1;
+    int visit = 0;                                    // the visit its owner took it in
+    int hits = 0, through = 0;                        // its surface measured again / seen through
     Eigen::Vector3f point = Eigen::Vector3f::Zero();  // where the owner's surface was measured
   };
 

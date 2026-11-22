@@ -220,20 +220,38 @@ void OnlineFront::judge(const cv::Mat& depth, const cv::Mat& observed_ids, const
 bool OnlineFront::onOtherSurface(const Points& surface, int candidate) const {
   if (surface.empty() || cells_.empty()) return false;
   const int semantic = tracks_[candidate].semantic;
+  const double tol = config_.surface_tolerance;
+  const auto other_class = [&](const Cell& c) {
+    if (c.owner < 0) return false;
+    const int owner = root(c.owner);
+    return owner != candidate && tracks_[owner].semantic != semantic;
+  };
   size_t other = 0;
   for (const auto& s : surface) {
-    const auto it = cells_.find(key(s, config_.surface_tolerance));
-    if (it == cells_.end() || it->second.owner < 0) continue;
-    const int owner = root(it->second.owner);
-    if (owner != candidate && tracks_[owner].semantic != semantic) ++other;
+    const auto it = cells_.find(key(s, tol));
+    if (it != cells_.end() && it->second.owner >= 0) {
+      other += other_class(it->second);
+      continue;
+    }
+    // a free cell next to a cell an earlier visit gave to another class's object: that surface, seen through the
+    // visits' alignment
+    bool near = false;
+    for (int dx = -1; dx <= 1 && !near; ++dx)
+      for (int dy = -1; dy <= 1 && !near; ++dy)
+        for (int dz = -1; dz <= 1 && !near; ++dz) {
+          const auto n = cells_.find(key(s + Eigen::Vector3d(dx, dy, dz) * tol, tol));
+          near = n != cells_.end() && n->second.visit < visit_ && other_class(n->second);
+        }
+    other += near;
   }
   return other > config_.min_reid_share * surface.size();
 }
 
 void OnlineFront::release(const cv::Mat& depth, const Eigen::Isometry3d& T) {
-  // a held cell seen through in this frame belongs to no one any more
+  // a held cell seen through more often than measured again belongs to no one any more
   const Eigen::Matrix3d Rt = T.linear().transpose();
   const Eigen::Vector3d t = T.translation();
+  const double tol = config_.surface_tolerance;
   for (auto& [k, c] : cells_) {
     if (c.owner < 0) continue;
     const Eigen::Vector3d cam = Rt * (c.point.cast<double>() - t);
@@ -243,7 +261,10 @@ void OnlineFront::release(const cv::Mat& depth, const Eigen::Isometry3d& T) {
     const double vf = std::floor(K_.fy * cam.y() / z + K_.cy - K_.offset + 0.5);
     if (!(uf >= 0 && uf < K_.width && vf >= 0 && vf < K_.height)) continue;
     const float d = depth.at<float>(static_cast<int>(vf), static_cast<int>(uf));
-    if (std::isfinite(d) && d > z + config_.surface_tolerance) c.owner = -1;
+    if (!std::isfinite(d)) continue;
+    if (std::abs(d - z) <= tol) ++c.hits;
+    if (d > z + tol) ++c.through;
+    if (c.through > c.hits) c.owner = -1, c.hits = c.through = 0;
   }
 }
 
@@ -362,8 +383,9 @@ std::vector<OnlineFront::Cluster> OnlineFront::clusters(const cv::Mat& depth, co
 }
 
 std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluster>& clusters, int64_t stamp) {
-  // front_real3.py: front.py's steps 2-3 with re-identification by half of the smaller of cluster and track, and online
-  // merging (a cluster overlapping two tracks of its class by half of the smaller set makes them one).
+  // front.py's steps 2-3: re-identification of a cluster lying by half in an earlier track's voxels (a cluster that only
+  // covers half of a smaller track is not that track: it would carry the track's id onto what lies around it), and
+  // online merging (a cluster overlapping two tracks of its class by half of the smaller set makes them one).
   std::vector<std::pair<int, int>> claimed;
   std::vector<char> taken(clusters.size(), 0);
   const int64_t window = stamp - static_cast<int64_t>(config_.temporal_window_s * 1e9);
@@ -393,7 +415,7 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
       if (t.semantic != c.semantic) continue;
       if (t.all_voxels.empty()) continue;
       const double inter = static_cast<double>(intersection(c.voxels, t.all_voxels));
-      const double share = inter / std::min(c.voxels.size(), t.all_voxels.size());
+      const double share = inter / c.voxels.size();
       if (share >= best_share) best = static_cast<int>(ti), best_share = share;
     }
     if (best < 0) {
@@ -482,7 +504,7 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
         if (!std::isfinite(z) || confirmed == confirmed_visit_.end() || confirmed->second != visit_) continue;
         const Eigen::Vector3d x = backproject(u, v, z, T);
         auto& cell = cells_[key(x, config_.surface_tolerance)];
-        if (cell.owner < 0) cell.owner = id - 1, cell.point = x.cast<float>();
+        if (cell.owner < 0) cell.owner = id - 1, cell.visit = visit_, cell.hits = 1, cell.through = 0, cell.point = x.cast<float>();
       }
     }
   return out;
@@ -517,7 +539,8 @@ void OnlineFront::save() const {
   w(static_cast<int64_t>(confirmed_visit_.size()));
   for (const auto& [t, v] : confirmed_visit_) w(t), w(v);
   w(static_cast<int64_t>(cells_.size()));
-  for (const auto& [k, c] : cells_) w(k), w(c.owner), wd(c.point.x()), wd(c.point.y()), wd(c.point.z());
+  for (const auto& [k, c] : cells_)
+    w(k), w(c.owner), w(c.visit), w(c.hits), w(c.through), wd(c.point.x()), wd(c.point.y()), wd(c.point.z());
 
   // the catalog the front made, for the record (id -> class of its named tracks)
   std::ofstream c(config_.state_path + ".catalog.json");
@@ -572,6 +595,9 @@ void OnlineFront::load() {
     const int64_t k = r();
     Cell c;
     c.owner = static_cast<int>(r());
+    c.visit = static_cast<int>(r());
+    c.hits = static_cast<int>(r());
+    c.through = static_cast<int>(r());
     const double x = rd(), y = rd(), z = rd();
     c.point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
     cells_.emplace(k, c);
