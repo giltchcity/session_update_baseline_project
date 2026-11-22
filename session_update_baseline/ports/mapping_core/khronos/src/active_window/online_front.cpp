@@ -450,10 +450,12 @@ std::vector<OnlineFront::Cluster> OnlineFront::clusters(const cv::Mat& depth, co
 }
 
 std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluster>& clusters, int64_t stamp) {
-  // SEMANTIC: front.py steps 2-3 (front_real.py, the TESSE rows' semv5): the window's tracking, then re-identification by
-  // the cluster's own share in a track. PREDICTED adds online merging: a cluster overlapping two tracks of its class by half
-  // of the smaller set makes them one (the layer merges their nodes, PhysicalIdAliases); the confirmed track keeps its id
-  // (joining never confirms), of two alike the older.
+  // SEMANTIC (annotated semantics): front.py steps 2-3 (the TESSE rows' semv5) as front_real3.py runs them over visits:
+  // the window's tracking, re-identification by half of the smaller of cluster and track, and online merging (a cluster
+  // overlapping two tracks of its class by half of the smaller set makes them one, the older id stays; the layer merges
+  // their nodes, PhysicalIdAliases): the offline consolidation of the TESSE front's fragments (merge_fragments.py) done
+  // online. PREDICTED: re-identification by the cluster's own share in a track and merges in which the confirmed track
+  // keeps its id (joining never confirms).
   const bool predicted = config_.mode == Mode::PREDICTED;
   std::vector<std::pair<int, int>> claimed;
   std::vector<char> taken(clusters.size(), 0);
@@ -482,9 +484,9 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
     for (size_t ti = 0; ti < tracks_.size(); ++ti) {
       const auto& t = tracks_[ti];
       if (t.semantic != c.semantic) continue;
-      if (predicted && t.all_voxels.empty()) continue;
+      if (t.all_voxels.empty()) continue;
       const double inter = static_cast<double>(intersection(c.voxels, t.all_voxels));
-      const double share = inter / c.voxels.size();
+      const double share = predicted ? inter / c.voxels.size() : inter / std::min(c.voxels.size(), t.all_voxels.size());
       if (share >= best_share) best = static_cast<int>(ti), best_share = share;
     }
     if (best < 0) {
@@ -499,7 +501,6 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
     taken[ci] = 1;
     claimed.emplace_back(static_cast<int>(ci), best);
   }
-  if (!predicted) return claimed;
   for (const auto& [ci, ti] : claimed) {
     const auto& c = clusters[ci];
     int r = root(ti);
@@ -509,12 +510,16 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
       if (ru == r || u.semantic != c.semantic || u.all_voxels.empty()) continue;
       if (retired_.count(r) || retired_.count(ru)) continue;
       if (intersection(c.voxels, u.all_voxels) >= config_.min_reid_share * std::min(c.voxels.size(), u.all_voxels.size())) {
-        const bool r_named = named_.count(r) > 0, u_named = named_.count(ru) > 0;
-        const int keep = r_named != u_named ? (r_named ? r : ru) : std::min(r, ru), gone = keep == r ? ru : r;
+        int keep = std::min(r, ru), gone = std::max(r, ru);
+        if (predicted) {  // the confirmed track keeps its id, of two alike the older
+          const bool r_named = named_.count(r) > 0, u_named = named_.count(ru) > 0;
+          keep = r_named != u_named ? (r_named ? r : ru) : std::min(r, ru), gone = keep == r ? ru : r;
+        }
         alias_[gone] = keep;
         PhysicalIdAliases::instance().add(static_cast<size_t>(gone) + 1, static_cast<size_t>(keep) + 1);
         const auto gone_voxels = tracks_[gone].all_voxels;
         tracks_[keep].all_voxels.insert(gone_voxels.begin(), gone_voxels.end());
+        if (!predicted && named_.count(gone)) named_.insert(keep);
         if (const auto o = observations_.find(gone); o != observations_.end()) {
           observations_[keep] += o->second;
           observations_.erase(gone);

@@ -1,12 +1,15 @@
 #pragma once
 // Online object front (11-21): physical ids from semantics inside the mapper, frame by frame, one front through the
 // visits of a chain (its state in a file between visits). Two inputs, two modes:
-//   SEMANTIC   annotated semantics: the TESSE route, a C++ port of tesse_semantic_front.py --3d (the TESSE rows' semv5),
-//              on real BedRoom front_real.py, and nothing else: each frame's object-class pixels cut into 3-D regions
+//   SEMANTIC   annotated semantics: the TESSE route over visits, a C++ port of front_real3.py (tesse_semantic_front.py --3d,
+//              the TESSE rows' semv5, with its fragments merged online as merge_fragments.py merged them offline): each
+//              frame's object-class pixels cut into 3-D regions
 //              (ConnectedSemantics: 0.1 m cells, 26-connected; pixels without depth take their image region's), named by
 //              front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s window, then re-identification: a cluster whose
 //              voxels lie by half in an earlier track's), an id written once its surface seen again is measured more often
-//              than seen through. Pixel by pixel the Python front's output.
+//              than seen through; re-identification by half of the smaller of cluster and track, and a cluster
+//              overlapping two tracks of its class by half of the smaller set makes them one (the older id stays). Pixel
+//              by pixel the Python front's output.
 //   PREDICTED  predicted semantics (a segmentation network's masks) only: SEMANTIC with online merging (a cluster overlapping
 //              two tracks of its class by half of the smaller set makes them one; the confirmed track keeps its id), a
 //              confirmation that also needs a new look at the track's own id and a surface that is not another class's
@@ -31,7 +34,7 @@
 namespace khronos {
 
 /**
- * Identity merges of the online front (PREDICTED), process-wide: the front registers that output id `gone` is the
+ * Identity merges of the online front (SEMANTIC, PREDICTED), process-wide: the front registers that output id `gone` is the
  * object of id `keep` (gone > keep) the moment it decides it; the map applies them at its next round (its states, its
  * nodes, its stored per-pixel identities read through root()). Empty unless the online front merges.
  */
