@@ -143,6 +143,10 @@ if(BUILD_TESTING)
     COMMAND test_incremental_change_detection_oracle
   )
 
+  add_executable(test_online_front_surface_owner tests/test_online_front_surface_owner.cpp)
+  target_link_libraries(test_online_front_surface_owner PRIVATE ${PROJECT_NAME})
+  add_test(NAME online_front_surface_owner COMMAND test_online_front_surface_owner)
+
   add_executable(test_physical_identity_evidence
     tests/test_physical_identity_evidence.cpp
   )

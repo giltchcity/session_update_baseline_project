@@ -4,9 +4,10 @@
 // front_real3.py: each frame's object-class pixels cut into 3-D regions (ConnectedSemantics: 0.1 m cells, 26-connected;
 // pixels without depth take their image region's), named by front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s
 // window, then re-identification by half of the smaller of cluster and track), online merging (a cluster overlapping two
-// tracks of its class by half of the smaller set makes them one), an id written once its surface seen again is measured
-// more often than seen through. To confirm a provisional track, its reprojected surface must also match the same
-// physical id in the current observation. The input with annotated instances needs no front.
+// tracks of its class by half of the smaller set makes them one; the confirmed one keeps its id), an id written once its
+// surface seen again is measured more often than seen through. To confirm a provisional track, its reprojected surface
+// must also match the same physical id in the current observation, and must not lie by more than half on surface cells
+// held by a confirmed track of another class (see Cell). The input with annotated instances needs no front.
 // KHRONOS_ONLINE_FRONT=off|semantic_merge,
 // KHRONOS_ONLINE_FRONT_STATE (state file), KHRONOS_ONLINE_FRONT_INTRINSICS (the recording's Intrinsics.txt) and
 // KHRONOS_ONLINE_FRONT_STEP (its pixels per input pixel, 2 at image scale 0.5).
@@ -90,8 +91,19 @@ class OnlineFront {
     std::unordered_set<int64_t> voxels;
   };
   using Points = std::vector<Eigen::Vector3d>;
+  // Surface ownership (11-22). A surface cell (surface_tolerance) belongs to the first confirmed track whose written pixels
+  // reach it. A track confirmed in an earlier visit keeps the cells it held then and takes no new ones (what is new on a
+  // surface in a later visit is not the old object); a cell seen through belongs to no one (what stood there moved or
+  // went). A provisional track whose surface lies by more than half on cells of a track of another class is that track's
+  // surface under another name and is not confirmed. Kept between visits.
+  struct Cell {
+    int owner = -1;
+    Eigen::Vector3f point = Eigen::Vector3f::Zero();  // where the owner's surface was measured
+  };
 
   void judge(const cv::Mat& depth, const cv::Mat& observed_ids, const Eigen::Isometry3d& world_T_camera);
+  bool onOtherSurface(const Points& surface, int candidate) const;
+  void release(const cv::Mat& depth, const Eigen::Isometry3d& world_T_camera);
   cv::Mat segments(const cv::Mat& depth, const cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera) const;
   std::vector<Cluster> clusters(const cv::Mat& depth, const cv::Mat& segments, const cv::Mat& semantics,
                                 const Eigen::Isometry3d& world_T_camera) const;
@@ -108,6 +120,9 @@ class OnlineFront {
   std::vector<std::pair<int, Points>> pending_;          // insertion order, as the Python dict
   std::map<int, std::pair<int64_t, int64_t>> evidence_;  // track -> (supported, seen through)
   std::map<int, int> alias_;                             // merged track -> the track it joined
+  std::unordered_map<int64_t, Cell> cells_;              // surface cell -> its owner
+  std::map<int, int> confirmed_visit_;                   // confirmed track -> the visit it was confirmed in
+  int visit_ = 0;                                        // this visit: the number of visits before it in the state
 };
 
 }  // namespace khronos
