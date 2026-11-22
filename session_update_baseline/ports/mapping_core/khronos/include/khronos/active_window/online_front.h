@@ -95,9 +95,10 @@ class OnlineFront {
   // reach it. A track confirmed in an earlier visit keeps the cells it held then and takes no new ones (what is new on a
   // surface in a later visit is not the old object); a cell whose surface is seen through more often than measured again
   // belongs to no one (what stood there moved or went), the rule that names a track. A provisional track whose surface lies
-  // by more than half on cells of a track of another class is that track's surface under another name and is not
-  // confirmed; a cell of an earlier visit is met within one cell (the visits are aligned to a map voxel). Kept between
-  // visits.
+  // by more than half on cells of a track of another class observed in at least as many frames is that track's surface
+  // under another name and is not confirmed; a cell of an earlier visit is met within one cell (the visits are aligned to
+  // a map voxel). A track confirmed over the cells of an object observed in fewer frames takes them (a first name seen
+  // briefly gives way to the object seen longer). An id is written only on its own or on free cells. Kept between visits.
   struct Cell {
     int owner = -1;
     int visit = 0;                                    // the visit its owner took it in
@@ -107,6 +108,7 @@ class OnlineFront {
 
   void judge(const cv::Mat& depth, const cv::Mat& observed_ids, const Eigen::Isometry3d& world_T_camera);
   bool onOtherSurface(const Points& surface, int candidate) const;
+  int64_t seen(int track) const;  // the frames it was observed in
   void release(const cv::Mat& depth, const Eigen::Isometry3d& world_T_camera);
   cv::Mat segments(const cv::Mat& depth, const cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera) const;
   std::vector<Cluster> clusters(const cv::Mat& depth, const cv::Mat& segments, const cv::Mat& semantics,
@@ -126,6 +128,7 @@ class OnlineFront {
   std::map<int, int> alias_;                             // merged track -> the track it joined
   std::unordered_map<int64_t, Cell> cells_;              // surface cell -> its owner
   std::map<int, int> confirmed_visit_;                   // confirmed track -> the visit it was confirmed in
+  std::map<int, int64_t> observations_;                  // track -> frames it got a cluster in (merged ones summed)
   int visit_ = 0;                                        // this visit: the number of visits before it in the state
 };
 

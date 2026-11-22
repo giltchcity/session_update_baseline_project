@@ -1,6 +1,7 @@
 // The online front's surface ownership: a confirmed object's surface named another class is not a new object, in the
 // visit it was confirmed in and in a later one; a real object that appears on it in a later visit is one, also when it is
 // first named as the surface under it; and it is one again where it is moved to, while its old place shows the surface.
+// A first name seen for a few looks gives way to the object its surface is seen as for longer.
 #include "khronos/active_window/online_front.h"
 
 #include <unistd.h>
@@ -60,6 +61,17 @@ int main() {
     const auto moved = look(front, bed, bag, false, true);
     require(moved.at<int>(8, 50) > 0 && moved.at<int>(8, 50) != bed_id, "the moved bag is missing at its new place");
     require(moved.at<int>(8, 8) == bed_id, "the bed is missing where the bag was");
+  }
+  std::remove(config.state_path.c_str());
+  std::remove((config.state_path + ".catalog.json").c_str());
+  {  // a bag first named clothes for a few looks, then bag for longer: the bag is confirmed and takes its surface
+    khronos::OnlineFront front(config, camera);
+    for (int i = 0; i < 3; ++i) look(front, bed, clothes, false, true);
+    const int clothes_id = look(front, bed, clothes, false, true).at<int>(8, 50);
+    require(clothes_id > 0, "the first name never confirmed");
+    int now = 0;
+    for (int i = 0; i < 12; ++i) now = look(front, bed, bag, false, true).at<int>(8, 50);
+    require(now > 0 && now != clothes_id, "a first name seen briefly kept the surface of the object seen longer");
   }
   std::remove(config.state_path.c_str());
   std::remove((config.state_path + ".catalog.json").c_str());

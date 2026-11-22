@@ -201,14 +201,24 @@ void OnlineFront::judge(const cv::Mat& depth, const cv::Mat& observed_ids, const
     }
     const bool other_surface = onOtherSurface(S, candidate);
     if (std::getenv("KHRONOS_ONLINE_FRONT_DEBUG"))
-      std::cerr << "judge track " << r << ": " << P.size() << " places, evidence " << ev.first << "/" << ev.second
-                << (other_surface ? ", on another object's surface" : "") << "\n";
+      std::cerr << "judge track " << r << " (class " << tracks_[candidate].semantic << "): " << P.size()
+                << " places, evidence " << ev.first << "/" << ev.second << ", identity " << same_identity << "/"
+                << other_or_unassigned << (other_surface ? ", on another object's surface" : "") << "\n";
     // A depth hit confirms geometry. Only a new look at this track can confirm its identity, and only on a surface that
-    // no object of another class holds (there the track is that object under another name).
+    // no object of another class seen at least as long holds (there the track is that object under another name).
     if (ev.first > ev.second && same_identity > other_or_unassigned && !other_surface) {
       named_.insert(candidate);
       confirmed_visit_[candidate] = visit_;
       done.push_back(r);
+      // the cells of its surface held by an object of another class seen less long are its now
+      const int semantic = tracks_[candidate].semantic;
+      for (const auto& s : S) {
+        const auto it = cells_.find(key(s, tol));
+        if (it == cells_.end() || it->second.owner < 0) continue;
+        const int owner = root(it->second.owner);
+        if (owner == candidate || tracks_[owner].semantic == semantic || seen(owner) >= seen(candidate)) continue;
+        it->second.owner = candidate, it->second.visit = visit_, it->second.hits = 1, it->second.through = 0;
+      }
     }
   }
   for (const int r : done) {
@@ -217,14 +227,20 @@ void OnlineFront::judge(const cv::Mat& depth, const cv::Mat& observed_ids, const
   }
 }
 
+int64_t OnlineFront::seen(int t) const {
+  const auto it = observations_.find(t);
+  return it == observations_.end() ? 0 : it->second;
+}
+
 bool OnlineFront::onOtherSurface(const Points& surface, int candidate) const {
   if (surface.empty() || cells_.empty()) return false;
   const int semantic = tracks_[candidate].semantic;
   const double tol = config_.surface_tolerance;
-  const auto other_class = [&](const Cell& c) {
+  const int64_t looks = seen(candidate);
+  const auto other_class = [&](const Cell& c) {  // an object of another class, seen at least as long as the candidate
     if (c.owner < 0) return false;
     const int owner = root(c.owner);
-    return owner != candidate && tracks_[owner].semantic != semantic;
+    return owner != candidate && tracks_[owner].semantic != semantic && seen(owner) >= looks;
   };
   size_t other = 0;
   for (const auto& s : surface) {
@@ -444,6 +460,10 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
         PhysicalIdAliases::instance().add(static_cast<size_t>(gone) + 1, static_cast<size_t>(keep) + 1);
         const auto gone_voxels = tracks_[gone].all_voxels;
         tracks_[keep].all_voxels.insert(gone_voxels.begin(), gone_voxels.end());
+        if (const auto o = observations_.find(gone); o != observations_.end()) {
+          observations_[keep] += o->second;
+          observations_.erase(gone);
+        }
         r = keep;
       }
     }
@@ -466,13 +486,16 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
   const auto claimed = associate(cl, stamp);
   cv::Mat out = cv::Mat::zeros(depth.size(), CV_32SC1);
   const int W = depth.cols;
+  std::set<int> looked;
   for (const auto& [ci, ti] : claimed) {
     auto& t = tracks_[ti];
+    looked.insert(ti);
     t.last_seen = stamp;
     t.last_voxels = cl[ci].voxels;
     t.all_voxels.insert(cl[ci].voxels.begin(), cl[ci].voxels.end());
     for (const int p : cl[ci].pixels) out.at<int32_t>(p / W, p % W) = t.id + 1;
   }
+  for (const int t : looked) ++observations_[t];  // one look per frame, however many clusters it got
   judge(depth, out, T);  // out still contains provisional ids; fresh points enter pending_ below.
   // SemanticFront.process: an unnamed track's measured points wait for its naming; only named tracks are written
   std::map<int, Points> fresh;
@@ -496,16 +519,31 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
     for (int u = 0; u < W; ++u) {
       int32_t& id = out.at<int32_t>(v, u);
       if (id > 0 && !named_.count(id - 1)) id = 0;
-      if (id > 0) {
-        semantics.at<int32_t>(v, u) = tracks_[id - 1].semantic;  // the catalog contract: the id's class
-        // a free surface cell is taken by the first track confirmed in this visit that writes it
-        const float z = depth.at<float>(v, u);
-        const auto confirmed = confirmed_visit_.find(id - 1);
-        if (!std::isfinite(z) || confirmed == confirmed_visit_.end() || confirmed->second != visit_) continue;
+      if (id <= 0) continue;
+      const int t = id - 1;
+      const float z = depth.at<float>(v, u);
+      if (std::isfinite(z)) {
         const Eigen::Vector3d x = backproject(u, v, z, T);
-        auto& cell = cells_[key(x, config_.surface_tolerance)];
-        if (cell.owner < 0) cell.owner = id - 1, cell.visit = visit_, cell.hits = 1, cell.through = 0, cell.point = x.cast<float>();
+        const int64_t k = key(x, config_.surface_tolerance);
+        auto it = cells_.find(k);
+        if (it != cells_.end() && it->second.owner >= 0) {
+          // an id is written on its own surface or on a free one, never on an object of another class: whichever way
+          // its cluster reached this pixel (the window, re-identification or a merge), here it is that object
+          const int owner = root(it->second.owner);
+          if (owner != t && tracks_[owner].semantic != tracks_[t].semantic) {
+            id = 0;
+            continue;
+          }
+        } else {
+          // a free surface cell is taken by the first track confirmed in this visit that writes it
+          const auto confirmed = confirmed_visit_.find(t);
+          if (confirmed != confirmed_visit_.end() && confirmed->second == visit_) {
+            Cell& cell = it != cells_.end() ? it->second : cells_[k];
+            cell.owner = t, cell.visit = visit_, cell.hits = 1, cell.through = 0, cell.point = x.cast<float>();
+          }
+        }
       }
+      semantics.at<int32_t>(v, u) = tracks_[t].semantic;  // the catalog contract: the id's class
     }
   return out;
 }
@@ -541,6 +579,8 @@ void OnlineFront::save() const {
   w(static_cast<int64_t>(cells_.size()));
   for (const auto& [k, c] : cells_)
     w(k), w(c.owner), w(c.visit), w(c.hits), w(c.through), wd(c.point.x()), wd(c.point.y()), wd(c.point.z());
+  w(static_cast<int64_t>(observations_.size()));
+  for (const auto& [t, n] : observations_) w(t), w(n);
 
   // the catalog the front made, for the record (id -> class of its named tracks)
   std::ofstream c(config_.state_path + ".catalog.json");
@@ -601,6 +641,10 @@ void OnlineFront::load() {
     const double x = rd(), y = rd(), z = rd();
     c.point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
     cells_.emplace(k, c);
+  }
+  for (int64_t n = r(); n > 0; --n) {
+    const int t = r();
+    observations_[t] = r();
   }
 
   // an earlier visit's merges: its map already carries the merged ids; stored identities of this visit never had them
