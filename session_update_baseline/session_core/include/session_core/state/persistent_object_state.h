@@ -497,6 +497,11 @@ class PersistentObjectState {
     size_t visit_own_samples = 0;
     size_t visit_other_samples = 0;
     bool from_earlier_visit = false;  // seeded from the earlier visit's map
+    // KHRONOS_ONLINE_FRONT=semantic only (identities from annotated semantics by the TESSE front): the inherited surface's
+    // samples at the last round, measured as this identity / as background, and their number. Untouched in every other mode.
+    size_t last_own_votes = 0;
+    size_t last_background_votes = 0;
+    size_t last_inherited_samples = 0;
 
     // Anchor lock: observationFirstStamp of the merged node the last time this
     // ID was processed.

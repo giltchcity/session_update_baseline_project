@@ -80,6 +80,19 @@ void retireIdentity(const size_t id) {
   std::ofstream(std::string(state) + ".retired", std::ios::app) << id << "\n";
 }
 
+// (11-22) KHRONOS_ONLINE_FRONT=semantic: the identities are made from annotated semantics by the TESSE front, which writes
+// an object's pixels only under an identity it has named. An object the earlier visit kept that was taken away from
+// before a wall or the floor is not seen through: its place shows the background where its surface was. When at the
+// terminal round its surface was measured as background more often than as itself, and at least once per sample, its
+// CURRENT is closed (the earlier visit's identity carries no copy elsewhere to hand it over). No other mode runs it.
+bool semanticFrontIdentities() {
+  static const bool on = [] {
+    const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
+    return mode && std::string(mode) == "semantic";
+  }();
+  return on;
+}
+
 constexpr const char* kMobilityChangesDetail = "session_mobility_changes";
 constexpr const char* kMobilityContinuationsDetail = "session_mobility_continuations";
 
@@ -1188,9 +1201,17 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         state.b_session && state.b_session->current;
     const bool by_other_identity =
         predictedIdentities() && state.visit_other_samples > state.visit_own_samples;
+    const bool by_background = semanticFrontIdentities() && state.last_inherited_samples > 0 &&
+                               state.last_background_votes > state.last_own_votes &&
+                               state.last_background_votes >= state.last_inherited_samples;
     const bool inherited_absent =
         state.last_contradiction_rays > state.last_support_rays ||
-        sessionCopyElsewhere(state, current, state.last_session_reliable_samples) || by_other_identity;
+        sessionCopyElsewhere(state, current, state.last_session_reliable_samples) || by_other_identity ||
+        by_background;
+
+    if (by_background)
+      LOG(INFO) << "INHERITED_CLOSE_BY_BACKGROUND inst=" << id << " own=" << state.last_own_votes
+                << " background=" << state.last_background_votes << " samples=" << state.last_inherited_samples;
 
     if (by_other_identity) {
       LOG(INFO) << "INHERITED_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
@@ -1266,6 +1287,11 @@ bool PersistentObjectState::resolveCurrentEvidence(
             << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
             << " observed_verts=" << (state.observed_new ? state.observed_new->geometry.numVertices() : 0);
 
+  if (semanticFrontIdentities()) {  // the inherited surface measured as this identity / as background, this round
+    state.last_own_votes = inherited_evidence.supported_votes + session_evidence.support_rays;
+    state.last_background_votes = inherited_evidence.replaced_by_background_votes;
+    state.last_inherited_samples = inherited_evidence.surface_samples;
+  }
   if (predictedIdentities()) {  // the identity's surfaces measured under it / under another identity, this visit
     state.visit_own_samples += inherited_evidence.supported_votes + session_evidence.supported_votes;
     state.visit_other_samples += inherited_evidence.replaced_by_other_votes + session_evidence.replaced_by_other_votes;
