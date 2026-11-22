@@ -2,21 +2,19 @@
 // Online object front (11-21): physical ids from semantics inside the mapper, frame by frame, one front through the
 // visits of a chain (its state in a file between visits). Two inputs, two modes:
 //   SEMANTIC   annotated semantics, the instance image without its number: each object class's 8-connected image region
-//              is one object in the frame (not the 0.1 m cells of --3d); then the TESSE route over visits, front_real3.py's
-//              tracking (tesse_semantic_front.py,
-//              the TESSE rows' semv5, with its fragments merged online as merge_fragments.py merged them offline): each
-//              frame's object-class pixels cut into 3-D regions
-//              (ConnectedSemantics: 0.1 m cells, 26-connected; pixels without depth take their image region's), named by
-//              front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s window, then re-identification: a cluster whose
-//              voxels lie by half in an earlier track's), an id written once its surface seen again is measured more often
-//              than seen through; re-identification by half of the smaller of cluster and track, and a cluster
-//              overlapping two tracks of its class by half of the smaller set makes them one (the older id stays); and
-//              merge_fragments.py's consolidation online: two tracks of one class whose footprints (the 0.2 m voxels of
-//              all their clusters) overlap by half of the smaller one are one object, the smaller id names it.
-//   PREDICTED  predicted semantics (a segmentation network's masks) only: SEMANTIC with online merging (a cluster overlapping
-//              two tracks of its class by half of the smaller set makes them one; the confirmed track keeps its id), a
-//              confirmation that also needs a new look at the track's own id and a surface that is not another class's
-//              object seen at least as long (surface cells, see Cell), and the map's retired identities (<state>.retired).
+//              is one object in the frame (not the 0.1 m cells of tesse_semantic_front.py --3d). The regions are named by
+//              front.py's tracking (MaxIoUTracker over 0.2 m voxels in a 3 s window), re-identification by half of the
+//              smaller of cluster and track, a cluster overlapping two tracks of its class by half of the smaller set makes
+//              them one (the older id stays; front_real3.py), and merge_fragments.py's consolidation online: two tracks of
+//              one class whose footprints (the 0.2 m voxels of all their clusters) overlap by half of the smaller one are
+//              one object, the smaller id names it. An id is written once its surface seen again is measured more often
+//              than seen through.
+//   PREDICTED  predicted semantics (a segmentation network's masks) only: each frame's object-class pixels cut into 3-D
+//              regions (ConnectedSemantics: 0.1 m cells, 26-connected; pixels without depth take their image region's),
+//              tracked as above with re-identification by the cluster's own share in a track and merges in which the
+//              confirmed track keeps its id, a confirmation that also needs a new look at the track's own id and a
+//              surface that is not another class's object seen at least as long (surface cells, see Cell), and the map's
+//              retired identities (<state>.retired).
 // The input with annotated instances needs no front (OFF). KHRONOS_ONLINE_FRONT=off|semantic|predicted,
 // KHRONOS_ONLINE_FRONT_STATE (state file), KHRONOS_ONLINE_FRONT_INTRINSICS (the recording's Intrinsics.txt) and
 // KHRONOS_ONLINE_FRONT_STEP (its pixels per input pixel, 2 at image scale 0.5).
