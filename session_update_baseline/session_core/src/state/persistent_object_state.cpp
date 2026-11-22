@@ -85,6 +85,15 @@ void retireIdentity(const size_t id) {
 // before a wall or the floor is not seen through: its place shows the background where its surface was. When at the
 // terminal round its surface was measured as background more often than as itself, and at least once per sample, its
 // CURRENT is closed (the earlier visit's identity carries no copy elsewhere to hand it over). No other mode runs it.
+// (11-22) KHRONOS_ONLINE_FRONT on (semantic or predicted): the identities come from an online front.
+bool frontIdentities() {
+  static const bool on = [] {
+    const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
+    return mode && std::string(mode) != "off" && std::string(mode) != "";
+  }();
+  return on;
+}
+
 bool semanticFrontIdentities() {
   static const bool on = [] {
     const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
@@ -1383,7 +1392,11 @@ bool PersistentObjectState::resolveSupportDominance(PhysicalState& b,
               << " same_site_probability=" << same_site_probability << " change_prior=" << q
               << " different_site=" << different_site;
   }
-  const bool by_new_site = different_site && support == 0;
+  // "Nothing supports the old site" needs the old site in view: a round in which it is out of view measures nothing
+  // there. (11-22) With an online front's identities a piece of the object named alike elsewhere (a same-site
+  // probability of 0 for an object that did not move: BedRoom A's bed and fan) otherwise closed a static object the
+  // moment it left the view. Applied with KHRONOS_ONLINE_FRONT on only; with annotated instances nothing changes.
+  const bool by_new_site = different_site && support == 0 && (!frontIdentities() || evidence.reliable_in_view > 0);
   const bool by_observed_absence = contradiction > support;
   if (by_new_site || by_observed_absence) {
     LOG(INFO) << scope << "_CLOSE inst=" << physical_instance_id << " by_new_site=" << by_new_site
