@@ -43,6 +43,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cstdlib>
+#include <string>
 #include <limits>
 #include <set>
 #include <tuple>
@@ -57,6 +59,17 @@
 namespace khronos {
 
 namespace {
+
+// (11-22) KHRONOS_ONLINE_FRONT=predicted: the object identities are made from predicted semantics by the online front.
+// An inherited object whose surface this visit measured under other identities more often than under its own is that
+// surface's other object named wrongly in an earlier visit: it is closed at the terminal round. No other mode runs it.
+bool predictedIdentities() {
+  static const bool on = [] {
+    const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
+    return mode && std::string(mode) == "predicted";
+  }();
+  return on;
+}
 
 constexpr const char* kMobilityChangesDetail = "session_mobility_changes";
 constexpr const char* kMobilityContinuationsDetail = "session_mobility_continuations";
@@ -1150,10 +1163,15 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
     // Compare the frozen inherited state with the independent B-session state.
     const bool have_b_current =
         state.b_session && state.b_session->current;
+    const bool by_other_identity =
+        predictedIdentities() && state.visit_other_samples > state.visit_own_samples;
     const bool inherited_absent =
         state.last_contradiction_rays > state.last_support_rays ||
-        sessionCopyElsewhere(state, current, state.last_session_reliable_samples);
+        sessionCopyElsewhere(state, current, state.last_session_reliable_samples) || by_other_identity;
 
+    if (by_other_identity)
+      LOG(INFO) << "INHERITED_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
+                << " other=" << state.visit_other_samples;
     if (inherited_absent) {
       LOG(INFO) << "INHERITED_CLOSE inst=" << id << " by_observed_absence="
                 << (state.last_contradiction_rays > state.last_support_rays)
@@ -1244,6 +1262,10 @@ bool PersistentObjectState::resolveCurrentEvidence(
                                         ? inherited_evidence.contradiction_rays : 0;
     state.last_surface_samples = inherited_evidence.surface_samples;
     state.last_session_reliable_samples = session_evidence.reliable_samples;
+    if (predictedIdentities()) {
+      state.visit_own_samples += inherited_evidence.supported_votes;
+      state.visit_other_samples += inherited_evidence.replaced_by_other_votes;
+    }
     // Online D2/D3 transition: as soon as the B-session state exists and A's
     // old surface is seen through, switch CURRENT to the B state. Do not wait
     // until the end of the session.
