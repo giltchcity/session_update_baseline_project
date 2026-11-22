@@ -32,7 +32,7 @@ DATASET="${1:-}"; OUTPUT="${2:-}"; FRAME_LIMIT="${3:-0}"
 [[ "$DATASET" == real || "$DATASET" == flat || "$DATASET" == synthetic || "$DATASET" == 3rscan || "$DATASET" == tesse ]] && [[ -n "$OUTPUT" && ! -e "$OUTPUT" ]] \
   || { echo "usage: $0 real|flat|synthetic|3rscan|tesse NEW_OUTPUT_DIR" >&2; exit 2; }
 ROOT=/home/jixian/Desktop/FT/session_update_baseline_project/session_update_baseline
-PLAYER=/home/jixian/Desktop/FT/wt_resupport/session_update_baseline/scripts/nss_flat_ros2_player.py   # 6b6f7fa: waits never negative
+PLAYER="${KHRONOS_PLAYER:-/home/jixian/Desktop/FT/wt_resupport/session_update_baseline/scripts/nss_flat_ros2_player.py}"
 FASTRTPS_PROFILE="$ROOT/configs/fastdds_session_update_ack.xml"
 L=/home/jixian/Desktop/FT/datasets/local_ab; S=/home/jixian/Desktop/FT/datasets/synthetic_ab; F=/home/jixian/Desktop/FT/datasets/flat_ab
 matched_thresholds() {  # matched_thresholds OBJECT_RESOLUTION: the real/Flat matched protocol
@@ -41,7 +41,7 @@ matched_thresholds() {  # matched_thresholds OBJECT_RESOLUTION: the real/Flat ma
 if [[ $DATASET == real ]]; then
   OFFICIAL_BUILD=/home/jixian/Desktop/FT/build_artifacts/official_khronos_63faadde_zsnap; MAP_FILE=final.4dmap.zpk
   ADAPTER="$OFFICIAL_BUILD/adapter/official_khronos_session_node"
-  INPUT_CONFIG="$ROOT/configs/nss_flat_input.yaml"; LABELSPACE_CONFIG="$ROOT/configs/nss_ade20k_room_label_space.yaml"
+  INPUT_CONFIG="$ROOT/configs/nss_flat_input.yaml"; LABELSPACE_CONFIG="${KHRONOS_LABELSPACE:-$ROOT/configs/nss_ade20k_room_label_space.yaml}"
   MAX_RANGE=5.0; EXTRA_FILE=""
   COMMON_THRESHOLDS=$(matched_thresholds 0.02)
   SESSIONS=(a b c)
@@ -61,7 +61,7 @@ if [[ $DATASET == real ]]; then
   player_args() {  # player_args SESSION
     local w=""; [[ $1 != a ]] && w="--world-transform $L/alignment/session_$1_to_session_a.txt"
     [[ -n ${REAL_INSTANCES:-} ]] && w="$w --instance-dir $REAL_INSTANCE_DIR/session_$1 $REAL_INSTANCES"
-    echo "$w --run-dir $(run_dir $1) --label-dir $L/semantics/session_$1 --session-start-ns $(start_ns $1) --tf-settle-s 0.02 --play-rate 100 --image-scale 0.5 --flow-control ack --ack-timeout-s 180 --finish-timeout-s 1800 --discovery-timeout-s 180 --post-wait-s 0 --frame-limit $FRAME_LIMIT"
+    echo "$w --run-dir $(run_dir $1) --label-dir ${KHRONOS_LABEL_DIR:-$L/semantics}/session_$1 --session-start-ns $(start_ns $1) --tf-settle-s 0.02 --play-rate 100 --image-scale 0.5 --flow-control ack --ack-timeout-s 180 --finish-timeout-s 1800 --discovery-timeout-s 180 --post-wait-s 0 --frame-limit $FRAME_LIMIT"
   }
 elif [[ $DATASET == 3rscan ]]; then
   OFFICIAL_BUILD=/home/jixian/Desktop/FT/build_artifacts/official_khronos_63faadde_zsnap; MAP_FILE=final.4dmap.zpk
