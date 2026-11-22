@@ -496,6 +496,7 @@ class PersistentObjectState {
     // under it / under another identity, summed over this visit's rounds. Untouched in every other mode.
     size_t visit_own_samples = 0;
     size_t visit_other_samples = 0;
+    bool from_earlier_visit = false;  // seeded from the earlier visit's map
 
     // Anchor lock: observationFirstStamp of the merged node the last time this
     // ID was processed.

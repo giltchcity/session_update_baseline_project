@@ -62,8 +62,9 @@ namespace khronos {
 namespace {
 
 // (11-22) KHRONOS_ONLINE_FRONT=predicted: the object identities are made from predicted semantics by the online front.
-// An identity whose surfaces this visit measured under other identities more often than under its own is another
-// object's surface named wrongly: its CURRENT is closed at the terminal round. No other mode runs it.
+// An identity of an earlier visit whose surfaces this visit measured under other identities more often than under its
+// own is another object's surface named wrongly then: its CURRENT is closed at the terminal round (the first visit, with
+// nothing earlier to check against, closes nothing). No other mode runs it.
 bool predictedIdentities() {
   static const bool on = [] {
     const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
@@ -1151,7 +1152,8 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
       }
       foldSessionState(state, stamp);
       if (!state.current) promoteObservedNew(state);
-      if (state.current && predictedIdentities() && state.visit_other_samples > state.visit_own_samples) {
+      if (state.current && predictedIdentities() && state.from_earlier_visit &&
+          state.visit_other_samples > state.visit_own_samples) {
         LOG(INFO) << "SESSION_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
                   << " other=" << state.visit_other_samples << " folded=1";
         closeCurrent(state, stamp);
@@ -1164,8 +1166,8 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
 
     Fragment& current = state.fragments[*state.current];
     if (!current.requires_current_session_support) {
-      const bool by_other_identity =
-          predictedIdentities() && state.visit_other_samples > state.visit_own_samples;
+      const bool by_other_identity = predictedIdentities() && state.from_earlier_visit &&
+                                     state.visit_other_samples > state.visit_own_samples;
       if ((state.pending_absence_stamp != 0 && !state.observed_new) || by_other_identity) {
         if (by_other_identity)
           LOG(INFO) << "SESSION_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
@@ -1418,6 +1420,7 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg) 
     state.observed_new.reset();
     state.pending_absence_stamp = 0;
     state.current.reset();
+    if (predictedIdentities()) state.from_earlier_visit = true;  // judged against this visit's observations
     if (attrs->bounding_box.isValid()) {
       state.fragments.push_back(makeFragment(*attrs, first, last));
       state.current = 0;
