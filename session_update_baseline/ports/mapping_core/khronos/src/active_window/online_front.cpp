@@ -343,6 +343,37 @@ cv::Mat OnlineFront::segments(const cv::Mat& depth, const cv::Mat& sem, const Ei
   const int H = depth.rows, W = depth.cols;
   cv::Mat out = cv::Mat::zeros(H, W, CV_32SC1);
   int n = 0;
+  if (config_.mode == Mode::SEMANTIC) {
+    // SEMANTIC (annotated semantics): an annotated region is a whole object, the instance image without its number
+    // (BedRoom: with the 0.1 m cells one annotated object was 2+ segments in 33-38 % of the frames, cut where its depth
+    // jumps). Each object class's 8-connected image regions are the segments, pixels with and without depth alike.
+    for (const int c : config_.object_semantics) {
+      std::vector<int> cls;
+      for (int i = 0; i < H * W; ++i)
+        if (sem.at<int32_t>(i / W, i % W) == c) cls.push_back(i);
+      if (cls.empty()) continue;
+      std::unordered_map<int, int> where;
+      for (size_t i = 0; i < cls.size(); ++i) where[cls[i]] = static_cast<int>(i);
+      const auto reg = label(cls.size(), [&](size_t i, const auto& join) {
+        const int v = cls[i] / W, u = cls[i] % W;
+        for (int dv = -1; dv <= 1; ++dv)
+          for (int du = -1; du <= 1; ++du) {
+            if (!dv && !du) continue;
+            const int vv = v + dv, uu = u + du;
+            if (vv < 0 || vv >= H || uu < 0 || uu >= W) continue;
+            const auto it = where.find(vv * W + uu);
+            if (it != where.end()) join(it->second);
+          }
+      });
+      int k = 0;
+      for (size_t i = 0; i < cls.size(); ++i) {
+        k = std::max(k, reg[i]);
+        out.at<int32_t>(cls[i] / W, cls[i] % W) = reg[i] + n;
+      }
+      n += k;
+    }
+    return out;
+  }
   for (const int c : config_.object_semantics) {
     std::vector<int> pix;
     std::vector<std::array<int64_t, 3>> cells;

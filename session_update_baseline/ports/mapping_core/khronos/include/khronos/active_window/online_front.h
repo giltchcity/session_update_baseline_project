@@ -1,7 +1,9 @@
 #pragma once
 // Online object front (11-21): physical ids from semantics inside the mapper, frame by frame, one front through the
 // visits of a chain (its state in a file between visits). Two inputs, two modes:
-//   SEMANTIC   annotated semantics: the TESSE route over visits, a C++ port of front_real3.py (tesse_semantic_front.py --3d,
+//   SEMANTIC   annotated semantics, the instance image without its number: each object class's 8-connected image region
+//              is one object in the frame (not the 0.1 m cells of --3d); then the TESSE route over visits, front_real3.py's
+//              tracking (tesse_semantic_front.py,
 //              the TESSE rows' semv5, with its fragments merged online as merge_fragments.py merged them offline): each
 //              frame's object-class pixels cut into 3-D regions
 //              (ConnectedSemantics: 0.1 m cells, 26-connected; pixels without depth take their image region's), named by
