@@ -11,7 +11,8 @@
 //   PREDICTED       (11-22, for predicted semantics only: a segmentation network's masks, not annotated semantics)
 //                   SEMANTIC_MERGE with re-identification by the cluster's own share in a track, merges in which the
 //                   confirmed track keeps its id, a confirmation that also needs a new look at the track's own id and a
-//                   surface that is not another class's object seen at least as long (surface cells, see Cell).
+//                   surface that is not another class's object seen at least as long (surface cells, see Cell), and
+//                   an id written on another class's cell only once given there more often than the owner (01a4da5).
 //                   SEMANTIC and SEMANTIC_MERGE do none of this: they stay the ports of the Python fronts.
 // The input with annotated instances needs no front (OFF). KHRONOS_ONLINE_FRONT=off|semantic|semantic_merge|predicted,
 // KHRONOS_ONLINE_FRONT_STATE (state file), KHRONOS_ONLINE_FRONT_INTRINSICS (the recording's Intrinsics.txt) and
@@ -130,6 +131,8 @@ class OnlineFront {
     int visit = 0;                                    // the visit its owner took it in
     int hits = 0, through = 0;                        // its surface measured again / seen through
     Eigen::Vector3f point = Eigen::Vector3f::Zero();  // where the owner's surface was measured
+    int writes = 0;                                   // the owner's pixels written on it
+    int rival = -1, rival_writes = 0;                 // the other class's confirmed track given it most (majority vote)
   };
 
   cv::Mat processPredicted(const cv::Mat& depth, cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera,
