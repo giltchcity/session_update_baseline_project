@@ -113,6 +113,25 @@ for directory in "${RUN_DIR}" "${SEMANTIC_DIR}" "${INSTANCE_DIR}"; do
   [[ -d "${directory}" ]] || die "missing input directory: ${directory}"
 done
 
+# (11-22) The online fronts (the mapper's KHRONOS_ONLINE_FRONT, the player's NSS_ONLINE_FRONT / NSS_LAG_FRONT) make the
+# object identities from PREDICTED semantics. The dataset's annotated semantics and annotated instances never go through
+# a front: with either as input no front may be on, and those inputs are mapped exactly as without the fronts.
+online_front_on() {
+  [[ -n "${KHRONOS_ONLINE_FRONT:-}" && "${KHRONOS_ONLINE_FRONT}" != off ]] || [[ -n "${NSS_ONLINE_FRONT:-}" ]] || \
+    [[ -n "${NSS_LAG_FRONT:-}" ]]
+}
+dataset_annotation() {  # a directory under the dataset's semantics/ or instance_labels*/ (the dataset holding --run-dir)
+  local root dir
+  root="$(realpath -m "${RUN_DIR}/../..")"; dir="$(realpath -m "$1")"
+  [[ "${dir}" == "${root}/semantics" || "${dir}" == "${root}/semantics/"* || "${dir}" == "${root}/instance_labels"* ]]
+}
+if online_front_on; then
+  dataset_annotation "${SEMANTIC_DIR}" && \
+    die "an online front runs on predicted semantics only; --semantic-dir is the dataset's annotation: ${SEMANTIC_DIR}"
+  dataset_annotation "${INSTANCE_DIR}" && \
+    die "an online front makes the instances itself; --instance-dir is the dataset's annotation: ${INSTANCE_DIR}"
+fi
+
 # Load the one canonical runtime environment before importing the ROS player
 # for preflight. A direct invocation must not depend on the caller having
 # already sourced ROS or a personal workspace.
