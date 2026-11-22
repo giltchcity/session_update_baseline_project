@@ -98,11 +98,15 @@ class OnlineFront {
   // by more than half on cells of a track of another class observed in at least as many frames is that track's surface
   // under another name and is not confirmed; a cell of an earlier visit is met within one cell (the visits are aligned to
   // a map voxel). A track confirmed over the cells of an object observed in fewer frames takes them (a first name seen
-  // briefly gives way to the object seen longer). An id is written only on its own or on free cells. Kept between visits.
+  // briefly gives way to the object seen longer). An id is written on its own and on free cells; on a cell of an object of
+  // another class only once it was given there more often than that object (the cell is then its: a surface its neighbour
+  // took in a few mislabelled looks comes back to it, a neighbour's id is never carried onto it). Kept between visits.
   struct Cell {
     int owner = -1;
     int visit = 0;                                    // the visit its owner took it in
     int hits = 0, through = 0;                        // its surface measured again / seen through
+    int writes = 0;                                   // the owner's pixels written on it
+    int rival = -1, rival_writes = 0;                 // the other class's confirmed track given it most (majority vote)
     Eigen::Vector3f point = Eigen::Vector3f::Zero();  // where the owner's surface was measured
   };
 

@@ -217,7 +217,8 @@ void OnlineFront::judge(const cv::Mat& depth, const cv::Mat& observed_ids, const
         if (it == cells_.end() || it->second.owner < 0) continue;
         const int owner = root(it->second.owner);
         if (owner == candidate || tracks_[owner].semantic == semantic || seen(owner) >= seen(candidate)) continue;
-        it->second.owner = candidate, it->second.visit = visit_, it->second.hits = 1, it->second.through = 0;
+        it->second.owner = candidate, it->second.visit = visit_, it->second.hits = 1, it->second.through = 0, it->second.writes = 1,
+        it->second.rival = -1, it->second.rival_writes = 0;
       }
     }
   }
@@ -280,7 +281,7 @@ void OnlineFront::release(const cv::Mat& depth, const Eigen::Isometry3d& T) {
     if (!std::isfinite(d)) continue;
     if (std::abs(d - z) <= tol) ++c.hits;
     if (d > z + tol) ++c.through;
-    if (c.through > c.hits) c.owner = -1, c.hits = c.through = 0;
+    if (c.through > c.hits) c.owner = -1, c.hits = c.through = c.writes = c.rival_writes = 0, c.rival = -1;
   }
 }
 
@@ -527,12 +528,26 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
         const int64_t k = key(x, config_.surface_tolerance);
         auto it = cells_.find(k);
         if (it != cells_.end() && it->second.owner >= 0) {
-          // an id is written on its own surface or on a free one, never on an object of another class: whichever way
-          // its cluster reached this pixel (the window, re-identification or a merge), here it is that object
-          const int owner = root(it->second.owner);
-          if (owner != t && tracks_[owner].semantic != tracks_[t].semantic) {
-            id = 0;
-            continue;
+          Cell& cell = it->second;
+          const int owner = root(cell.owner);
+          if (owner == t || tracks_[owner].semantic == tracks_[t].semantic) {
+            if (owner == t) ++cell.writes;
+          } else {
+            // a cell of an object of another class: whichever way the cluster reached this pixel (the window,
+            // re-identification or a merge), the id is written here only once it was given here more often than the
+            // owner's (the rival is the other-class track given it most, by majority vote)
+            if (cell.rival >= 0 && root(cell.rival) == t) {
+              ++cell.rival_writes;
+            } else if (cell.rival_writes == 0) {
+              cell.rival = t, cell.rival_writes = 1;
+            } else {
+              --cell.rival_writes;
+            }
+            if (cell.rival < 0 || root(cell.rival) != t || cell.rival_writes <= cell.writes) {
+              id = 0;
+              continue;
+            }
+            cell.owner = t, cell.visit = visit_, cell.writes = cell.rival_writes, cell.rival = -1, cell.rival_writes = 0;
           }
         } else {
           // a free surface cell is taken by the first track confirmed in this visit that writes it
@@ -540,6 +555,7 @@ cv::Mat OnlineFront::process(const cv::Mat& depth_in, cv::Mat& semantics, const 
           if (confirmed != confirmed_visit_.end() && confirmed->second == visit_) {
             Cell& cell = it != cells_.end() ? it->second : cells_[k];
             cell.owner = t, cell.visit = visit_, cell.hits = 1, cell.through = 0, cell.point = x.cast<float>();
+            cell.writes = 1, cell.rival = -1, cell.rival_writes = 0;
           }
         }
       }
@@ -578,7 +594,8 @@ void OnlineFront::save() const {
   for (const auto& [t, v] : confirmed_visit_) w(t), w(v);
   w(static_cast<int64_t>(cells_.size()));
   for (const auto& [k, c] : cells_)
-    w(k), w(c.owner), w(c.visit), w(c.hits), w(c.through), wd(c.point.x()), wd(c.point.y()), wd(c.point.z());
+    w(k), w(c.owner), w(c.visit), w(c.hits), w(c.through), w(c.writes), w(c.rival), w(c.rival_writes), wd(c.point.x()),
+        wd(c.point.y()), wd(c.point.z());
   w(static_cast<int64_t>(observations_.size()));
   for (const auto& [t, n] : observations_) w(t), w(n);
 
@@ -638,6 +655,9 @@ void OnlineFront::load() {
     c.visit = static_cast<int>(r());
     c.hits = static_cast<int>(r());
     c.through = static_cast<int>(r());
+    c.writes = static_cast<int>(r());
+    c.rival = static_cast<int>(r());
+    c.rival_writes = static_cast<int>(r());
     const double x = rd(), y = rd(), z = rd();
     c.point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), static_cast<float>(z));
     cells_.emplace(k, c);
