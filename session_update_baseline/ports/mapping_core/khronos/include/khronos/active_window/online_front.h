@@ -9,9 +9,8 @@
 //              one class whose footprints (the 0.2 m voxels of all their clusters) overlap by half of the smaller one are
 //              one object, the smaller id names it. An id is written once its surface seen again is measured more often
 //              than seen through.
-//   PREDICTED  predicted semantics (a segmentation network's masks) only: each frame's object-class pixels cut into 3-D
-//              regions (ConnectedSemantics: 0.1 m cells, 26-connected; pixels without depth take their image region's),
-//              tracked as above with re-identification by the cluster's own share in a track and merges in which the
+//   PREDICTED  predicted semantics (a segmentation network's masks) only: each object class's 8-connected image region
+//              is one object in the frame, as for SEMANTIC; tracked as above with re-identification by the cluster's own share in a track and merges in which the
 //              confirmed track keeps its id, a confirmation that also needs a new look at the track's own id and a
 //              surface that is not another class's object seen at least as long (surface cells, see Cell), and the map's
 //              retired identities (<state>.retired).
