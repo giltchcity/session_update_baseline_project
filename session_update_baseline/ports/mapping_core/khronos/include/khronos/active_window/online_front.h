@@ -162,6 +162,9 @@ class OnlineFront {
   std::map<int, int> confirmed_visit_;                   // confirmed track -> the visit it was confirmed in
   std::map<int, int64_t> observations_;                  // track -> frames it got a cluster in (merged ones summed)
   int visit_ = 0;                                        // this visit: the number of visits before it in the state
+  // tracks the map closed at an earlier visit's end as another object's surface named wrongly (<state>.retired, written
+  // by the map): never written again, never merged
+  std::set<int> retired_;
  public:
   struct Merge { int64_t stamp; int gone, keep; };
   std::vector<Merge> merges_;                            // every merge, in order (fixed-lag output)

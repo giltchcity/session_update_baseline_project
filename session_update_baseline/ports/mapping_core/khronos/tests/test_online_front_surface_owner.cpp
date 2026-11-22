@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -72,6 +73,21 @@ int main() {
     int now = 0;
     for (int i = 0; i < 12; ++i) now = look(front, bed, bag, false, true).at<int>(8, 50);
     require(now > 0 && now != clothes_id, "a first name seen briefly kept the surface of the object seen longer");
+  }
+  std::remove(config.state_path.c_str());
+  std::remove((config.state_path + ".catalog.json").c_str());
+  {  // a track the map retired at a visit's end (<state>.retired) is never written in the next visit
+    int clothes_obj = 0;
+    {
+      khronos::OnlineFront front(config, camera);
+      for (int i = 0; i < 4; ++i) clothes_obj = look(front, bed, clothes, false, true).at<int>(8, 50);
+      require(clothes_obj > 0, "the clothes never confirmed");
+    }
+    std::ofstream(config.state_path + ".retired") << clothes_obj << "\n";
+    khronos::OnlineFront front(config, camera);
+    look(front, bed, clothes, false, true);
+    require(look(front, bed, clothes, false, true).at<int>(8, 50) == 0, "a retired track was written");
+    std::remove((config.state_path + ".retired").c_str());
   }
   std::remove(config.state_path.c_str());
   std::remove((config.state_path + ".catalog.json").c_str());

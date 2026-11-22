@@ -492,8 +492,8 @@ class PersistentObjectState {
     size_t last_contradiction_rays = 0;
     size_t last_surface_samples = 0;
     size_t last_session_reliable_samples = 0;  // of the B-session CURRENT, last round
-    // KHRONOS_ONLINE_FRONT=predicted only (identities from predicted semantics): the inherited surface's samples measured
-    // under its own identity / under another identity, summed over this visit's rounds. Untouched in every other mode.
+    // KHRONOS_ONLINE_FRONT=predicted only (identities from predicted semantics): the identity's surfaces' samples measured
+    // under it / under another identity, summed over this visit's rounds. Untouched in every other mode.
     size_t visit_own_samples = 0;
     size_t visit_other_samples = 0;
 

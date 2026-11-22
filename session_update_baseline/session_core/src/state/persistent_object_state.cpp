@@ -44,6 +44,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
 #include <string>
 #include <limits>
 #include <set>
@@ -61,14 +62,21 @@ namespace khronos {
 namespace {
 
 // (11-22) KHRONOS_ONLINE_FRONT=predicted: the object identities are made from predicted semantics by the online front.
-// An inherited object whose surface this visit measured under other identities more often than under its own is that
-// surface's other object named wrongly in an earlier visit: it is closed at the terminal round. No other mode runs it.
+// An identity whose surfaces this visit measured under other identities more often than under its own is another
+// object's surface named wrongly: its CURRENT is closed at the terminal round. No other mode runs it.
 bool predictedIdentities() {
   static const bool on = [] {
     const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
     return mode && std::string(mode) == "predicted";
   }();
   return on;
+}
+// ... and the online front never writes that identity again: the closed identities are appended to
+// <KHRONOS_ONLINE_FRONT_STATE>.retired, which the front reads when the next visit starts.
+void retireIdentity(const size_t id) {
+  const char* state = std::getenv("KHRONOS_ONLINE_FRONT_STATE");
+  if (!state) return;
+  std::ofstream(std::string(state) + ".retired", std::ios::app) << id << "\n";
 }
 
 constexpr const char* kMobilityChangesDetail = "session_mobility_changes";
@@ -1143,14 +1151,27 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
       }
       foldSessionState(state, stamp);
       if (!state.current) promoteObservedNew(state);
+      if (state.current && predictedIdentities() && state.visit_other_samples > state.visit_own_samples) {
+        LOG(INFO) << "SESSION_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
+                  << " other=" << state.visit_other_samples << " folded=1";
+        closeCurrent(state, stamp);
+        retireIdentity(id);
+        ++closed;
+      }
       state.pending_absence_stamp = 0;
       continue;
     }
 
     Fragment& current = state.fragments[*state.current];
     if (!current.requires_current_session_support) {
-      if (state.pending_absence_stamp != 0 && !state.observed_new) {
+      const bool by_other_identity =
+          predictedIdentities() && state.visit_other_samples > state.visit_own_samples;
+      if ((state.pending_absence_stamp != 0 && !state.observed_new) || by_other_identity) {
+        if (by_other_identity)
+          LOG(INFO) << "SESSION_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
+                    << " other=" << state.visit_other_samples;
         closeCurrent(state, stamp);
+        if (by_other_identity) retireIdentity(id);
         ++closed;
       }
       // P01: a session state that outlived its inherited state is archived into the history
@@ -1169,9 +1190,11 @@ size_t PersistentObjectState::finalizePendingAbsences(const TimeStamp stamp) {
         state.last_contradiction_rays > state.last_support_rays ||
         sessionCopyElsewhere(state, current, state.last_session_reliable_samples) || by_other_identity;
 
-    if (by_other_identity)
+    if (by_other_identity) {
       LOG(INFO) << "INHERITED_CLOSE_BY_OTHER_IDENTITY inst=" << id << " own=" << state.visit_own_samples
                 << " other=" << state.visit_other_samples;
+      retireIdentity(id);
+    }
     if (inherited_absent) {
       LOG(INFO) << "INHERITED_CLOSE inst=" << id << " by_observed_absence="
                 << (state.last_contradiction_rays > state.last_support_rays)
@@ -1241,6 +1264,11 @@ bool PersistentObjectState::resolveCurrentEvidence(
             << " cur_verts=" << (state.current ? state.fragments[*state.current].geometry.numVertices() : 0)
             << " observed_verts=" << (state.observed_new ? state.observed_new->geometry.numVertices() : 0);
 
+  if (predictedIdentities()) {  // the identity's surfaces measured under it / under another identity, this visit
+    state.visit_own_samples += inherited_evidence.supported_votes + session_evidence.supported_votes;
+    state.visit_other_samples += inherited_evidence.replaced_by_other_votes + session_evidence.replaced_by_other_votes;
+  }
+
   // Resolve the independent B-session mini state first. Its D2 decisions are
   // allowed online because both the old and the new observations belong to B.
   if (state.b_session && state.b_session->current) {
@@ -1262,10 +1290,6 @@ bool PersistentObjectState::resolveCurrentEvidence(
                                         ? inherited_evidence.contradiction_rays : 0;
     state.last_surface_samples = inherited_evidence.surface_samples;
     state.last_session_reliable_samples = session_evidence.reliable_samples;
-    if (predictedIdentities()) {
-      state.visit_own_samples += inherited_evidence.supported_votes;
-      state.visit_other_samples += inherited_evidence.replaced_by_other_votes;
-    }
     // Online D2/D3 transition: as soon as the B-session state exists and A's
     // old surface is seen through, switch CURRENT to the B state. Do not wait
     // until the end of the session.

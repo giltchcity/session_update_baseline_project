@@ -555,6 +555,7 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
       const int ru = root(static_cast<int>(ui));
       const auto& u = tracks_[ui];
       if (ru == r || u.semantic != c.semantic || u.all_voxels.empty()) continue;
+      if (predicted && (retired_.count(r) || retired_.count(ru))) continue;
       if (intersection(c.voxels, u.all_voxels) >= config_.min_reid_share * std::min(c.voxels.size(), u.all_voxels.size())) {
         int keep = std::min(r, ru), gone = std::max(r, ru);
         if (predicted) {  // the confirmed track keeps its id, of two alike the older
@@ -685,7 +686,7 @@ cv::Mat OnlineFront::processPredicted(const cv::Mat& depth_in, cv::Mat& semantic
   for (int v = 0; v < depth.rows; ++v)
     for (int u = 0; u < W; ++u) {
       int32_t& id = out.at<int32_t>(v, u);
-      if (id > 0 && !named_.count(id - 1)) id = 0;
+      if (id > 0 && (!named_.count(id - 1) || retired_.count(id - 1))) id = 0;
       if (id <= 0) continue;
       const int t = id - 1;
       const float z = depth.at<float>(v, u);
@@ -813,6 +814,12 @@ void OnlineFront::load() {
   // an earlier visit's merges: its map already carries the merged ids; stored identities of this visit never had them
   for (const auto& [a, b] : alias_) PhysicalIdAliases::instance().add(static_cast<size_t>(a) + 1, static_cast<size_t>(b) + 1);
   PhysicalIdAliases::instance().takeNew();
+  if (config_.mode == Mode::PREDICTED) {
+    std::ifstream retired(config_.state_path + ".retired");
+    for (size_t id; retired >> id;)
+      if (id > 0) retired_.insert(root(static_cast<int>(id) - 1));
+    LOG(WARNING) << "ONLINE FRONT: " << retired_.size() << " tracks retired by the map (never written again)";
+  }
   LOG(WARNING) << "ONLINE FRONT: state of " << tracks_.size() << " tracks (" << named_.size() << " named) from "
                << config_.state_path;
 }
