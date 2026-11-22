@@ -11,9 +11,8 @@
 //   PREDICTED       (11-22, for predicted semantics only: a segmentation network's masks, not annotated semantics)
 //                   SEMANTIC_MERGE with re-identification by the cluster's own share in a track, merges in which the
 //                   confirmed track keeps its id, a confirmation that also needs a new look at the track's own id and a
-//                   surface that is not another class's object seen at least as long (surface cells, see Cell), and
-//                   an id written on another class's cell only where this visit calls the cell its class at least as
-//                   often. SEMANTIC and SEMANTIC_MERGE do none of this: they stay the ports of the Python fronts.
+//                   surface that is not another class's object seen at least as long (surface cells, see Cell).
+//                   SEMANTIC and SEMANTIC_MERGE do none of this: they stay the ports of the Python fronts.
 // The input with annotated instances needs no front (OFF). KHRONOS_ONLINE_FRONT=off|semantic|semantic_merge|predicted,
 // KHRONOS_ONLINE_FRONT_STATE (state file), KHRONOS_ONLINE_FRONT_INTRINSICS (the recording's Intrinsics.txt) and
 // KHRONOS_ONLINE_FRONT_STEP (its pixels per input pixel, 2 at image scale 0.5).
@@ -126,15 +125,11 @@ class OnlineFront {
   // under another name and is not confirmed; a cell of an earlier visit is met within one cell (the visits are aligned to
   // a map voxel). A track confirmed over the cells of an object observed in fewer frames takes them (a first name seen
   // briefly gives way to the object seen longer). Kept between visits.
-  // An id is written on a cell of an object of another class only where, in this visit, its class was given there at
-  // least as often as the owner's: a laptop on a desk is called a laptop there, a part of the bed called a cabinet now and
-  // then is called the bed more often (an id carried there by association is not written).
   struct Cell {
     int owner = -1;
     int visit = 0;                                    // the visit its owner took it in
     int hits = 0, through = 0;                        // its surface measured again / seen through
     Eigen::Vector3f point = Eigen::Vector3f::Zero();  // where the owner's surface was measured
-    std::vector<std::pair<int, int>> labels;          // this visit: class -> its clusters' pixels here (not kept)
   };
 
   cv::Mat processPredicted(const cv::Mat& depth, cv::Mat& semantics, const Eigen::Isometry3d& world_T_camera,

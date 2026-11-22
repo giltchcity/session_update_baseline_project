@@ -663,17 +663,6 @@ cv::Mat OnlineFront::processPredicted(const cv::Mat& depth_in, cv::Mat& semantic
     for (const int p : cl[ci].pixels) out.at<int32_t>(p / W, p % W) = t.id + 1;
   }
   for (const int t : looked) ++observations_[t];  // one look per frame, however many clusters it got
-  for (const auto& [ci, ti] : claimed) {          // the classes this visit gives the held cells
-    (void)ti;
-    const int semantic = cl[ci].semantic;
-    for (const int p : cl[ci].pixels) {
-      const auto it = cells_.find(key(backproject(p % W, p / W, depth.at<float>(p / W, p % W), T), config_.surface_tolerance));
-      if (it == cells_.end() || it->second.owner < 0) continue;
-      auto& labels = it->second.labels;
-      auto e = std::find_if(labels.begin(), labels.end(), [semantic](const auto& l) { return l.first == semantic; });
-      if (e == labels.end()) labels.emplace_back(semantic, 1); else ++e->second;
-    }
-  }
   judgePredicted(depth, out, T);  // out still contains provisional ids; fresh points enter pending_ below.
   // SemanticFront.process: an unnamed track's measured points wait for its naming; only named tracks are written
   std::map<int, Points> fresh;
@@ -704,21 +693,7 @@ cv::Mat OnlineFront::processPredicted(const cv::Mat& depth_in, cv::Mat& semantic
         const Eigen::Vector3d x = backproject(u, v, z, T);
         const int64_t k = key(x, config_.surface_tolerance);
         auto it = cells_.find(k);
-        if (it != cells_.end() && it->second.owner >= 0) {
-          const int owner = root(it->second.owner);
-          const int mine = tracks_[t].semantic, theirs = tracks_[owner].semantic;
-          if (owner != t && mine != theirs) {
-            int given_mine = 0, given_theirs = 0;
-            for (const auto& [c, n] : it->second.labels) {
-              if (c == mine) given_mine = n;
-              if (c == theirs) given_theirs = n;
-            }
-            if (given_mine < given_theirs) {
-              id = 0;
-              continue;
-            }
-          }
-        } else {
+        if (it == cells_.end() || it->second.owner < 0) {
           // a free surface cell is taken by the first track confirmed in this visit that writes it
           const auto confirmed = confirmed_visit_.find(t);
           if (confirmed != confirmed_visit_.end() && confirmed->second == visit_) {
