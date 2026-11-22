@@ -15,6 +15,9 @@
 //              confirmed track keeps its id, a confirmation that also needs a new look at the track's own id and a
 //              surface that is not another class's object seen at least as long (surface cells, see Cell), and the map's
 //              retired identities (<state>.retired).
+// KHRONOS_ONLINE_FRONT_TESSE=1 (with semantic): the TESSE rows' front unchanged (simulated data, one visit):
+// tesse_semantic_front.py --3d pixel by pixel (0.1 m cells, re-identification by the cluster's own share, no merging),
+// and the map runs none of the rules for front identities.
 // The input with annotated instances needs no front (OFF). KHRONOS_ONLINE_FRONT=off|semantic|predicted,
 // KHRONOS_ONLINE_FRONT_STATE (state file), KHRONOS_ONLINE_FRONT_INTRINSICS (the recording's Intrinsics.txt) and
 // KHRONOS_ONLINE_FRONT_STEP (its pixels per input pixel, 2 at image scale 0.5).
@@ -72,6 +75,7 @@ class OnlineFront {
     double grid = 0.1;                   // ConnectedSemantics cells
     double surface_tolerance = 0.05;     // the map's voxel (naming: on the surface vs seen through)
     std::string state_path;
+    bool tesse = false;  // SEMANTIC with KHRONOS_ONLINE_FRONT_TESSE=1: tesse_semantic_front.py --3d as the TESSE rows ran it
   };
 
   // From the environment (nullptr when KHRONOS_ONLINE_FRONT is unset or off); object classes from the label space.

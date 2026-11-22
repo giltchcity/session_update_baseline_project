@@ -100,6 +100,9 @@ std::unique_ptr<OnlineFront> OnlineFront::fromEnvironment(const std::vector<int>
   Config config;
   if (std::string(mode) == "semantic") {
     config.mode = Mode::SEMANTIC;
+    // KHRONOS_ONLINE_FRONT_TESSE=1: the TESSE rows' front as it was (simulated data, one visit): tesse_semantic_front.py
+    // --3d, pixel by pixel; none of what annotated semantics over visits of real data use.
+    if (const char* t = std::getenv("KHRONOS_ONLINE_FRONT_TESSE")) config.tesse = std::string(t) == "1";
   } else if (std::string(mode) == "predicted") {
     config.mode = Mode::PREDICTED;
   } else {
@@ -343,7 +346,7 @@ cv::Mat OnlineFront::segments(const cv::Mat& depth, const cv::Mat& sem, const Ei
   const int H = depth.rows, W = depth.cols;
   cv::Mat out = cv::Mat::zeros(H, W, CV_32SC1);
   int n = 0;
-  if (config_.mode == Mode::SEMANTIC) {
+  if (config_.mode == Mode::SEMANTIC && !config_.tesse) {
     // SEMANTIC (annotated semantics): an annotated region is a whole object, the instance image without its number
     // (BedRoom: with the 0.1 m cells one annotated object was 2+ segments in 33-38 % of the frames, cut where its depth
     // jumps). Each object class's 8-connected image regions are the segments, pixels with and without depth alike.
@@ -488,6 +491,7 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
   // online. PREDICTED: re-identification by the cluster's own share in a track and merges in which the confirmed track
   // keeps its id (joining never confirms).
   const bool predicted = config_.mode == Mode::PREDICTED;
+  const bool tesse = config_.tesse;  // the TESSE rows' front: re-identification by the cluster's own share, no merging
   std::vector<std::pair<int, int>> claimed;
   std::vector<char> taken(clusters.size(), 0);
   const int64_t window = stamp - static_cast<int64_t>(config_.temporal_window_s * 1e9);
@@ -515,9 +519,9 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
     for (size_t ti = 0; ti < tracks_.size(); ++ti) {
       const auto& t = tracks_[ti];
       if (t.semantic != c.semantic) continue;
-      if (t.all_voxels.empty()) continue;
+      if (!tesse && t.all_voxels.empty()) continue;
       const double inter = static_cast<double>(intersection(c.voxels, t.all_voxels));
-      const double share = predicted ? inter / c.voxels.size() : inter / std::min(c.voxels.size(), t.all_voxels.size());
+      const double share = predicted || tesse ? inter / c.voxels.size() : inter / std::min(c.voxels.size(), t.all_voxels.size());
       if (share >= best_share) best = static_cast<int>(ti), best_share = share;
     }
     if (best < 0) {
@@ -532,6 +536,7 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
     taken[ci] = 1;
     claimed.emplace_back(static_cast<int>(ci), best);
   }
+  if (tesse) return claimed;
   for (const auto& [ci, ti] : claimed) {
     const auto& c = clusters[ci];
     int r = root(ti);
@@ -564,6 +569,7 @@ std::vector<std::pair<int, int>> OnlineFront::associate(const std::vector<Cluste
 }
 
 void OnlineFront::consolidate() {
+  if (config_.tesse) return touched_.clear();
   // SEMANTIC: merge_fragments.py's consolidation online (the TESSE front cuts one object into several ids, and a piece
   // named apart stays where the object was when the object is moved: BedRoom B's old clothes and fan pieces). Two tracks
   // of one class whose footprints (all_voxels: the 0.2 m voxels of every cluster they got) overlap by at least half of

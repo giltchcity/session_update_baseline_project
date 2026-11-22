@@ -86,10 +86,18 @@ void retireIdentity(const size_t id) {
 // terminal round its surface was measured as background more often than as itself, and at least once per sample, its
 // CURRENT is closed (the earlier visit's identity carries no copy elsewhere to hand it over). No other mode runs it.
 // (11-22) KHRONOS_ONLINE_FRONT on (semantic or predicted): the identities come from an online front.
+// KHRONOS_ONLINE_FRONT_TESSE=1: the TESSE rows' front (simulated data, one visit): none of these rules.
+bool tesseFront() {
+  static const bool on = [] {
+    const char* t = std::getenv("KHRONOS_ONLINE_FRONT_TESSE");
+    return t && std::string(t) == "1";
+  }();
+  return on;
+}
 bool frontIdentities() {
   static const bool on = [] {
     const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
-    return mode && std::string(mode) != "off" && std::string(mode) != "";
+    return mode && std::string(mode) != "off" && std::string(mode) != "" && !tesseFront();
   }();
   return on;
 }
@@ -97,7 +105,7 @@ bool frontIdentities() {
 bool semanticFrontIdentities() {
   static const bool on = [] {
     const char* mode = std::getenv("KHRONOS_ONLINE_FRONT");
-    return mode && std::string(mode) == "semantic";
+    return mode && std::string(mode) == "semantic" && !tesseFront();
   }();
   return on;
 }
