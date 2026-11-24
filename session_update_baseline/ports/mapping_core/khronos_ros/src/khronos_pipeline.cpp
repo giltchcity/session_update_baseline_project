@@ -58,7 +58,6 @@
 
 #include "khronos_ros/utils/ros_conversions.h"
 #include "khronos_ros/utils/ros_namespaces.h"
-#include "khronos_ros/visualization/active_window_visualizer.h"
 
 namespace khronos {
 
@@ -130,10 +129,6 @@ void KhronosPipeline::init() {
       }));
 
   if (khronos_active_window_) {
-    // Need to make the nodehandle private to get private topics in the aw_visualizer.
-    const auto aw_nh = nh_ / "~" / RosNs::VISUALIZATION;
-    khronos_active_window_->addKhronosSink(std::make_shared<ActiveWindowVisualizer>(
-        config::fromContext<ActiveWindowVisualizer::Config>(RosNs::VISUALIZATION), &aw_nh));
     khronos_active_window_->addKhronosSink(ActiveWindow::KhronosSink::fromCallback(
         [this](const auto& frame_data, const auto& map, const auto& tracks) {
           if (aw_evaluation_callback_) {

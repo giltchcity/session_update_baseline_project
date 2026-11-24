@@ -29,7 +29,6 @@ add_library(
   src/experiments/experiment_manager.cpp
   src/experiments/experiment_directory.cpp
   src/khronos_pipeline.cpp
-  src/visualization/active_window_visualizer.cpp
   src/visualization/visualization_utils.cpp
   src/visualization/spatio_temporal_visualizer.cpp)
 target_include_directories(
