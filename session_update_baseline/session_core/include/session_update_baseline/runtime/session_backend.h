@@ -51,6 +51,12 @@ class SessionBackend : public khronos::Backend {
   void connectSession(const SessionInputs& inputs) override;
 
  protected:
+  // The session's round, in place of Khronos's change detection and reconciliation: identity merges,
+  // the state layer's decision on every CURRENT state from the stored pixels, presence, one logical
+  // node per identity, the composed surface, the snapshot.
+  void runChangeDetectionThread(khronos::DynamicSceneGraph::Ptr dsg, khronos::RPGOMerges rpgo_merges,
+                                khronos::TimeStamp stamp, bool had_loopclosure,
+                                bool finalize_pending = false) override;
   void beforeChangeDetection(const khronos::DynamicSceneGraph::Ptr& dsg) override;
   void beforeReconcile(const khronos::DynamicSceneGraph::Ptr& dsg, khronos::Changes& changes,
                        khronos::TimeStamp stamp, bool finalize_pending) override;

@@ -175,11 +175,13 @@ class Backend : public hydra::BackendModule {
 
   void runChangeDetection(bool had_loopclosure);
 
-  void runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
-                                RPGOMerges rpgo_merges,
-                                TimeStamp stamp,
-                                bool had_loopclosure,
-                                bool finalize_pending = false);
+  // One round on the state of its request. A mapping session (session_update's SessionBackend) runs
+  // its own round in place of Khronos's change detection and reconciliation.
+  virtual void runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
+                                        RPGOMerges rpgo_merges,
+                                        TimeStamp stamp,
+                                        bool had_loopclosure,
+                                        bool finalize_pending = false);
 
   void saveMapAndChanges(const hydra::DataDirectory& log_setup,
                          bool save_individual_dsgs);

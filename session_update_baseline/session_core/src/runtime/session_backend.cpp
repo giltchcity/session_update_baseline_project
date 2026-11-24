@@ -117,8 +117,6 @@ void SessionBackend::loadInputState(const std::string& state_path) {
       num_vertices, num_vertices, mesh->numFaces());
   last_deformed_vertices_ = num_vertices;
 
-  change_detector_->setDsg(unmerged_graph_);
-
   // D3 cross-session restore: reconstruct the in-memory persistent physical-
   // object registry from the inherited OBJECTS layer, exactly as if this
   // session's backend had produced that geometry itself. Registry identity is

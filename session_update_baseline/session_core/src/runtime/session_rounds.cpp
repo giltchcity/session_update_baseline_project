@@ -32,7 +32,6 @@ using namespace khronos;
 
 void SessionBackend::connectSession(const SessionInputs& inputs) {
   physical_evidence_store_ = inputs.evidence;
-  change_detector_->setPhysicalEvidenceStore(inputs.evidence);
   persistent_objects_.setMapResolution(inputs.object_surface_resolution);
   object_surface_resolution_ = inputs.object_surface_resolution;
   present_surface_ = inputs.present;
@@ -57,13 +56,12 @@ void SessionBackend::setShownMemory(PresentSurface::Surface shown) {
 }
 
 size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
-  const auto verificator = change_detector_->getRayVerificator();
-  if (!verificator) {
+  if (!physical_evidence_store_) {
     return 0;
   }
   // One frozen snapshot for the whole pass, so an asynchronous frame ingest cannot split a single
   // state decision across two store versions.
-  const auto evidence = verificator->physicalEvidenceSnapshot();
+  const RayVerificator::PhysicalEvidenceSnapshot evidence = physical_evidence_store_->snapshot();
 
   size_t closed = 0;
   for (const size_t id : persistent_objects_.trackedIds()) {
@@ -112,7 +110,7 @@ size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
           id, *fragment.geometry, *fragment.bbox, evidence,
           object_surface_resolution_,
           std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp,
-          verificator.get(), &projected, state_slot, fragment.birth_time, prior_log_odds, fragment.uid);
+          nullptr, &projected, state_slot, fragment.birth_time, prior_log_odds, fragment.uid);
       LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
                 << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
                 << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp
@@ -176,6 +174,20 @@ void SessionBackend::afterTerminalRound() {
   // was the last reader of the stored evidence frames.
   if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
+}
+
+void SessionBackend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg, RPGOMerges /*rpgo_merges*/,
+                                              const TimeStamp stamp, bool /*had_loopclosure*/,
+                                              const bool finalize_pending) {
+  // One round at a time on the 4D map (the base's lock); the round's own state is the request's clone.
+  std::lock_guard<std::mutex> lock(map_mutex_);
+  beforeChangeDetection(dsg);
+  Changes none;
+  beforeReconcile(dsg, none, stamp, finalize_pending);
+  afterReconcile(dsg, stamp, finalize_pending);
+  storeSnapshot(dsg, stamp);
+  afterSnapshotStored(*dsg, stamp);
+  CLOG(3) << "Session round completed: " << map_.numTimeSteps() << " time steps in 4D map.";
 }
 
 void SessionBackend::beforeChangeDetection(const DynamicSceneGraph::Ptr& dsg) {
@@ -268,9 +280,6 @@ void SessionBackend::afterReconcile(
     // them before the sole terminal snapshot, otherwise a late old segment
     // can remain CURRENT while a newer observed site waits for a next round
     // that will never happen (Synthetic A I69).
-    // Reconciliation changed mesh indices: rebuild once here rather than
-    // querying the stale pre-reconciliation ray index.
-    change_detector_->setDsg(dsg);
     const size_t terminal_closed = verifyCurrentObjectStates(stamp);
     persistent_objects_.finalizePendingAbsences(stamp);
     session::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
