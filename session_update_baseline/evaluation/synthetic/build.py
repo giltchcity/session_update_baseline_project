@@ -11,7 +11,7 @@ import shlex, subprocess
 ROOT = Path('/home/jixian/Desktop/FT'); D = Path(__file__).resolve().parent; cpp = D / 'historical_object_eval.cpp'
 for method, build, target, ev in [
         ('ours', ROOT / 'session_update_baseline_project/session_update_baseline/build_canonical', 'stream_4dmap_copy',
-         ROOT / 'session_update_baseline_project/session_update_baseline/ports/mapping_core/khronos_eval'),
+         ROOT / 'build_artifacts/official_khronos_63faadde_abc/src/khronos_eval'),  # the official evaluator, as below
         ('khronos', ROOT / 'build_artifacts/official_khronos_63faadde_abc/mesh_adapter', 'official_mesh_export',
          ROOT / 'build_artifacts/official_khronos_63faadde_abc/src/khronos_eval')]:
     cm = build / f'CMakeFiles/{target}.dir'; flags = {}
