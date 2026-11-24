@@ -5,6 +5,7 @@
 // owns the absence records it keeps per tested state.
 #include <cstdint>
 #include <limits>
+#include <vector>
 
 #include <spark_dsg/bounding_box.h>
 #include <spark_dsg/mesh.h>
@@ -18,7 +19,6 @@ class SurfaceEvidence {
  public:
   using Snapshot = RayVerificator::PhysicalEvidenceSnapshot;
   using Counts = RayVerificator::SurfaceEvidenceCounts;
-  using CheckResult = RayVerificator::CheckResult;
 
   struct Config {
     // Depth tolerance of a measurement on the surface [m] (the change detection's).
@@ -65,12 +65,25 @@ class SurfaceEvidence {
                             int state_slot = 0, uint64_t state_birth = 0,
                             double prior_log_odds = 0.0, uint64_t state_id = 0) const;
 
-  // One point's measurements in the stored pixels: a frame whose pixel reaches the point votes
-  // present (its own identity on the surface), absent (seen through, or the background or another
-  // identity on the surface) or inconclusive (an unidentified object on the surface); a frame whose
-  // pixel stops in front of the point or has no reading within range did not observe it.
-  CheckResult checkProjected(const Point& point, size_t physical_id, const Snapshot& snapshot,
-                             uint64_t earliest, uint64_t latest) const;
+  // When an identity began to be present: the observed-absence test (eq. 7) run backwards over the
+  // rounds before its first observation. The same samples of its surface, the same measurement (a
+  // sample on the surface whatever the label, seen through at a judged incidence, otherwise no
+  // verdict), one look per round, Page's statistic with each sample speaking once, committed at 99:1.
+  // What the identity's own frames from its first observation on teach, as the absence test learns it
+  // for a state, decides what counts: a sample those frames see through while they identify the
+  // object in place is no evidence, and the present model is the object's own in-place looks shrunk
+  // towards the population. `absent`: the looks up to some round show the site empty; the change lies
+  // between that run's latest measurement (`last_absent`) and the first observation (`next_present`).
+  // Without such a run the site was never seen empty: the object stands from the start. Called once
+  // per round (the frames up to `latest`); round_ends: the session's round stamps in time order.
+  struct PresenceStart {
+    bool absent = false;
+    uint64_t last_absent = 0;
+    uint64_t next_present = 0;
+  };
+  PresenceStart presenceStart(size_t physical_id, const spark_dsg::Mesh& mesh, const spark_dsg::BoundingBox& bbox,
+                              const Snapshot& snapshot, const std::vector<uint64_t>& round_ends,
+                              uint64_t first_seen, uint64_t latest) const;
 
   float minAbsenceCos() const;
 

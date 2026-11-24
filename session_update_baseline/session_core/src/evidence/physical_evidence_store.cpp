@@ -66,6 +66,8 @@ struct PhysicalEvidenceStore::Storage {
   std::map<TimeStamp, std::shared_ptr<const FrameEvidence>> frames;
   size_t num_runs = 0;
   size_t num_depth_runs = 0;
+  // The earliest stored frame in which each identity was measured (a pixel of it with a reading).
+  std::map<int32_t, TimeStamp> first_measured;
 };
 
 PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage)
@@ -74,6 +76,17 @@ PhysicalEvidenceStore::Snapshot::Snapshot(std::shared_ptr<const Storage> storage
 EndpointEvidence PhysicalEvidenceStore::Snapshot::classify(
     TimeStamp stamp, const Point& world_point) const {
   return project(stamp, world_point).endpoint;
+}
+
+TimeStamp PhysicalEvidenceStore::Snapshot::firstMeasured(const size_t physical_id) const {
+  if (!storage_) return 0;
+  // Identities merged since (online front aliases) are one identity, as every lookup reads them.
+  TimeStamp first = 0;
+  for (const auto& [id, stamp] : storage_->first_measured) {
+    if (static_cast<size_t>(PhysicalIdAliases::instance().root(id)) != physical_id) continue;
+    if (first == 0 || stamp < first) first = stamp;
+  }
+  return first;
 }
 
 std::vector<TimeStamp> PhysicalEvidenceStore::Snapshot::timestamps(
@@ -328,6 +341,11 @@ bool PhysicalEvidenceStore::ingest(const FrameData& data) {
   }
   next->frames[input.timestamp_ns] = frame;
   next->num_runs += frame->runs.size();
+  for (const auto& run : frame->runs) {
+    if (run.value <= 0) continue;
+    const auto [it, inserted] = next->first_measured.emplace(run.value, input.timestamp_ns);
+    if (!inserted && input.timestamp_ns < it->second) it->second = input.timestamp_ns;
+  }
   next->num_depth_runs += frame->depth_runs.size();
   storage_ = std::move(next);
   return true;

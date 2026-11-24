@@ -381,7 +381,7 @@ std::vector<AbsenceQuery> absenceQueries(const spark_dsg::Mesh& mesh, const Boun
 void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
                     const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
                     const float tolerance, const float min_cos, const TimeStamp latest,
-                    const uint64_t record_key = 0) {
+                    const uint64_t record_key = 0, const bool diag = true) {
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
   std::vector<float> raw_cos(queries.size()), raw_range(queries.size()), raw_delta(queries.size());
   std::vector<bool> identified(queries.size()), foreign(queries.size());
@@ -457,7 +457,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
     }
     const bool in_place = identified_samples > seen_through_samples;
     if (in_place) state.ever_identified = true;
-    if (identified_samples + seen_through_samples + d_other > 0) {
+    if (diag && identified_samples + seen_through_samples + d_other > 0) {
       const auto join = [](const std::array<double, 10>& a) {
         std::string out;
         char buf[32];
@@ -821,37 +821,160 @@ float session::SurfaceEvidence::minAbsenceCos() const {
   return std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
 }
 
-RayVerificator::CheckResult session::SurfaceEvidence::checkProjected(
-    const Point& point, const size_t physical_id,
-    const Snapshot& evidence_snapshot,
-    const uint64_t earliest, const uint64_t latest) const {
-  CheckResult result;
-  if (!evidence_snapshot) return result;
-  for (const auto stamp : evidence_snapshot->timestamps(earliest, latest)) {
-    const auto p = evidence_snapshot->project(stamp, point);
-    switch (classifyMeasurement(p, physical_id, config.depth_tolerance)) {
-      case Vote::Supported:
-        result.present.push_back(stamp); ++result.reasons.same_id; break;
-      case Vote::Free:
-        result.absent.push_back(stamp); ++result.reasons.free_space; break;
-      case Vote::Background:
-        result.absent.push_back(stamp); ++result.reasons.background_replacement; break;
-      case Vote::Other:
-        result.absent.push_back(stamp); ++result.reasons.different_id; break;
-      // A pixel whose reading stops in front of the point, or that has no reading within the
-      // sensor's range, never reached the point: like a point outside the view, the frame did not
-      // observe it, and it is no evidence either way (a ray-based check has no ray there at all).
-      // 11-25: counted as coverage, 244k such looks at a chair's site beyond the 5 m range drowned
-      // the 1,044 that saw through it before it appeared (TESSE apartment).
-      case Vote::Occluded:
-        ++result.reasons.geometric_occlusion; break;
-      case Vote::Invalid:
-        ++result.reasons.invalid; break;
-      case Vote::Unidentified:
-        result.inconclusive.push_back(stamp); ++result.reasons.unidentified_object; break;
-      case Vote::Unavailable:
-        break;  // Outside FOV / absent frame is not a coverage measurement.
+namespace {
+// One identity's presence start (README eq. 7 run backwards): the looks before its first real
+// observation, fixed once taken, and a record of the frames from that observation on, kept as the
+// absence test keeps a state's (reliability of every sample, the object's own in-place looks), so
+// a sample the object's own in-place frames see through, or a share the object usually shows in
+// place, is no evidence that its site was empty.
+struct PresenceRecord {
+  TimeStamp first_seen = 0;
+  std::vector<AbsenceQuery> queries;
+  struct Look {
+    std::vector<std::pair<uint32_t, bool>> judged;  // sample index, seen through
+    TimeStamp last = 0;
+  };
+  std::vector<Look> before;
+  ObjectAbsenceState learn;
+};
+// Key: (verificator lifetime token, identity, first observation of the node it dates).
+std::map<std::tuple<uint64_t, size_t, TimeStamp>, std::shared_ptr<PresenceRecord>> presence_records;
+}  // namespace
+
+session::SurfaceEvidence::PresenceStart session::SurfaceEvidence::presenceStart(
+    const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
+    const Snapshot& evidence_snapshot, const std::vector<uint64_t>& round_ends, const uint64_t first_seen,
+    const uint64_t latest) const {
+  PresenceStart result;
+  if (!evidence_snapshot || first_seen == 0 || latest < first_seen) return result;
+  const float tolerance = config.surface_match_tolerance;
+  const float min_cos = minAbsenceCos();
+  std::shared_ptr<PresenceRecord> record;
+  {
+    std::lock_guard<std::mutex> lock(absence_mutex);
+    auto& slot = presence_records[{absence_owner_, physical_id, first_seen}];
+    if (!slot) slot = std::make_shared<PresenceRecord>();
+    record = slot;
+  }
+  if (record->queries.empty()) {
+    record->first_seen = first_seen;
+    record->queries = absenceQueries(mesh, bbox, 0.5f * tolerance);
+    if (record->queries.empty()) return result;
+    // The looks before the first observation, in time order: the latest verdict of every sample
+    // judged in the round (as summarizeLook) with the round's latest measurement. On the surface
+    // whatever the label, seen through at a judged incidence, otherwise no verdict.
+    std::vector<int8_t> verdict(record->queries.size());
+    TimeStamp begin = 0;
+    for (const TimeStamp end : round_ends) {
+      if (end >= first_seen) break;
+      std::fill(verdict.begin(), verdict.end(), 0);
+      PresenceRecord::Look look;
+      for (const auto stamp : evidence_snapshot->timestamps(begin, end)) {
+        for (size_t i = 0; i < record->queries.size(); ++i) {
+          const auto& q = record->queries[i];
+          const auto p = evidence_snapshot->project(stamp, q.point);
+          const auto& e = p.endpoint;
+          if (e.type == EndpointClass::kUnavailable || e.type == EndpointClass::kInvalid ||
+              !std::isfinite(e.measured_depth_m) || e.measured_depth_m <= 0 ||
+              !std::isfinite(p.query_range_m) || p.query_range_m <= 0) {
+            continue;
+          }
+          const float delta = e.measured_depth_m - p.query_range_m;
+          if (std::abs(delta) <= tolerance) {
+            verdict[i] = 1;
+          } else if (delta > tolerance &&
+                     RayVerificator::facesSurface(q.has_normal ? &q.normal : nullptr, p.view_direction_world, min_cos)) {
+            verdict[i] = 2;
+          } else {
+            continue;
+          }
+          look.last = stamp;
+        }
+      }
+      for (uint32_t i = 0; i < record->queries.size(); ++i) {
+        if (verdict[i]) look.judged.emplace_back(i, verdict[i] == 2);
+      }
+      record->before.push_back(std::move(look));
+      begin = end + 1;
     }
+    // Frames before the first observation are no evidence about the object in place.
+    record->learn.processed = first_seen - 1;
+    for (const auto& q : record->queries) record->learn.samples.try_emplace(q.cell);
+  }
+  // The frames since the last round: reliability and in-place looks, as the absence test learns
+  // them (judge, then learn; the object's own looks stay out of the population).
+  {
+    ObjectAbsenceState& learn = record->learn;
+    const TimeStamp round_start = learn.processed + 1;
+    // (The cell model of label reliability is the absence test's, read as it stands.)
+    classifyFrames(learn, record->queries, evidence_snapshot, physical_id, tolerance, min_cos, latest, 0, false);
+    const AbsenceLook look = summarizeLook(learn, record->queries, round_start);
+    const bool in_place = look.own_identity > look.seen_through;
+    const size_t verdicts = look.verdicts();
+    if (in_place && verdicts > 0 &&
+        verdicts >= std::min<size_t>(static_cast<size_t>(std::max(0, config.min_judged_samples)), look.reliable)) {
+      const double f = static_cast<double>(look.seen_through) / verdicts;
+      learn.history_n += 1;
+      learn.history_sum += f;
+      if (learn.looks.size() < 256) learn.looks.push_back(f);
+    }
+    commitReliability(learn, in_place);
+  }
+  std::vector<uint8_t> reliable(record->queries.size(), 0);
+  size_t num_reliable = 0;
+  PresentBeta beta;
+  {
+    std::lock_guard<std::mutex> lock(absence_mutex);
+    for (size_t i = 0; i < record->queries.size(); ++i) {
+      const auto it = record->learn.samples.find(record->queries[i].cell);
+      reliable[i] = it != record->learn.samples.end() && reliableSample(record->learn, it->second);
+      num_reliable += reliable[i];
+    }
+    const auto [mean, second] = presentMoments(record->learn);
+    beta = presentBeta(mean, second);
+  }
+  if (absenceAblation().fixed_beta) beta = PresentBeta{0.05, 0.1, 1.9};
+  if (num_reliable == 0) return result;
+  // Page's statistic backwards from the first observation (addLook's candidates and weights, the
+  // looks taken latest first): a candidate is the latest look of a run that saw the site empty.
+  const size_t min_judged = std::min<size_t>(static_cast<size_t>(std::max(0, config.min_judged_samples)), num_reliable);
+  std::vector<double> page;
+  std::vector<size_t> candidate_look;
+  std::vector<int32_t> last_look(record->queries.size(), -1);
+  std::vector<uint32_t> judged;
+  for (size_t j = record->before.size(); j-- > 0;) {
+    const auto& look = record->before[j];
+    judged.clear();
+    size_t seen_through = 0;
+    for (const auto& [i, through] : look.judged) {
+      if (!reliable[i]) continue;
+      judged.push_back(i);
+      seen_through += through;
+    }
+    if (judged.empty() || judged.size() < min_judged) continue;
+    const double llr = -presentLogDensity(beta, static_cast<double>(seen_through) / judged.size());
+    const size_t t = page.size();
+    std::vector<size_t> first_since(t + 1, 0);
+    for (const uint32_t i : judged) ++first_since[static_cast<size_t>(last_look[i] + 1)];
+    for (size_t s = 1; s <= t; ++s) first_since[s] += first_since[s - 1];
+    page.push_back(0.0);
+    candidate_look.push_back(j);
+    for (size_t s = 0; s <= t; ++s) {
+      const double weight = absenceAblation().unit_weights
+          ? 1.0 : std::min(1.0, static_cast<double>(first_since[s]) / num_reliable);
+      page[s] += weight * llr;
+    }
+    for (const uint32_t i : judged) last_look[i] = static_cast<int32_t>(t);
+    const auto strongest = std::max_element(page.begin(), page.end());
+    if (absenceAblation().off || !(*strongest > absenceAblation().log_eta)) continue;
+    result.absent = true;
+    result.last_absent = record->before[candidate_look[static_cast<size_t>(strongest - page.begin())]].last;
+    result.next_present = first_seen;
+    VLOG(1) << "PRESENCE_START inst=" << physical_id << " first_seen=" << first_seen
+            << " samples=" << record->queries.size() << " reliable=" << num_reliable
+            << " own_looks=" << record->learn.history_n << " looks=" << record->before.size()
+            << " scored=" << page.size() << " page=" << *strongest << " last_absent=" << result.last_absent;
+    break;
   }
   return result;
 }

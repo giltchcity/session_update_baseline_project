@@ -222,24 +222,35 @@ void SessionBackend::beforeReconcile(
   // A closed state's old-site background goes with it in the round's composition (afterReconcile).
 }
 
-void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const TimeStamp /*stamp*/) {
+void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const TimeStamp stamp) {
+  // Each round ends one look of the stored frames (the absence test's unit of evidence).
+  if (round_ends_.empty() || stamp > round_ends_.back()) round_ends_.push_back(stamp);
   if (!dsg.hasLayer(DsgLayers::OBJECTS)) return;
   RayVerificator::PhysicalEvidenceSnapshot evidence;
   if (physical_evidence_store_) evidence = physical_evidence_store_->snapshot();
-  const session::PresenceQuery query{presence_query_margin_ns_, static_cast<size_t>(presence_query_subsampling_)};
-  size_t estimated = 0;
+  size_t opened = 0, dated = 0;
   for (const auto& [node_id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
     (void)node_id;
     auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
     if (!attrs) continue;
     const auto physical_id = session::physicalInstanceId(*attrs);
     if (!physical_id || attrs->first_observed_ns.empty() || attrs->last_observed_ns.empty()) continue;
-    const auto seen = session::observePresence(*attrs, *physical_id, surface_evidence_, evidence,
-                                               presence_estimator_, query);
-    session::estimatePresence(seen, config.reconciler.time_estimates_conservative, *attrs);
-    ++estimated;
+    // The node's presence starts no later than the first stored frame that measured its identity:
+    // the session's own first observation of it, which a node extracted later does not carry.
+    TimeStamp first_seen = session::openPresence(*attrs);
+    if (evidence) {
+      const TimeStamp measured = evidence->firstMeasured(*physical_id);
+      if (measured != 0 && measured < first_seen) first_seen = measured;
+    }
+    ++opened;
+    const auto start =
+        session::presenceStart(surface_evidence_, evidence, round_ends_, *physical_id, *attrs, first_seen, stamp);
+    if (!start) continue;
+    attrs->first_observed_ns = {*start};
+    dated += *start > 0;
   }
-  CLOG(3) << "[SessionBackend] presence of " << estimated << " physical object node(s) from the stored pixels";
+  CLOG(3) << "[SessionBackend] presence of " << opened << " physical object node(s), " << dated
+          << " dated after the session's start";
 }
 void SessionBackend::afterReconcile(
     const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <memory>
 #include <string>
 #include <utility>
@@ -90,25 +91,18 @@ class SessionBackend : public khronos::Backend {
   size_t verifyCurrentObjectStates(khronos::TimeStamp stamp);
 
   /**
-   * @brief Date when every physical object node begins to be present, from the session's own pixels.
-   *
-   * Before its first real observation, each sampled surface point of the node is looked up in the
-   * stored frames (SurfaceEvidence::checkProjected); the change detection's temporal estimator (its
-   * ray_change_detector settings, physical coverage) gives the closest absence and the furthest
-   * persistence, and the reconciler's rule dates the start: halfway between an observed absence and
-   * the nearest evidence of presence (minimum expected risk); without an absence, an unobserved site
-   * is not an absent object. The presence stays open: the state layer ends it when the identity's
-   * last state closes (applyPhysicalGeometry), so no segment of an identity ends on its own.
+   * @brief Opens every physical object node's presence and dates its start from the session's own
+   * pixels (session::presenceStart: the observed-absence test run backwards over the rounds before
+   * the node's first observation). The presence stays open: the state layer ends it when the
+   * identity's last state closes (applyPhysicalGeometry), so no segment of an identity ends on its own.
    */
   void estimatePhysicalPresence(khronos::DynamicSceneGraph& dsg, khronos::TimeStamp stamp);
 
   const std::vector<int> high_mobility_semantic_labels_;
   // The session's own measurement of its objects' surfaces (stored pixels, observed absence).
   khronos::session::SurfaceEvidence surface_evidence_;
-  // The temporal estimator and the object query settings of the change detection (the same keys).
-  khronos::RayChangeDetector presence_estimator_;
-  khronos::TimeStamp presence_query_margin_ns_ = 0;
-  int presence_query_subsampling_ = 100;
+  // The session's round stamps: each ends one look of the stored frames.
+  std::vector<uint64_t> round_ends_;
   khronos::PhysicalEvidenceStore::Ptr physical_evidence_store_;
   khronos::PresentSurface::Ptr present_surface_;
   // The previous session's surfaces.

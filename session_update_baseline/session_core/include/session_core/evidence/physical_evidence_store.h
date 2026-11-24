@@ -128,6 +128,8 @@ class PhysicalEvidenceStore {
 
     size_t numFrames() const;
     size_t numRuns() const;
+    // The earliest stored frame that measured a pixel of the identity (0: none).
+    TimeStamp firstMeasured(size_t physical_id) const;
     explicit operator bool() const { return static_cast<bool>(storage_); }
 
    private:

@@ -504,12 +504,23 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
   require(verifier.checkPhysical(Point(0,0,1), 7).absent.empty(),
           "empty mesh ray index reproduces missed physical visibility");
   const auto snapshot = verifier.physicalEvidenceSnapshot();
-  const auto projected = evidence.checkProjected(Point(0,0,1), 7, snapshot, kT1, kT2);
-  require(!projected.absent.empty(), "actual observed old site is absent even without a mesh endpoint");
-  require(evidence.checkProjected(Point(0,0,1), 7, snapshot, kT1, kT2-1).absent.empty(),
-          "future frames cannot explain an earlier snapshot");
-  require(evidence.checkProjected(Point(100,0,1), 7, snapshot, kT1, kT2).absent.empty(),
-          "outside-FOV surfaces remain unobserved");
+  // The presence start of a one-point surface first observed after kT2, one look ending at kT2:
+  // the site seen through at kT2 (the wall 5.5 cm behind it) is an empty site.
+  spark_dsg::Mesh site(false, true, false, true);
+  site.resizeVertices(1);
+  site.setPos(0, Point(0,0,1));
+  spark_dsg::Mesh outside(false, true, false, true);
+  outside.resizeVertices(1);
+  outside.setPos(0, Point(100,0,1));
+  const spark_dsg::BoundingBox at_origin(Point::Ones(), Point::Zero());
+  // A fresh evidence instance per question: an identity's presence record keeps the looks it took.
+  const auto empty_before = [&](const spark_dsg::Mesh& m, const std::vector<uint64_t>& looks, uint64_t first_seen) {
+    const khronos::session::SurfaceEvidence fresh(khronos::session::SurfaceEvidence::Config::of(verifier.config));
+    return fresh.presenceStart(7, m, at_origin, verifier.physicalEvidenceSnapshot(), looks, first_seen, first_seen).absent;
+  };
+  require(empty_before(site, {kT2}, kT2 + 1), "actual observed old site is empty even without a mesh endpoint");
+  require(!empty_before(site, {kT2 - 1}, kT2), "future frames cannot explain an earlier snapshot");
+  require(!empty_before(outside, {kT2}, kT2 + 1), "outside-FOV surfaces remain unobserved");
 
   spark_dsg::Mesh surface(false, true, false, true);
   surface.resizeVertices(3);
@@ -521,31 +532,21 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
   require(counts.surface_samples == 1 && counts.contradiction_rays == 1,
           "duplicate surfaces and a repeated image pixel are counted once");
 
-  auto closer = makeEndpointFrame(camera, kT2, EndpointClass::kBackground, 0, .5f);
-  require(store->ingest(closer), "occluding frame replaces the exact timestamp");
-  const auto occluded = evidence.checkProjected(Point(0,0,1), 7,
-      verifier.physicalEvidenceSnapshot(), kT1, kT2);
-  require(occluded.absent.empty() && occluded.reasons.geometric_occlusion == 1,
-          "direct projection preserves genuinely occluded old geometry");
-  require(occluded.present.empty() && occluded.inconclusive.empty(),
-          "a reading that stops in front of the point did not observe it: no vote either way");
-  auto no_reading = makeEndpointFrame(camera, kT2, EndpointClass::kInvalid);
-  require(store->ingest(no_reading), "a frame without a reading at the pixel replaces the exact timestamp");
-  const auto unread = evidence.checkProjected(Point(0,0,1), 7, verifier.physicalEvidenceSnapshot(), kT1, kT2);
-  require(unread.present.empty() && unread.absent.empty() && unread.inconclusive.empty() &&
-          unread.reasons.invalid == 1,
-          "a pixel without a reading within range did not observe the point: no vote either way");
-  auto unidentified = makeEndpointFrame(camera, kT2, EndpointClass::kUnidentifiedObject, 0, 1.f);
-  require(store->ingest(unidentified), "an unidentified object on the surface replaces the exact timestamp");
-  const auto undecided = evidence.checkProjected(Point(0,0,1), 7, verifier.physicalEvidenceSnapshot(), kT1, kT2);
-  require(undecided.inconclusive.size() == 1 && undecided.present.empty() && undecided.absent.empty(),
-          "an unidentified object on the surface reached the point and stays inconclusive");
-  auto same_farther = makeEndpointFrame(camera, kT2, EndpointClass::kPhysical, 7, 2.f);
-  require(store->ingest(same_farther), "same identity is seen farther along the ray");
-  const auto moved = evidence.checkProjected(Point(0,0,1), 7,
-      verifier.physicalEvidenceSnapshot(), kT1, kT2);
-  require(moved.present.empty() && moved.reasons.free_space == 1,
-          "same identity farther away cannot support its empty old surface");
+  // Each frame below replaces the one at kT2. A reading that stops in front of the point, or no
+  // reading within range, did not observe it; a reading on its surface, whatever the label, finds
+  // the site taken; the same identity seen farther along the ray sees through it.
+  require(store->ingest(makeEndpointFrame(camera, kT2, EndpointClass::kBackground, 0, .5f)),
+          "occluding frame replaces the exact timestamp");
+  require(!empty_before(site, {kT2}, kT2 + 1), "a reading in front of the point did not observe it");
+  require(store->ingest(makeEndpointFrame(camera, kT2, EndpointClass::kInvalid)),
+          "a frame without a reading at the pixel replaces the exact timestamp");
+  require(!empty_before(site, {kT2}, kT2 + 1), "a pixel without a reading within range did not observe it");
+  require(store->ingest(makeEndpointFrame(camera, kT2, EndpointClass::kUnidentifiedObject, 0, 1.f)),
+          "an unidentified object on the surface replaces the exact timestamp");
+  require(!empty_before(site, {kT2}, kT2 + 1), "a reading on the surface finds the site taken, whatever its label");
+  require(store->ingest(makeEndpointFrame(camera, kT2, EndpointClass::kPhysical, 7, 2.f)),
+          "same identity is seen farther along the ray");
+  require(empty_before(site, {kT2}, kT2 + 1), "same identity farther away sees through the site");
 }
 
 
@@ -741,8 +742,10 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     khronos::session::SurfaceEvidence evidence(khronos::session::SurfaceEvidence::Config::of(verifier->config));
     auto attrs=graph->getNode(spark_dsg::NodeSymbol('O',0)).attributes<khronos::KhronosObjectAttributes>().clone();
     auto& object_attrs=static_cast<khronos::KhronosObjectAttributes&>(*attrs);
-    const auto seen=khronos::session::observePresence(object_attrs,49,evidence,store->snapshot(),*temporal,{0,1});
-    khronos::session::estimatePresence(seen,false,object_attrs);
+    // One look ends at kT1, the next at the observation kT2 (the rounds of the session).
+    const auto first_seen=khronos::session::openPresence(object_attrs);
+    const auto dated=khronos::session::presenceStart(evidence,store->snapshot(),{kT1,kT2},49,object_attrs,first_seen,kT2);
+    if (dated) object_attrs.first_observed_ns={*dated};
     const auto start=object_attrs.first_observed_ns.front();
     require(mode==2 ? start==kT1+(kT2-kT1)/2 : start==0,
       "the presence start must reject unavailable pixels and accept actual earlier free space; mode="+std::to_string(mode));

@@ -462,28 +462,22 @@ khronos::ObjectChanges updateHidden(
     const auto detector_config = makeDetectorConfig();
     const khronos::session::SurfaceEvidence evidence(
         khronos::session::SurfaceEvidence::Config::of(detector_config.ray_verificator));
-    const khronos::RayChangeDetector estimator(detector_config.ray_change_detector);
-    const auto* objects =
-        detector_config.objects.getUnderlying<khronos::RayObjectChangeDetector::Config>();
-    require(objects != nullptr, "the harness configures the object change detection");
-    const khronos::session::PresenceQuery query{
-        static_cast<Stamp>(objects->time_filtering_threshold * 1e9),
-        static_cast<size_t>(objects->query_subsampling)};
-    const auto stored = evidence_store->snapshot();
-    const bool conservative = makeReconcilerConfig().time_estimates_conservative;
+    const khronos::session::SurfaceEvidence::Snapshot stored = evidence_store->snapshot();
+    // The harness has no rounds of its own: every stored frame up to the round ends one look.
+    const std::vector<uint64_t> round_ends = stored->timestamps(0, stamp);
     for (const auto& [node_id, node] : graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
       (void)node;
       auto& attrs = graph.getNode(node_id).attributes<ObjectAttrs>();
       const auto physical_id = khronos::session::physicalInstanceId(attrs);
       if (!physical_id || attrs.first_observed_ns.empty() || attrs.last_observed_ns.empty()) continue;
-      const auto seen = khronos::session::observePresence(attrs, *physical_id, evidence, stored,
-                                                          estimator, query);
+      const auto first_seen = khronos::session::openPresence(attrs);
+      const auto start =
+          khronos::session::presenceStart(evidence, stored, round_ends, *physical_id, attrs, first_seen, stamp);
       khronos::ObjectChange record;
       record.node_id = node_id;
-      record.first_absent = seen.first_absent;
-      record.first_persistent = seen.first_persistent;
+      record.first_absent = start.value_or(0);
       result.push_back(record);
-      khronos::session::estimatePresence(seen, conservative, attrs);
+      if (start) attrs.first_observed_ns = {*start};
     }
   }
 
