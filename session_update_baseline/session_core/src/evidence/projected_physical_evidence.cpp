@@ -838,12 +838,17 @@ RayVerificator::CheckResult session::SurfaceEvidence::checkProjected(
         result.absent.push_back(stamp); ++result.reasons.background_replacement; break;
       case Vote::Other:
         result.absent.push_back(stamp); ++result.reasons.different_id; break;
+      // A pixel whose reading stops in front of the point, or that has no reading within the
+      // sensor's range, never reached the point: like a point outside the view, the frame did not
+      // observe it, and it is no evidence either way (a ray-based check has no ray there at all).
+      // 11-25: counted as coverage, 244k such looks at a chair's site beyond the 5 m range drowned
+      // the 1,044 that saw through it before it appeared (TESSE apartment).
       case Vote::Occluded:
-        result.inconclusive.push_back(stamp); ++result.reasons.geometric_occlusion; break;
+        ++result.reasons.geometric_occlusion; break;
+      case Vote::Invalid:
+        ++result.reasons.invalid; break;
       case Vote::Unidentified:
         result.inconclusive.push_back(stamp); ++result.reasons.unidentified_object; break;
-      case Vote::Invalid:
-        result.inconclusive.push_back(stamp); ++result.reasons.invalid; break;
       case Vote::Unavailable:
         break;  // Outside FOV / absent frame is not a coverage measurement.
     }

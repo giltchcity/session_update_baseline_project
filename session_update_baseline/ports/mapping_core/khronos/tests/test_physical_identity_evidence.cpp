@@ -527,6 +527,19 @@ void testProjectedCoverageWithoutMeshRays(const hydra::Sensor::ConstPtr& camera)
       verifier.physicalEvidenceSnapshot(), kT1, kT2);
   require(occluded.absent.empty() && occluded.reasons.geometric_occlusion == 1,
           "direct projection preserves genuinely occluded old geometry");
+  require(occluded.present.empty() && occluded.inconclusive.empty(),
+          "a reading that stops in front of the point did not observe it: no vote either way");
+  auto no_reading = makeEndpointFrame(camera, kT2, EndpointClass::kInvalid);
+  require(store->ingest(no_reading), "a frame without a reading at the pixel replaces the exact timestamp");
+  const auto unread = evidence.checkProjected(Point(0,0,1), 7, verifier.physicalEvidenceSnapshot(), kT1, kT2);
+  require(unread.present.empty() && unread.absent.empty() && unread.inconclusive.empty() &&
+          unread.reasons.invalid == 1,
+          "a pixel without a reading within range did not observe the point: no vote either way");
+  auto unidentified = makeEndpointFrame(camera, kT2, EndpointClass::kUnidentifiedObject, 0, 1.f);
+  require(store->ingest(unidentified), "an unidentified object on the surface replaces the exact timestamp");
+  const auto undecided = evidence.checkProjected(Point(0,0,1), 7, verifier.physicalEvidenceSnapshot(), kT1, kT2);
+  require(undecided.inconclusive.size() == 1 && undecided.present.empty() && undecided.absent.empty(),
+          "an unidentified object on the surface reached the point and stays inconclusive");
   auto same_farther = makeEndpointFrame(camera, kT2, EndpointClass::kPhysical, 7, 2.f);
   require(store->ingest(same_farther), "same identity is seen farther along the ray");
   const auto moved = evidence.checkProjected(Point(0,0,1), 7,

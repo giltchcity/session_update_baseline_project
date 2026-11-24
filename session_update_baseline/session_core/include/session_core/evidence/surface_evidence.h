@@ -65,7 +65,10 @@ class SurfaceEvidence {
                             int state_slot = 0, uint64_t state_birth = 0,
                             double prior_log_odds = 0.0, uint64_t state_id = 0) const;
 
-  // One point's measurements in the stored pixels.
+  // One point's measurements in the stored pixels: a frame whose pixel reaches the point votes
+  // present (its own identity on the surface), absent (seen through, or the background or another
+  // identity on the surface) or inconclusive (an unidentified object on the surface); a frame whose
+  // pixel stops in front of the point or has no reading within range did not observe it.
   CheckResult checkProjected(const Point& point, size_t physical_id, const Snapshot& snapshot,
                              uint64_t earliest, uint64_t latest) const;
 
