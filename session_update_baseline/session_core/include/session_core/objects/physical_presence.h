@@ -1,10 +1,12 @@
 #pragma once
-// A physical object node's presence interval from the session's own stored pixels: the evidence
-// before its first and after its last real observation (SurfaceEvidence::checkProjected on its
-// sampled surface, through the round's stamp, with the change detection's temporal estimator in
-// physical coverage), and the rule that turns it into the interval (the reconciler's: an observed
-// absence starts or ends presence halfway between it and the nearest evidence of presence, the
-// estimate of minimum expected risk; without one, an unobserved site is not an absent object).
+// When a physical object begins to be present, from the session's own stored pixels: the evidence
+// before its first real observation (SurfaceEvidence::checkProjected on its sampled surface, with
+// the change detection's temporal estimator in physical coverage) and the rule that dates it (the
+// reconciler's: an observed absence starts presence halfway between it and the nearest evidence of
+// presence, the estimate of minimum expected risk; without one, an unobserved site is not an absent
+// object). Its end is the state layer's alone (PersistentObjectState::applyPhysicalGeometry): an
+// identity stays present while it has a current state and leaves when its last state closes. No
+// segment of an identity ends on its own, so a moved object is never absent between its segments.
 #include <cstddef>
 
 #include "khronos/backend/change_detection/ray_change_detector.h"
@@ -15,7 +17,6 @@ namespace khronos::session {
 
 struct PresenceEvidence {
   TimeStamp first_absent = 0, first_persistent = 0;  // before the first observation
-  TimeStamp last_absent = 0, last_persistent = 0;    // after the last observation
 };
 
 struct PresenceQuery {
@@ -26,11 +27,11 @@ struct PresenceQuery {
 PresenceEvidence observePresence(const KhronosObjectAttributes& attrs, size_t physical_id,
                                  const SurfaceEvidence& evidence,
                                  const SurfaceEvidence::Snapshot& snapshot,
-                                 const RayChangeDetector& estimator, const PresenceQuery& query,
-                                 TimeStamp through);
+                                 const RayChangeDetector& estimator, const PresenceQuery& query);
 
-// Writes the interval into first/last_observed_ns, keeping the real observation bounds apart
-// (persistObservationBounds). conservative: without an absence, the evidence itself.
+// Writes the presence into first/last_observed_ns, keeping the real observation bounds apart
+// (persistObservationBounds): from the dated start, open-ended (the state layer ends it).
+// conservative: without an absence, the first observation itself.
 void estimatePresence(const PresenceEvidence& evidence, bool conservative, KhronosObjectAttributes& attrs);
 
 }  // namespace khronos::session

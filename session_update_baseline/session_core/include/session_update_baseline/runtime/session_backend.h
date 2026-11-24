@@ -90,16 +90,15 @@ class SessionBackend : public khronos::Backend {
   size_t verifyCurrentObjectStates(khronos::TimeStamp stamp);
 
   /**
-   * @brief Estimate every physical object node's presence interval from the session's own pixels.
+   * @brief Date when every physical object node begins to be present, from the session's own pixels.
    *
-   * Before its first and after its last real observation, each sampled surface point of the node is
-   * looked up in the stored frames (SurfaceEvidence::checkProjected, through the round's stamp);
-   * the change detection's temporal estimator (its ray_change_detector settings, physical coverage)
-   * gives the closest absence and the furthest persistence on either side, and the reconciler's rule
-   * turns them into the interval: an observed absence ends (starts) presence halfway between it
-   * and the nearest evidence of presence (minimum expected risk); without one, an unobserved site
-   * is not an absent object (time_estimates_conservative: the evidence itself). The object's state
-   * then ends a closed identity's presence no later than its own decision (applyPhysicalGeometry).
+   * Before its first real observation, each sampled surface point of the node is looked up in the
+   * stored frames (SurfaceEvidence::checkProjected); the change detection's temporal estimator (its
+   * ray_change_detector settings, physical coverage) gives the closest absence and the furthest
+   * persistence, and the reconciler's rule dates the start: halfway between an observed absence and
+   * the nearest evidence of presence (minimum expected risk); without an absence, an unobserved site
+   * is not an absent object. The presence stays open: the state layer ends it when the identity's
+   * last state closes (applyPhysicalGeometry), so no segment of an identity ends on its own.
    */
   void estimatePhysicalPresence(khronos::DynamicSceneGraph& dsg, khronos::TimeStamp stamp);
 

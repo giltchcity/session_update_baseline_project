@@ -697,6 +697,10 @@ void testCurrentStateRejectsPreArrivalAbsence(const hydra::Sensor::ConstPtr& cam
 }
 
 void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& camera) {
+  // The object is first seen at kT2. Mode 2: a frame at kT1 sees through its site, so its presence
+  // starts halfway between; mode 0: that site is outside the frame; mode 1: the only frame is the
+  // observation's own time, no earlier evidence. Its presence is never ended here: the state layer
+  // ends an identity's presence when its last state closes.
   for (int mode=0; mode<3; ++mode) {
     const bool outside=mode==0, missing=mode==1;
     auto graph=makeRayGraph(kT2, outside?Point(6,0,2):Point(0,0,2));
@@ -704,14 +708,14 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     object->mesh=spark_dsg::Mesh(false,true,false,true);
     object->mesh.resizeVertices(1);
     object->mesh.setPos(0,outside?Point(3,0,1):Point(0,0,1));
-    object->mesh.setTimestamp(0,kT1);object->mesh.setFirstSeenTimestamp(0,kT1);
+    object->mesh.setTimestamp(0,kT2);object->mesh.setFirstSeenTimestamp(0,kT2);
     object->bounding_box=spark_dsg::BoundingBox(Point::Ones(),Point::Zero());
-    object->first_observed_ns={kT1};object->last_observed_ns={kT1};
-    khronos::setObservationBounds(*object,kT1,kT1);
+    object->first_observed_ns={kT2};object->last_observed_ns={kT2};
+    khronos::setObservationBounds(*object,kT2,kT2);
     object->details["instance_id"]={49};
-    require(graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS,spark_dsg::NodeSymbol('O',0),std::move(object)),"physical reducer fixture inserted");
+    require(graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS,spark_dsg::NodeSymbol('O',0),std::move(object)),"physical presence fixture inserted");
     auto store=std::make_shared<PhysicalEvidenceStore>();
-    require(store->ingest(makeEndpointFrame(camera,missing?kT1:kT2,EndpointClass::kBackground,0,2)),"sensor frame stored");
+    require(store->ingest(makeEndpointFrame(camera,missing?kT2:kT1,EndpointClass::kBackground,0,2)),"sensor frame stored");
     // Khronos's object detector leaves physical objects to the session layer.
     auto verifier=std::make_shared<RayVerificator>(makeVerifierConfig());
     verifier->setPhysicalEvidenceStore(store);verifier->setDsg(graph);
@@ -721,16 +725,16 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     khronos::RayObjectChangeDetector detector(dc,verifier,temporal);
     khronos::ObjectChanges changes;detector.detectChanges(*graph,{},changes);
     require(changes.empty(),"Khronos's object detector emits no record for a physical object");
-    // The session's estimate from its stored pixels rejects unavailable pixels and evidence not
-    // after the observation, and accepts actual later free space.
     khronos::session::SurfaceEvidence evidence(khronos::session::SurfaceEvidence::Config::of(verifier->config));
     auto attrs=graph->getNode(spark_dsg::NodeSymbol('O',0)).attributes<khronos::KhronosObjectAttributes>().clone();
     auto& object_attrs=static_cast<khronos::KhronosObjectAttributes&>(*attrs);
-    const auto seen=khronos::session::observePresence(object_attrs,49,evidence,store->snapshot(),*temporal,{0,1},kT2);
+    const auto seen=khronos::session::observePresence(object_attrs,49,evidence,store->snapshot(),*temporal,{0,1});
     khronos::session::estimatePresence(seen,false,object_attrs);
-    const bool ended=object_attrs.last_observed_ns.back()!=std::numeric_limits<uint64_t>::max();
-    require(ended==(mode==2),
-      "the physical presence estimate must reject unavailable pixels and accept actual later free space; mode="+std::to_string(mode));
+    const auto start=object_attrs.first_observed_ns.front();
+    require(mode==2 ? start==kT1+(kT2-kT1)/2 : start==0,
+      "the presence start must reject unavailable pixels and accept actual earlier free space; mode="+std::to_string(mode));
+    require(object_attrs.last_observed_ns==std::vector<uint64_t>{std::numeric_limits<uint64_t>::max()},
+      "no evidence ends a physical object's presence on its own; mode="+std::to_string(mode));
   }
 }
 

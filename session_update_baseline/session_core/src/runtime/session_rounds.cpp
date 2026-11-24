@@ -222,7 +222,7 @@ void SessionBackend::beforeReconcile(
   // A closed state's old-site background goes with it in the round's composition (afterReconcile).
 }
 
-void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const TimeStamp stamp) {
+void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const TimeStamp /*stamp*/) {
   if (!dsg.hasLayer(DsgLayers::OBJECTS)) return;
   RayVerificator::PhysicalEvidenceSnapshot evidence;
   if (physical_evidence_store_) evidence = physical_evidence_store_->snapshot();
@@ -235,7 +235,7 @@ void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const Time
     const auto physical_id = session::physicalInstanceId(*attrs);
     if (!physical_id || attrs->first_observed_ns.empty() || attrs->last_observed_ns.empty()) continue;
     const auto seen = session::observePresence(*attrs, *physical_id, surface_evidence_, evidence,
-                                               presence_estimator_, query, stamp);
+                                               presence_estimator_, query);
     session::estimatePresence(seen, config.reconciler.time_estimates_conservative, *attrs);
     ++estimated;
   }

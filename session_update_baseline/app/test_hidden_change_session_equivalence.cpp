@@ -477,13 +477,11 @@ khronos::ObjectChanges updateHidden(
       const auto physical_id = khronos::session::physicalInstanceId(attrs);
       if (!physical_id || attrs.first_observed_ns.empty() || attrs.last_observed_ns.empty()) continue;
       const auto seen = khronos::session::observePresence(attrs, *physical_id, evidence, stored,
-                                                          estimator, query, stamp);
+                                                          estimator, query);
       khronos::ObjectChange record;
       record.node_id = node_id;
       record.first_absent = seen.first_absent;
       record.first_persistent = seen.first_persistent;
-      record.last_absent = seen.last_absent;
-      record.last_persistent = seen.last_persistent;
       result.push_back(record);
       khronos::session::estimatePresence(seen, conservative, attrs);
     }
@@ -711,43 +709,32 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
 
   const auto changes = updateHidden(
       *graph, makeBackgroundEvidenceStore(camera, kTerminalStamp), kTerminalStamp);
-  const auto old_change = changes.find(spark_dsg::NodeSymbol('O', 8));
-  const auto newest_change = changes.find(spark_dsg::NodeSymbol('O', 108));
-  require(old_change != changes.end() && old_change->last_absent == kTerminalStamp &&
-              old_change->last_persistent == 0,
-          "the old I8 site seen empty in the terminal frame was not classified absent");
-  require(newest_change != changes.end() &&
-              newest_change->last_absent == kTerminalStamp &&
-              newest_change->last_persistent == 0,
-          "new I8 site terminal free-space was not classified absent");
+  require(changes.find(spark_dsg::NodeSymbol('O', 8)) != changes.end() &&
+              changes.find(spark_dsg::NodeSymbol('O', 108)) != changes.end(),
+          "both I8 segments have a presence record from the session's estimate");
 
   const auto* terminal_attrs = findPhysicalObject(*graph, 8);
-  const auto expected_right = (kNewStamp + kTerminalStamp) / 2;
-  // Nothing observes either I8 site before its first sighting, so the left edge is the presence prior.
+  // Nothing observes either I8 site before its first sighting, so the left edge is the presence
+  // prior; no evidence ends the presence on its own (without a registry nothing ends it here).
   require(terminal_attrs != nullptr &&
               terminal_attrs->first_observed_ns == std::vector<Stamp>({0}) &&
               terminal_attrs->last_observed_ns ==
-                  std::vector<Stamp>({expected_right}),
-          "I8 canonical terminal interval is not newest-right authoritative");
+                  std::vector<Stamp>({std::numeric_limits<Stamp>::max()}),
+          "I8 canonical terminal interval is not open from the presence prior");
   require(khronos::observationFirstStamp(*terminal_attrs) == kNewStamp &&
               khronos::observationLastStamp(*terminal_attrs) == kNewStamp,
           "I8 canonical direct observation provenance is not newest-segment authoritative");
   require(khronos::isPresent(*terminal_attrs, kInitialStamp) &&
               khronos::isPresent(*terminal_attrs, kNewStamp) &&
-              khronos::isPresent(*terminal_attrs, expected_right - 1) &&
-              !khronos::isPresent(*terminal_attrs, expected_right) &&
-              !khronos::isPresent(*terminal_attrs, kTerminalStamp),
-          "I8 presence transition is incorrect around its terminal right edge");
+              khronos::isPresent(*terminal_attrs, kTerminalStamp),
+          "I8 presence is not continuous across its move");
 
   khronos::SpatioTemporalMap terminal_map(
       khronos::SpatioTemporalMap::Config{});
   terminal_map.update(graph->clone(), kNewStamp);
   terminal_map.update(graph, kTerminalStamp);
-  // The 0e02450 timeline rule keeps a node whose CURRENT mesh is non-empty
-  // visible even after its presence interval ends. This test exercises the
-  // null-registry legacy path, whose winner-takes-all merge materializes the
-  // newest segment's non-empty mesh, so I8 stays in the terminal view while its
-  // presence right edge (expected_right) is the part the timeline preserves.
+  // The null-registry legacy path's winner-takes-all merge materializes the
+  // newest segment's non-empty mesh, so I8 stays in the terminal view.
   require(summarizeCurrent(*terminal_map.getDsgPtr(kTerminalStamp))
               .objects.count(8) == 1,
           "I8 presence is absent at the terminal but its non-empty mesh keeps it visible");
@@ -763,7 +750,7 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
   require(loaded_present.objects.count(8) == 1 &&
               loaded_present.objects.at(8).presence_starts == std::vector<Stamp>({0}) &&
               loaded_present.objects.at(8).presence_ends ==
-                  std::vector<Stamp>({expected_right}) &&
+                  std::vector<Stamp>({std::numeric_limits<Stamp>::max()}) &&
               loaded_present.objects.at(8).observed_first == kNewStamp &&
               loaded_present.objects.at(8).observed_last == kNewStamp,
           "I8 full interval/provenance changed across save/load");
@@ -1047,33 +1034,10 @@ int main(int argc, char** argv) {
       updateHidden(*continuous, makeNewEvidenceStore(evidence_camera),
                    kNewStamp, &continuous_registry);
 
-  const auto* i20_change =
-      findPhysicalChange(*continuous, continuous_changes, 20);
-  require(i20_change != nullptr,
-          "old I20 has no physical change record");
-  require(i20_change->last_absent == kNewStamp &&
-              i20_change->last_persistent == 0,
-          "typed background replacement did not remove I20");
-  const auto* i7_change =
-      findPhysicalChange(*continuous, continuous_changes, 7);
-  // The session's evidence reads another identity on I7's surface (the six I9
-  // pixels) as a replacement, as the registry's per-sample ledger does (10
-  // replacement votes vs 0 support): with the four background replacements a
-  // majority absence ends I7's presence in this round.
-  require(i7_change != nullptr && i7_change->last_absent == kNewStamp &&
-              i7_change->last_persistent == 0,
-          "another identity on I7's surface replaces it, as in the registry's ledger");
-  const auto* i21_change =
-      findPhysicalChange(*continuous, continuous_changes, 21);
-  require(i21_change != nullptr && i21_change->last_absent == 0 &&
-              i21_change->last_persistent == 0,
-          "unidentified near-surface evidence incorrectly deleted I21");
-  const auto* old_i6_change =
-      findPhysicalChange(*continuous, continuous_changes, 6);
-  require(old_i6_change != nullptr &&
-              old_i6_change->last_absent == kNewStamp &&
-              old_i6_change->last_persistent == 0,
-          "later direct same-ID I6 segment erased old-site absence evidence");
+  // The end of a physical object's presence is the state layer's (the registry's closures, checked
+  // on the materialized current state below), not a per-segment evidence estimate.
+  require(findPhysicalChange(*continuous, continuous_changes, 20) != nullptr,
+          "old I20 has no presence record from the session's estimate");
 
   // D3: serialize the exact same midpoint, start a fresh process-level working
   // state from latest(P_prev), append the exact same observations, and invoke
@@ -1099,27 +1063,6 @@ int main(int argc, char** argv) {
   const auto restarted_changes =
       updateHidden(*restarted, makeNewEvidenceStore(evidence_camera),
                    kNewStamp, &restarted_registry);
-  const auto* restarted_i20 =
-      findPhysicalChange(*restarted, restarted_changes, 20);
-  require(restarted_i20 != nullptr &&
-              restarted_i20->last_absent == kNewStamp &&
-              restarted_i20->last_persistent == 0,
-          "serialized D3 classified I20 differently from continuous D2: absent=" +
-              (restarted_i20 == nullptr
-                   ? std::string("missing")
-                   : std::to_string(restarted_i20->last_absent)) +
-              ", persistent=" +
-              (restarted_i20 == nullptr
-                   ? std::string("missing")
-                   : std::to_string(restarted_i20->last_persistent)));
-  const auto* restarted_i7 =
-      findPhysicalChange(*restarted, restarted_changes, 7);
-  const auto* restarted_i21 =
-      findPhysicalChange(*restarted, restarted_changes, 21);
-  require(restarted_i7 != nullptr && restarted_i7->last_absent == kNewStamp &&
-              restarted_i21 != nullptr && restarted_i21->last_absent == 0,
-          "serialized D3 changed mixed/unknown coverage semantics");
-
   // Compare authoritative *current* materializations, not the raw temporal
   // nodes that deliberately retain absent history.
   khronos::SpatioTemporalMap d2_map(khronos::SpatioTemporalMap::Config{});
