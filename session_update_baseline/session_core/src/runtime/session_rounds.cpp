@@ -1,39 +1,6 @@
-/** -----------------------------------------------------------------------------
- * Copyright (c) 2024 Massachusetts Institute of Technology.
- * All Rights Reserved.
- *
- * AUTHORS:      Lukas Schmid <lschmid@mit.edu>, Marcus Abate <mabate@mit.edu>,
- *               Yun Chang <yunchang@mit.edu>, Luca Carlone <lcarlone@mit.edu>
- * AFFILIATION:  MIT SPARK Lab, Massachusetts Institute of Technology
- * YEAR:         2024
- * SOURCE:       https://github.com/MIT-SPARK/Khronos
- * LICENSE:      BSD 3-Clause
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * -------------------------------------------------------------------------- */
+// The mapping session's part of every change-detection round (SessionBackend): object states,
+// the present surface with the memory, the dated history and the saved session state.
+#include "session_update_baseline/runtime/session_backend.h"
 
 #include "khronos/backend/backend.h"
 #include "khronos/active_window/online_front.h"
@@ -57,19 +24,22 @@ namespace {
 // keeps freed heap pages of the arenas otherwise.
 void releaseFreedMemory() { malloc_trim(0); }
 }  // namespace
+}  // namespace khronos
 
+namespace session_update::runtime {
+using namespace khronos;
 
-void Backend::setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store) {
-  physical_evidence_store_ = store;
-  change_detector_->setPhysicalEvidenceStore(std::move(store));
+void SessionBackend::connectSession(const SessionInputs& inputs) {
+  physical_evidence_store_ = inputs.evidence;
+  change_detector_->setPhysicalEvidenceStore(inputs.evidence);
+  persistent_objects_.setMapResolution(inputs.object_surface_resolution);
+  object_surface_resolution_ = inputs.object_surface_resolution;
+  present_surface_ = inputs.present;
+  persistent_objects_.setHighMobilitySemanticLabels(high_mobility_semantic_labels_);
 }
 
-void Backend::setPresentSurface(PresentSurface::Ptr surface) {
-  present_surface_ = std::move(surface);
-}
-
-void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
-                              std::vector<std::array<uint32_t, 3>> faces) {
+void SessionBackend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
+                                     std::vector<std::array<uint32_t, 3>> faces) {
   loaded_memory_search_.reset();
   loaded_memory_ = std::move(points);
   loaded_memory_faces_ = std::move(faces);
@@ -81,20 +51,11 @@ void Backend::setLoadedMemory(std::vector<Eigen::Vector3f> points,
   LOG(INFO) << "[PresentSurface] memory copy tolerance m=" << memory_copy_tolerance_;
 }
 
-void Backend::setShownMemory(PresentSurface::Surface shown) {
+void SessionBackend::setShownMemory(PresentSurface::Surface shown) {
   shown_memory_ = std::make_unique<PresentSurface::Surface>(std::move(shown));
 }
 
-void Backend::setObjectSurfaceResolution(const float resolution) {
-  if (session_extensions_enabled_) persistent_objects_.setMapResolution(resolution);
-  object_surface_resolution_ = resolution;
-}
-
-void Backend::setHighMobilitySemanticLabels(const std::vector<int>& labels) {
-  if (session_extensions_enabled_) persistent_objects_.setHighMobilitySemanticLabels(labels);
-}
-
-size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
+size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
   const auto verificator = change_detector_->getRayVerificator();
   if (!verificator) {
     return 0;
@@ -209,15 +170,14 @@ size_t Backend::verifyCurrentObjectStates(const TimeStamp stamp) {
   return closed;
 }
 
-void Backend::releaseSessionEvidence() {
-  if (!session_extensions_enabled_) return;
+void SessionBackend::afterTerminalRound() {
   // The terminal change-detection pass has just written the final snapshot and
   // was the last reader of the stored evidence frames.
   if (physical_evidence_store_) physical_evidence_store_->clear();
   releaseFreedMemory();
 }
 
-void Backend::sessionApplyIdentityMerges(const DynamicSceneGraph::Ptr& dsg) {
+void SessionBackend::beforeChangeDetection(const DynamicSceneGraph::Ptr& dsg) {
   auto& aliases = PhysicalIdAliases::instance();
   if (!aliases.active()) return;
   for (const auto& [gone, keep] : aliases.takeNew()) {
@@ -242,7 +202,7 @@ void Backend::sessionApplyIdentityMerges(const DynamicSceneGraph::Ptr& dsg) {
   if (relabelled) LOG(INFO) << "IDENTITY_RELABEL nodes=" << relabelled;
 }
 
-void Backend::sessionBeforeReconcile(
+void SessionBackend::beforeReconcile(
     const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending) {
   // One change-detection round is one observation event: every state decision
   // until the next round reads the persistence history resolved before it.
@@ -265,7 +225,7 @@ void Backend::sessionBeforeReconcile(
                                changes.background_changes);
   }
 }
-void Backend::sessionAfterReconcile(
+void SessionBackend::afterReconcile(
     const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {
   // Change detection must see every visibility segment independently. In
   // particular, an old physical object can be cleared at its previous site
@@ -402,7 +362,7 @@ void Backend::sessionAfterReconcile(
   }
   refusion_report_ = std::move(round.report_json);
 }
-void Backend::sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp) {
+void SessionBackend::afterSnapshotStored(const DynamicSceneGraph& dsg, TimeStamp stamp) {
   if (session_new_states_.empty()) return;
   std::vector<std::pair<size_t, TimeStamp>> pending;
   pending.swap(session_new_states_);
@@ -471,7 +431,7 @@ void Backend::sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp)
   }
 }
 
-void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
+void SessionBackend::afterFinalMapSaved(const hydra::DataDirectory& log_setup) {
   const auto path = log_setup.path();
   saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
     if (map_.numTimeSteps() > 0) {
@@ -498,4 +458,4 @@ void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
     }
 }
 
-}  // namespace khronos
+}  // namespace session_update::runtime

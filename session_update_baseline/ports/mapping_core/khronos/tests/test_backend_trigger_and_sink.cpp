@@ -137,11 +137,10 @@ struct BackendFixture {
     state->lcd_graph = hydra::GlobalInfo::instance().createSharedDsg();
     // The ROS pipeline calls these adapters for a plain Backend as well.
     // Project TODOs must remain isolated from ordinary Khronos execution.
-    if (backend.sessionExtensionsEnabled()) {
-      throw std::runtime_error("plain Backend unexpectedly enables session extensions");
+    if (backend.hasSessionLayer()) {
+      throw std::runtime_error("plain Backend unexpectedly has a session layer");
     }
-    backend.setObjectSurfaceResolution(0.05f);
-    backend.setHighMobilitySemanticLabels({});
+    backend.connectSession({});
   }
 
   hydra::BackendInput input(uint64_t sequence, uint64_t stamp) {

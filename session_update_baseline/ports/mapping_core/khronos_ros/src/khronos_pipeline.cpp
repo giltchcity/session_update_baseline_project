@@ -94,10 +94,10 @@ void KhronosPipeline::init() {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);
   }
   if (khronos_backend_) {
-    khronos_backend_->setPhysicalEvidenceStore(physical_evidence_store_);
+    Backend::SessionInputs session;
+    session.evidence = physical_evidence_store_;
     if (khronos_active_window_) {
-      khronos_backend_->setObjectSurfaceResolution(
-          khronos_active_window_->config.volumetric_map.voxel_size);
+      session.object_surface_resolution = khronos_active_window_->config.volumetric_map.voxel_size;
       if (khronos_backend_->config.piece_history) {
         // The 4D map's history as versioned pieces, split by the active window's own voxel blocks.
         const auto& volume = khronos_active_window_->config.volumetric_map;
@@ -108,17 +108,18 @@ void KhronosPipeline::init() {
     }
     // The persistent surface uses the same native reconstruction settings as
     // the active window; tracking retains its original temporal lifetime.
-    if (khronos_backend_->sessionExtensionsEnabled() && khronos_active_window_) {
+    if (khronos_backend_->hasSessionLayer() && khronos_active_window_) {
       const auto& window = khronos_active_window_->config;
       auto present = std::make_shared<PresentSurface>(
           window.volumetric_map, window.projective_integrator, window.mesh_integrator);
       khronos_active_window_->setPresentSurface(present);
-      khronos_backend_->setPresentSurface(present);
+      session.present = present;
       LOG(INFO) << "[PresentSurface] native Hydra voxel " << window.volumetric_map.voxel_size
                 << " truncation " << window.volumetric_map.truncation_distance;
     }
-    khronos_backend_->setHighMobilitySemanticLabels(
-        khronos_backend_->config.high_mobility_semantic_labels);
+    // The session layer (SessionBackend) takes what it shares with the active window; the plain
+    // backend ignores it.
+    khronos_backend_->connectSession(session);
   }
 
   backend_->addSink(

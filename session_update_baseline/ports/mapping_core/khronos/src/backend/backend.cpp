@@ -81,8 +81,6 @@ void declare_config(Backend::Config& config) {
   field(config.fix_input_pose_variance, "fix_input_pose_variance");
   field(config.fix_input_poses, "fix_input_poses");
 
-  field(config.high_mobility_semantic_labels,
-        "high_mobility_semantic_labels");
 
   {
     NameSpace ns("change_detection");
@@ -273,16 +271,16 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
   // version.
   // TODO(lschmid): Currently always reset the change detection to avoid rare (but possible) hiccups
   // from deleted active vertices. Fix this by only resetting the active window mesh.
-  if (session_extensions_enabled_) sessionApplyIdentityMerges(dsg);
+  beforeChangeDetection(dsg);
   change_detector_->setDsg(dsg);
   auto changes =
       change_detector_->detectChanges(rpgo_merges, stamp, had_loopclosure);
-  if (session_extensions_enabled_) sessionBeforeReconcile(dsg, changes, stamp, finalize_pending);
+  beforeReconcile(dsg, changes, stamp, finalize_pending);
   reconciler_->reconcile(*dsg, changes, stamp);
 
-  if (session_extensions_enabled_) sessionAfterReconcile(dsg, stamp, finalize_pending);
+  afterReconcile(dsg, stamp, finalize_pending);
   storeSnapshot(dsg, stamp);
-  if (session_extensions_enabled_) sessionAmendHistory(*dsg, stamp);
+  afterSnapshotStored(*dsg, stamp);
 
   ChangeSink::callAll(change_sinks_, stamp, changes);
   CLOG(3) << "Change detection completed: " << map_.numTimeSteps() << " time steps in 4D map.";
@@ -455,7 +453,7 @@ void Backend::finishProcessing() {
     auto dsg = unmerged_graph_->clone();
     runChangeDetectionThread(dsg, proposed_merges_, last_timestamp_received_,
                              true, /*finalize_pending=*/true);
-    if (session_extensions_enabled_) releaseSessionEvidence();
+    afterTerminalRound();
   } else {
     // With change detection explicitly disabled there is no reconciler output;
     // preserve the final optimized state as the sole honest fallback.
@@ -561,7 +559,7 @@ void Backend::saveMapAndChanges(const hydra::DataDirectory& log_setup,
     if (map_.save(path / "final.4dmap.zpk")) {
       CLOG(1) << "Saved 4D map with " << map_.numTimeSteps() << " time steps to '" << path << "'.";
     }
-    if (session_extensions_enabled_) saveSessionState(log_setup);
+    afterFinalMapSaved(log_setup);
 
     if (!save_individual_dsgs) {
       return;

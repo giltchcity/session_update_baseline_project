@@ -22,16 +22,22 @@ void declare_config(SessionBackend::Config& config) {
   name("SessionBackend");
   base<khronos::Backend::Config>(config);
   field(config.input_state, "input_state");
+  field(config.high_mobility_semantic_labels, "high_mobility_semantic_labels");
 }
 
 SessionBackend::SessionBackend(const Config& config,
                                const hydra::SharedDsgInfo::Ptr& dsg,
                                const hydra::SharedModuleState::Ptr& state)
-    : khronos::Backend(config, dsg, state) {
-  session_extensions_enabled_ = true;
+    : khronos::Backend(config, dsg, state),
+      high_mobility_semantic_labels_(config.high_mobility_semantic_labels) {
   if (!config.input_state.empty()) {
     loadInputState(config.input_state);
   }
+}
+
+SessionBackend::~SessionBackend() {
+  stop();
+  waitForChangeDetection();
 }
 
 void SessionBackend::loadInputState(const std::string& state_path) {

@@ -56,10 +56,7 @@
 #include "khronos/backend/latest_only_worker.h"
 #include <optional>
 
-#include <hydra/utils/nearest_neighbor_utilities.h>
 
-#include "session_core/state/persistent_object_state.h"
-#include "session_core/surface/present_surface.h"
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/common/common_types.h"
@@ -67,6 +64,9 @@
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
 
 namespace khronos {
+
+class PhysicalEvidenceStore;
+class PresentSurface;
 
 class Backend : public hydra::BackendModule {
  public:
@@ -93,14 +93,6 @@ class Backend : public hydra::BackendModule {
     // TODO(lschmid): Refactor this together with asynchronous 4D-map updates.
     int run_change_detection_every_n_frames = 0;
 
-    // Config-driven semantic ontology prior for the generic moveability
-    // decision: semantic categories whose members are generally movable
-    // (chairs, bags, fans, monitors, ...). A weak prior used only to decide
-    // whether surface overlap between fragments is trustworthy co-observation
-    // evidence; it never deletes or merges anything by itself. Empty =
-    // ontology disabled (only observed D1 history and past relocation
-    // frequency are used).
-    std::vector<int> high_mobility_semantic_labels;
 
     // Keep the 4D map's history as versioned pieces (SpatioTemporalMap::usePieceHistory), split by the active
     // window's own voxel blocks: a mesh block, node or edge is stored again only when it changed. False: one
@@ -143,9 +135,6 @@ class Backend : public hydra::BackendModule {
    */
   void finishProcessing();
 
-  /** The terminal round was the last reader of the stored evidence frames: release them. */
-  void releaseSessionEvidence();
-
   /**
    * @brief Wait until the most recently requested change-detection update has
    * completed.
@@ -158,32 +147,18 @@ class Backend : public hydra::BackendModule {
 
   void addChangeSink(const ChangeSink::Ptr& sink);
 
-  /** Forward the shared session-local endpoint evidence store to change detection. */
-  void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
-
-  /** The session's present surface: every round's snapshot shows it and the memory that stays. */
-  void setPresentSurface(PresentSurface::Ptr surface);
-
-  /** Surface (world vertices and triangles) of the inherited state this session started from. */
-  void setLoadedMemory(std::vector<Eigen::Vector3f> points,
-                       std::vector<std::array<uint32_t, 3>> faces = {});
-
-  /**
-   * Memory as the previous session's final map showed it (its saved shown
-   * state): the surface every round composes its memory from
-   * (PresentSurface::Memory::shown).
-   */
-  void setShownMemory(PresentSurface::Surface shown);
-
-  /** Inherit the active map resolution for surface correspondence checks. */
-  void setObjectSurfaceResolution(float resolution);
   /** The 4D map keeps its history as versioned pieces; block_edge: the active window's voxel block edge. */
   void usePieceHistory(double block_edge) { map_.usePieceHistory(block_edge); }
 
-  /** Install the config-driven semantic ontology prior for moveability. */
-  void setHighMobilitySemanticLabels(const std::vector<int>& labels);
-
-  bool sessionExtensionsEnabled() const { return session_extensions_enabled_; }
+  // A mapping session built on this backend (session_update's SessionBackend) takes the pipeline's
+  // shared evidence store and present surface; the plain backend has no session layer.
+  struct SessionInputs {
+    std::shared_ptr<PhysicalEvidenceStore> evidence;
+    std::shared_ptr<PresentSurface> present;
+    float object_surface_resolution = 0.05f;
+  };
+  virtual bool hasSessionLayer() const { return false; }
+  virtual void connectSession(const SessionInputs& /*inputs*/) {}
 
   // Accessors.
   const RPGOMerges& getProposedMerges() const { return proposed_merges_; }
@@ -210,23 +185,16 @@ class Backend : public hydra::BackendModule {
                          bool save_individual_dsgs);
 
  protected:
-  // Project adapters: implementation resides in session_core/src/adapters.
-  // The plain Khronos backend runs independently of unfinished project algorithms.
-  bool session_extensions_enabled_ = false;
-  // Online front (KHRONOS_ONLINE_FRONT=predicted): its identity merges reach the layer, the present and the round's
-  // graph (every object node by its merged id) before the round's change detection.
-  void sessionApplyIdentityMerges(const DynamicSceneGraph::Ptr& dsg);
-  void sessionBeforeReconcile(const DynamicSceneGraph::Ptr& dsg, Changes& changes,
-                              TimeStamp stamp, bool finalize_pending);
-  void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,
-                             bool finalize_pending);
-  void saveSessionState(const hydra::DataDirectory& log_setup);
-  // A state begun in this session is shown from its start (its first sighting), as the 3DGS map
-  // dates its rows: the round that makes it CURRENT notes it (sessionAfterReconcile) and, once that
-  // round's snapshot is stored, the snapshots stored since its start take its surface.
-  void sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp);
-  std::map<size_t, uint64_t> session_current_uid_;
-  std::vector<std::pair<size_t, TimeStamp>> session_new_states_;
+  // Extension points of a mapping session (session_update's SessionBackend), each called by the
+  // change-detection round at its place; the plain backend does nothing there.
+  virtual void beforeChangeDetection(const DynamicSceneGraph::Ptr& /*dsg*/) {}
+  virtual void beforeReconcile(const DynamicSceneGraph::Ptr& /*dsg*/, Changes& /*changes*/,
+                               TimeStamp /*stamp*/, bool /*finalize_pending*/) {}
+  virtual void afterReconcile(const DynamicSceneGraph::Ptr& /*dsg*/, TimeStamp /*stamp*/,
+                              bool /*finalize_pending*/) {}
+  virtual void afterSnapshotStored(const DynamicSceneGraph& /*dsg*/, TimeStamp /*stamp*/) {}
+  virtual void afterTerminalRound() {}
+  virtual void afterFinalMapSaved(const hydra::DataDirectory& /*log_setup*/) {}
 
   // The trajectories of the session's moves (MoveTrajectories), written to the snapshots of the
   // 4D map only: a snapshot as it is stored, the snapshots stored before a move was told as soon
@@ -248,45 +216,6 @@ class Backend : public hydra::BackendModule {
   SpatioTemporalMap map_;
   std::unique_ptr<SequentialChangeDetector> change_detector_;
   std::unique_ptr<Reconciler> reconciler_;
-  PhysicalEvidenceStore::Ptr physical_evidence_store_;
-  PresentSurface::Ptr present_surface_;
-  // The previous session's surfaces.
-  std::vector<Eigen::Vector3f> loaded_memory_;
-  std::vector<std::array<uint32_t, 3>> loaded_memory_faces_;
-  std::unique_ptr<hydra::PointNeighborSearch> loaded_memory_search_;
-  float memory_copy_tolerance_ = 0.f;
-  std::unique_ptr<PresentSurface::Surface> shown_memory_;
-  // The terminal round's report.
-  std::string refusion_report_;
-
-  // Persistent physical-object geometry registry, keyed by
-  // physical_instance_id. Track segments become observations of one
-  // accumulating physical object instead of each canonicalization round
-  // re-electing a geometry winner from scratch (see PersistentObjectState).
-  // Only ever touched by the single change-detection worker thread, inside
-  // map_mutex_ (see runChangeDetectionThread). A derived SessionBackend
-  // seeds this from the inherited prior-session state (D3 cross-session
-  // restore) before the pipeline starts.
-  PersistentObjectState persistent_objects_;
-  float object_surface_resolution_ = 0.05f;
-
-  /**
-   * @brief Test every CURRENT object fragment against the measurements gathered this round, and
-   * close the ones a real measurement passed through.
-   *
-   * This is the object half of the same visibility semantics the background mesh already gets:
-   * SUPPORT / FREE_SPACE / OCCLUDED / UNOBSERVED, evaluated per surface point. A fragment is
-   * contradicted only when nothing of it is still being seen and something of it was seen
-   * through, so support always dominates -- a partially occluded or partially re-observed object
-   * is never closed, and an object nobody looked at is never closed. Contradiction closes the
-   * fragment; it never edits a mesh, so the geometry survives in the history.
-   *
-   * Must run before Reconciler::reconcile: rays index the background mesh by vertex number and
-   * ChangeMerger::merge erases from it, which invalidates those indices for the rest of the round.
-   *
-   * @returns The number of fragments closed.
-   */
-  size_t verifyCurrentObjectStates(TimeStamp stamp);
 
   // One worker runs every requested change detection, in order, each on the
   // backend state of its request (cloned when requested): the 4D map gets a
