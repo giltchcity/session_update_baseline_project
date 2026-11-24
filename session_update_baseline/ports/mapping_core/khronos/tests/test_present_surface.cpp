@@ -381,6 +381,33 @@ void testOnlineSurface() {
   require(!shows(-.2f,1.08f),"a same-facing shown face within the truncation behind the present gives way");
   require(shows(0.f,1.08f),"an opposite-facing shown face behind the present stays");
   require(shows(.2f,1.2f),"a shown face beyond the truncation stays");
+
+  // A fill face no reading reached (every reading lands in front of it) fills only a place the
+  // present left empty: within one voxel behind the present's layer (where `covered` does not
+  // apply to fill), facing the same way, the layer holds that place and the face goes; facing the
+  // other way, or beyond the truncation of any present layer, it stays (11-25).
+  PresentSurface fill_wall(mapConfig(),integrationConfig(),meshConfig());
+  fill_wall.integrate(camera,frame(1000000000ULL,1.f));
+  auto fill_graph=graph();
+  auto addFill=[&](float x,float z,bool same_facing) {
+    auto& m=*fill_graph->mesh();
+    const uint32_t b=static_cast<uint32_t>(m.points.size());
+    m.points.insert(m.points.end(),{{x,0.f,z},{x+.04f,0.f,z},{x,.04f,z}});
+    if ((wall_normal.z()>0.f)==same_facing) m.faces.push_back({b,b+1,b+2});
+    else m.faces.push_back({b,b+2,b+1});
+  };
+  addFill(-.2f,1.04f,true);   // the present holds this place: goes
+  addFill(0.f,1.04f,false);   // facing the other way: stays
+  addFill(.2f,1.2f,true);     // beyond the truncation: stays
+  const auto fill_report=nlohmann::json::parse(fill_wall.compose(*fill_graph,1000000000ULL,{}, {},false).report_json);
+  auto fill_shows=[&](float x,float z) {
+    for (const auto& point:fill_graph->mesh()->points) if (point==Eigen::Vector3f(x,0.f,z)) return true;
+    return false;
+  };
+  require(fill_report["memory"]["fill"]["present_holds"]==1,"one undecided fill face lies on a place the present holds");
+  require(!fill_shows(-.2f,1.04f),"an undecided fill face within the truncation of a same-facing present layer goes");
+  require(fill_shows(0.f,1.04f),"the same undecided fill face facing the other way stays");
+  require(fill_shows(.2f,1.2f),"an undecided fill face beyond the truncation of any present layer stays");
 }
 
 // States changing over rounds -- appearing, their start moving later and earlier, disappearing,

@@ -1819,11 +1819,18 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     if (ev.support != ev.free) return ev.support > ev.free || (!element_ends && k < tested.size()) ? 1 : 0;
     return covered[k] ? 0 : -1;
   };
-  // A fill face without evidence either way stays shown, as a memory face (11-01: a wall the
-  // window kept, seen only edge-on, was hidden until later frames voted on it, TESSE apartment),
-  // unless a reading the valid domains exclude supports it: it is then the surface of a state that
-  // has ended (the old site of a moved object), whose readings the valid domains take away, and it
-  // goes with them. Read from every frame a state restricts, its excluded pixels only.
+  // A fill face without evidence either way fills a place the present left empty: it stays shown,
+  // as a memory face (11-01: a wall the window kept, seen only edge-on, which the present had not
+  // built, was hidden until later frames voted on it, TESSE apartment). Two such faces go:
+  // - one a reading the valid domains exclude supports: it is the surface of a state that has ended
+  //   (the old site of a moved object), whose readings the valid domains take away, and it goes with
+  //   them. Read from every frame a state restricts, its excluded pixels only.
+  // - one whose place the present holds: the present's nearest layer within the truncation faces
+  //   the same way, and the volume holds one surface there (the rule `covered` applies behind a
+  //   layer, where no reading can reach; a face no reading reached is that layer's on either side).
+  //   (11-25: the window's copy of an object's side, 2-7 cm past the object's present mesh and only
+  //   ever read from in front at grazing incidence, delayed a moved cabinet's old-site clearance by
+  //   11 s, Home B.)
   std::vector<uint32_t> undecided_fill;
   for (size_t k = tested.size(); k < tested_centroid.size(); ++k) {
     if (verdict(k) == -1) undecided_fill.push_back(static_cast<uint32_t>(k));
@@ -1870,16 +1877,36 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     }
     ended_decoded = decoded.load();
   }
-  size_t fill_ended = 0;
+  std::vector<uint8_t> present_holds(tested_centroid.size(), 0);
+  {
+    std::vector<uint32_t> ask;
+    for (const uint32_t k : undecided_fill) {
+      if (!ended_support[k]) ask.push_back(k);
+    }
+    if (!ask.empty() && !Fp.empty()) {
+      const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
+      parallelFor(ask.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+        for (size_t j = b; j < e; ++j) {
+          const uint32_t k = ask[j];
+          float d;
+          Eigen::Vector3f point;
+          uint32_t face;
+          present_holds[k] = present_grid.closest(tested_centroid[k], T, d, point, face) &&
+                             tested_normal[k].dot(face_normal[face]) > 0.f;
+        }
+      });
+    }
+  }
+  size_t fill_ended = 0, fill_present = 0;
   std::vector<uint8_t> fill_kept(fill.size(), 0);
   for (size_t k = 0; k < tested_centroid.size(); ++k) {
     const int v = verdict(k);
     const bool outvoted = tested_ev[k].free > tested_ev[k].support;
     if (k >= tested.size()) {
       const size_t j = k - tested.size();
-      fill_kept[j] = v == 1 || (v == -1 && !ended_support[k]);
+      fill_kept[j] = v == 1 || (v == -1 && !ended_support[k] && !present_holds[k]);
       if (v == 0) ++(outvoted ? fill_outvoted : fill_covered);
-      if (v == -1) ++(ended_support[k] ? fill_ended : fill_unreached);
+      if (v == -1) ++(ended_support[k] ? fill_ended : present_holds[k] ? fill_present : fill_unreached);
       continue;
     }
     if (v != 0) continue;
@@ -1911,6 +1938,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   report << ",\"fill\":{\"faces\":" << fill.size() << ",\"outvoted\":" << fill_outvoted
          << ",\"covered\":" << fill_covered << ",\"unreached\":" << fill_unreached
          << ",\"ended\":" << fill_ended << ",\"ended_frames_decoded\":" << ended_decoded
+         << ",\"present_holds\":" << fill_present
          << ",\"closed_state\":" << fill_closed
          << ",\"kept\":" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "}";
   report << "}";
@@ -2079,7 +2107,8 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " memory_faces_kept=" << memory_faces_kept << "/" << memory_faces_total
             << " outvoted=" << shown_outvoted << " covered=" << shown_covered
             << " fill_kept=" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "/"
-            << fill.size() << " fill_ended=" << fill_ended << " inside_retired=" << num_retired
+            << fill.size() << " fill_ended=" << fill_ended << " fill_present=" << fill_present
+            << " inside_retired=" << num_retired
             << " guarded_objects=" << guarded << " reused(identities/rivals)=" << identities_reused << "/"
             << rivals_reused << " read(new_elements/decoded_fresh/decoded_history/moved)="
             << new_elements.size() << "/" << fresh_decoded << "/" << history_decoded << "/" << num_moved
