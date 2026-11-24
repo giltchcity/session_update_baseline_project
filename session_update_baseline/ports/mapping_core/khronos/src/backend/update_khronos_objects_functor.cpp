@@ -1,5 +1,6 @@
 #include "session_core/adapters/physical_object_access.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
+#include "session_core/objects/physical_objects.h"
 
 #include <algorithm>
 #include <limits>
@@ -47,7 +48,7 @@ hydra::UpdateFunctor::Hooks UpdateKhronosObjectsFunctor::hooks() const {
   my_hooks.find_merges = [this](const auto& graph, const auto& info) {
     return findMerges(graph, info);
   };
-  my_hooks.merge = &UpdateKhronosObjectsFunctor::mergeObjectAttributes;
+  my_hooks.merge = &session::mergePhysicalAttributes;  // the session layer merges object nodes
 
   return my_hooks;
 }

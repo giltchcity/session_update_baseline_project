@@ -46,6 +46,7 @@
 #include "khronos/active_window/data/reconstruction_types.h"
 #include "khronos/utils/geometry_utils.h"
 #include "khronos/utils/khronos_attribute_utils.h"
+#include "session_core/objects/static_surface.h"
 
 namespace khronos {
 
@@ -121,7 +122,8 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& tra
   // motion bookkeeping on this extraction-only copy suppresses false D1
   // trajectories. Static reconstruction independently checks actual RGB-D
   // compatibility; rejecting D1 never authorizes mixing different poses.
-  const auto static_fallback = preparePhysicalTrack(track);
+  const auto static_fallback =
+      session::staticFallback(track, computeDynamicDisplacement(track), config.min_dynamic_displacement);
   const Track& extraction_track = static_fallback ? *static_fallback : track;
   if (track.physical_instance_id) {
     LOG(INFO) << "OBJECT_EXTRACTION_INPUT inst=" << *track.physical_instance_id
@@ -226,7 +228,7 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractDynamicObject(const Tra
     }
   }
   // A physical track below the displacement threshold never gets here: extractObject already
-  // reconstructs it as static (preparePhysicalTrack).
+  // reconstructs it as static (session::staticFallback).
   const float max_displacement = computeDynamicDisplacement(track);
   const auto& label_space = hydra::GlobalInfo::instance().getLabelSpaceConfig();
   const bool has_dynamic_semantics =
@@ -258,7 +260,9 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
                                 ? std::optional<TimeStamp>(track.last_motion_seen)
                                 : std::nullopt;
   TimeStamp rejected = 0;
-  const auto frames = selectStaticFrames(track, frame_data, after_motion, &rejected);
+  const auto frames = session::latestStaticSurface(
+      collectSemanticFrames(track, frame_data, after_motion), track,
+      {config.static_consistency_tolerance, config.static_consistency_min_pixels}, &rejected);
   // The boundary is the end of a move of the object: its trajectory is written to the object's
   // node in the 4D map once the time after the end has passed (an output; nothing reads it).
   if (rejected != 0 && track.physical_instance_id) {

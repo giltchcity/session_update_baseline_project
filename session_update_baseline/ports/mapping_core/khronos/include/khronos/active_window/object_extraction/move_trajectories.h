@@ -22,7 +22,7 @@ namespace khronos {
  * @brief The trajectory of a physical object's move, written to the object's node of the map.
  *
  * A move ends where the hand-over finds the boundary of the object's current static surface
- * (selectStaticFrames, STATIC_SURFACE_BOUNDARY: the last frame rejected as not that surface). Its
+ * (session::latestStaticSurface, STATIC_SURFACE_BOUNDARY: the last frame rejected as not that surface). Its
  * positions are the tracker's per-frame centre of the object (Track::last_centroid, the quantity
  * the live observer records). The move starts at the last frame before the end whose smoothed
  * centre (running median) is still farther from the settled position than a fraction of the

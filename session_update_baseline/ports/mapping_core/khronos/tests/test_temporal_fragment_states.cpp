@@ -35,6 +35,7 @@
 #include "session_core/state/persistent_object_state.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
+#include <session_core/objects/physical_objects.h>
 
 namespace {
 
@@ -90,7 +91,7 @@ KhronosObjectAttributes::Ptr makeSegment(TimeStamp first,
 
 // Feed one already-inserted segment through the registry exactly as canonicalization would.
 void feed(PersistentObjectState& registry, DynamicSceneGraph& graph, NodeId node_id) {
-  auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(graph, {node_id});
+  auto merged = khronos::session::mergePhysicalAttributes(graph, {node_id});
   auto* khronos_attrs = dynamic_cast<KhronosObjectAttributes*>(merged.get());
   require(khronos_attrs != nullptr, "merge result is a Khronos object");
   registry.applyPhysicalGeometry(graph, {node_id}, *khronos_attrs);

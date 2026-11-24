@@ -1,5 +1,6 @@
 #include "session_core/adapters/physical_object_access.h"
-#include "khronos/backend/update_khronos_objects_functor.h"
+#include "session_core/objects/physical_objects.h"
+#include "session_core/state/persistent_object_state.h"
 
 #include <algorithm>
 #include <limits>
@@ -25,12 +26,12 @@
 namespace khronos {
 using session_detail::getPhysicalInstanceId;
 using session_detail::firstObservation;
-std::optional<size_t> UpdateKhronosObjectsFunctor::physicalInstanceId(
+std::optional<size_t> session::physicalInstanceId(
     const KhronosObjectAttributes& attrs) {
   return getPhysicalInstanceId(attrs);
 }
 
-spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+spark_dsg::NodeAttributes::Ptr session::mergePhysicalAttributes(
     const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes) {
   if (nodes.empty()) {
     return nullptr;
@@ -105,7 +106,7 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   //    less support the established holder keeps its mesh/bbox/position and
   //    the new segment only extends presence and trajectory history.
   // Compatibility layer (P54, kept pending, user 2026-10-05): this registry-free geometry choice
-  // runs in production (canonicalizePhysicalObjects -> mergeObjectAttributes, 3234 times on
+  // runs in production (canonicalizePhysicalObjects -> mergePhysicalAttributes, 3234 times on
   // synthetic A+B), but with a registry applyPhysicalGeometry then replaces mesh, box and
   // position by the CURRENT state (or no surface without one), so its choice never reaches
   // the output; only registry-free callers (offline tools, fixtures) keep it.
@@ -254,7 +255,7 @@ spark_dsg::NodeAttributes::Ptr UpdateKhronosObjectsFunctor::mergeObjectAttribute
   return result;
 }
 
-size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+size_t session::canonicalizePhysicalObjects(
     DynamicSceneGraph& graph, PersistentObjectState* registry) {
   if (!graph.hasLayer(DsgLayers::OBJECTS)) {
     return 0;
@@ -262,7 +263,7 @@ size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
 
   // A null registry reproduces the previous fresh/single-round reduction for
   // existing call sites that never threaded a persistent registry through:
-  // `mergeObjectAttributes`' winner-takes-all geometry stays authoritative and
+  // `mergePhysicalAttributes`' winner-takes-all geometry stays authoritative and
   // this local instance never survives past this one call. The persistent
   // fragment materialization (applyPhysicalGeometry) only runs when a real
   // registry owns the physical-ID history across rounds.
@@ -318,7 +319,7 @@ size_t UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
     });
 
     const auto target = nodes.front();
-    auto merged_attrs = mergeObjectAttributes(graph, nodes);
+    auto merged_attrs = session::mergePhysicalAttributes(graph, nodes);
     if (registry && dynamic_cast<KhronosObjectAttributes*>(merged_attrs.get())) {
       effective_registry.applyPhysicalGeometry(graph, nodes,
           *static_cast<KhronosObjectAttributes*>(merged_attrs.get()));

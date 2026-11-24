@@ -38,6 +38,7 @@
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/utils/khronos_attribute_utils.h>
 #include <session_update_baseline/runtime/session_state.h>
+#include <session_core/objects/physical_objects.h>
 
 using namespace khronos;
 
@@ -138,7 +139,7 @@ bool loadSurface(const std::string& path, PresentSurface::Surface& out) {
       const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
       if (!attrs || !hasCurrentObjectMesh(*attrs)) continue;
       add(attrs->mesh, attrs,
-          static_cast<uint32_t>(UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0)));
+          static_cast<uint32_t>(session::physicalInstanceId(*attrs).value_or(0)));
     }
   }
   return true;
@@ -280,7 +281,7 @@ int exportMode(int argc, char** argv) {
       if (!attrs || !hasCurrentObjectMesh(*attrs)) continue;
       ++k;
       add(attrs->mesh, attrs,
-          static_cast<int32_t>(UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0)), k);
+          static_cast<int32_t>(session::physicalInstanceId(*attrs).value_or(0)), k);
     }
   }
   std::ofstream out(argv[3], std::ios::binary);

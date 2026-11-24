@@ -56,6 +56,7 @@
 
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
+#include "session_core/objects/physical_objects.h"
 
 namespace khronos {
 
@@ -961,7 +962,7 @@ void PersistentObjectState::ingestObservation(PhysicalState& state,
 void PersistentObjectState::applyPhysicalGeometry(const DynamicSceneGraph& graph,
                                                   const std::vector<NodeId>& nodes,
                                                   KhronosObjectAttributes& merged) {
-  const auto instance_id = UpdateKhronosObjectsFunctor::physicalInstanceId(merged);
+  const auto instance_id = session::physicalInstanceId(merged);
   if (!instance_id) {
     return;
   }
@@ -1452,7 +1453,7 @@ void PersistentObjectState::initializeFromObjects(const DynamicSceneGraph& dsg) 
     if (!attrs) {
       continue;
     }
-    const auto instance_id = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs);
+    const auto instance_id = session::physicalInstanceId(*attrs);
     if (!instance_id) {
       continue;
     }

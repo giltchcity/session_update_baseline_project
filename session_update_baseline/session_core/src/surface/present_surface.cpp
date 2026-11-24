@@ -22,6 +22,7 @@
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 #include "session_core/surface/triangle_grid.h"
+#include "session_core/objects/physical_objects.h"
 
 namespace khronos {
 
@@ -1113,7 +1114,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       slot.node = id;
       slot.mesh = &attrs->mesh;
       slot.attrs = attrs;
-      slot.physical = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0);
+      slot.physical = session::physicalInstanceId(*attrs).value_or(0);
       addSlot(slot);
     }
   }

@@ -175,13 +175,6 @@ class MeshObjectExtractor : public ObjectExtractor {
       const FrameDataBuffer& frame_data,
       std::optional<TimeStamp> after_stamp = std::nullopt);
 
-  // Retain the latest geometrically compatible observation segment. This
-  // method does not assign D1 labels or alter physical identity/history.
-  std::vector<std::pair<FrameData::Ptr, int>> selectStaticFrames(
-      const Track& track, const FrameDataBuffer& frame_data,
-      std::optional<TimeStamp> after_stamp = std::nullopt,
-      TimeStamp* rejected = nullptr) const;
-
   /**
    * @brief Compute tje maximal spatial extent covered by all frames.
    * @param frames  A list of frames and the corresponding semantic cluster ID to get the extent
@@ -196,9 +189,6 @@ class MeshObjectExtractor : public ObjectExtractor {
                                   const hydra::SemanticVoxel& confidence_voxel) const;
 
  private:
-  // Project physical-track policy: session_core/src/adapters/static_surface_selection.cpp.
-  std::optional<Track> preparePhysicalTrack(const Track& track) const;
-
   hydra::MeshIntegrator mesh_integrator_;
 
   inline static const auto registration_ =

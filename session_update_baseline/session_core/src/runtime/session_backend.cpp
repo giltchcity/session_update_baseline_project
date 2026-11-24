@@ -13,6 +13,7 @@
 #include "session_update_baseline/runtime/session_state.h"
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/utils/khronos_attribute_utils.h>
+#include "session_core/objects/physical_objects.h"
 
 namespace session_update::runtime {
 
@@ -177,7 +178,7 @@ void SessionBackend::loadInputState(const std::string& state_path) {
           if (!attrs || !khronos::hasCurrentObjectMesh(*attrs)) continue;
           add(attrs->mesh, attrs,
               static_cast<uint32_t>(
-                  khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs).value_or(0)));
+                  khronos::session::physicalInstanceId(*attrs).value_or(0)));
         }
       }
       LOG(INFO) << "[SessionRefusion] memory as the previous final map showed it: "

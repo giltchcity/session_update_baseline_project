@@ -1,41 +1,6 @@
-/** -----------------------------------------------------------------------------
- * Copyright (c) 2024 Massachusetts Institute of Technology.
- * All Rights Reserved.
- *
- * AUTHORS:      Lukas Schmid <lschmid@mit.edu>, Marcus Abate <mabate@mit.edu>,
- *               Yun Chang <yunchang@mit.edu>, Luca Carlone <lcarlone@mit.edu>
- * AFFILIATION:  MIT SPARK Lab, Massachusetts Institute of Technology
- * YEAR:         2024
- * SOURCE:       https://github.com/MIT-SPARK/Khronos
- * LICENSE:      BSD 3-Clause
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * -------------------------------------------------------------------------- */
+// The latest static surface of a physical track (session layer): see session_core/objects/static_surface.h.
+#include "session_core/objects/static_surface.h"
 
-#include "khronos/active_window/object_extraction/mesh_object_extractor.h"
 #include <algorithm>
 #include <cmath>
 #include <mutex>
@@ -189,10 +154,11 @@ SurfaceCompatibility compareSurfaceFrames(
 
 }  // namespace
 
-std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
-    const Track& track, const FrameDataBuffer& frame_data,
-    std::optional<TimeStamp> after_stamp, TimeStamp* rejected) const {
-  auto frames = collectSemanticFrames(track, frame_data, after_stamp);
+namespace session {
+
+std::vector<std::pair<FrameData::Ptr, int>> latestStaticSurface(
+    std::vector<std::pair<FrameData::Ptr, int>> frames, const Track& track,
+    const StaticSurfaceConsistency& consistency, TimeStamp* rejected) {
   if (!track.physical_instance_id || frames.size() < 2) return frames;
   std::stable_sort(frames.begin(), frames.end(), [](const auto& a, const auto& b) {
     return a.first->input.timestamp_ns < b.first->input.timestamp_ns;
@@ -204,9 +170,9 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
   // small steps must not accumulate into a large undetected displacement.
   for (size_t offset = frames.size() - 1; offset > 0; --offset) {
     const auto forward = compareSurfaceFrames(frames[offset - 1], frames.back(),
-                                              config.static_consistency_tolerance);
+                                              consistency.tolerance);
     const auto reverse = compareSurfaceFrames(frames.back(), frames[offset - 1],
-                                              config.static_consistency_tolerance);
+                                              consistency.tolerance);
     // A pair of frames may split a track only if the later frame actually judged
     // a real share of the earlier surface: a sliver at the image border or in a
     // depth hole says nothing about the object as a whole (same coverage rule as
@@ -224,7 +190,7 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
     // static_consistency_min_pixels of the earlier surface were measured free.
     const auto conflicts = [&](const SurfaceCompatibility& value) {
       if (!admitted(value) ||
-          value.free < static_cast<size_t>(config.static_consistency_min_pixels)) return false;
+          value.free < static_cast<size_t>(consistency.min_pixels)) return false;
       std::lock_guard<std::mutex> lock(mixture.mutex);
       return shareSpeaksForMove(mixture, share(value));
     };
@@ -268,11 +234,12 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
 }
 
 
-std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(const Track& track) const {
+std::optional<Track> staticFallback(const Track& track, const float displacement,
+                                    const float min_displacement) {
   std::optional<Track> static_fallback;
   if (track.physical_instance_id &&
       (track.is_dynamic || track.has_dynamic_history) &&
-      computeDynamicDisplacement(track) < config.min_dynamic_displacement) {
+      displacement < min_displacement) {
     static_fallback = track;
     static_fallback->is_dynamic = false;
     static_fallback->has_dynamic_history = false;
@@ -280,4 +247,6 @@ std::optional<Track> MeshObjectExtractor::preparePhysicalTrack(const Track& trac
   }
   return static_fallback;
 }
+
+}  // namespace session
 }  // namespace khronos

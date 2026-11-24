@@ -24,6 +24,7 @@
 #include <spark_dsg/node_symbol.h>
 
 #include "session_update_baseline/runtime/session_state.h"
+#include <session_core/objects/physical_objects.h>
 
 namespace {
 
@@ -112,7 +113,7 @@ const ObjectAttrs* findPhysicalObject(const Dsg& graph, size_t physical_id) {
        graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
     (void)unused_id;
     const auto& attrs = node->attributes<ObjectAttrs>();
-    if (khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs) !=
+    if (khronos::session::physicalInstanceId(attrs) !=
         std::optional<size_t>(physical_id)) {
       continue;
     }
@@ -239,7 +240,7 @@ void testMovedPhysicalObjectReplacesCurrentState(
                                  spark_dsg::NodeSymbol('O', 110),
                                  makeObject(10, 75, 2.0F, 0.90F, 1'900, 1'990)),
           "insert moved I10 observation");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+  require(khronos::session::canonicalizePhysicalObjects(
               *b_working, &registry) == 1,
           "moved I10 was not canonicalized to one physical node");
   // Frozen contract: without absence evidence the inherited old site stays
@@ -258,7 +259,7 @@ void testMovedPhysicalObjectReplacesCurrentState(
   require(registry.resolveCurrentEvidence(10, inherited_evidence,
                                           session_evidence, kBStamp),
           "contradicted old I10 site did not hand off to the B-session state");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+  require(khronos::session::canonicalizePhysicalObjects(
               *b_working, &registry) == 0,
           "handoff re-canonicalization is a singleton materialization");
   // A relocation hands CURRENT geometry to the newest valid observation: pose x=2.0 AND
@@ -338,7 +339,7 @@ void testSequentialPhysicalIntervalReduction(
                             std::move(newest)),
           "insert newest I40 segment");
 
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+  require(khronos::session::canonicalizePhysicalObjects(
               graph) == 2,
           "three I40 segments were not canonicalized");
   const auto* attrs = findPhysicalObject(graph, 40);
@@ -408,7 +409,7 @@ void testSameStampAuthorityIsOrderIndependent() {
 
   const auto check = [&graph](const std::vector<khronos::NodeId>& order) {
     const auto result =
-        khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(graph, order);
+        khronos::session::mergePhysicalAttributes(graph, order);
     const auto* attrs = dynamic_cast<const ObjectAttrs*>(result.get());
     require(attrs != nullptr &&
                 std::abs(attrs->bounding_box.world_P_center.x() - 5.0F) < 1.0e-6F &&
@@ -445,7 +446,7 @@ void testTrajectoryOnlySegmentPreservesCanonicalMesh() {
   // established static surface" guarantee is a fragment-materialization
   // behavior, so thread a real registry through canonicalization.
   khronos::PersistentObjectState registry;
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+  require(khronos::session::canonicalizePhysicalObjects(
               graph, &registry) == 1,
           "trajectory-only I43 segments were not canonicalized");
   const auto* attrs = findPhysicalObject(graph, 43);

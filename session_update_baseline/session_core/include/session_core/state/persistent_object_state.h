@@ -56,7 +56,7 @@ namespace khronos {
  *
  * Khronos' short-term tracker produces a new DSG node every time a physical
  * object's visibility segment is broken (tracking-window timeout, session
- * boundary). `UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects`
+ * boundary). `session::canonicalizePhysicalObjects`
  * already reduces every segment carrying the same `instance_id` to one
  * current DSG node per canonicalization round using `mergeObjectAttributes()`
  * for presence/trajectory. That function alone, however, treats each round's
@@ -218,7 +218,7 @@ class PersistentObjectState {
    * from `nodes` (read from `graph`).
    *
    * `merged` must already carry a valid `instance_id` detail (i.e. it is the
-   * output of `UpdateKhronosObjectsFunctor::mergeObjectAttributes` for the
+   * output of `session::mergePhysicalAttributes` for the
    * same `nodes`); this is a no-op if it does not. An ID without any fragment
    * yet keeps the merge result. An ID whose last CURRENT was contradicted with
    * no candidate promoted is absent: its node keeps no surface and its presence

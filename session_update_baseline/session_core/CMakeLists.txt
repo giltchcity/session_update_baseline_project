@@ -2,8 +2,8 @@
 # Member adapters preserve the existing ABI; objects enter the final mapper once.
 add_library(session_core OBJECT
   src/adapters/physical_ray_queries.cpp
-  src/adapters/physical_object_merge.cpp
-  src/adapters/static_surface_selection.cpp
+  src/objects/physical_objects.cpp
+  src/objects/static_surface.cpp
   src/adapters/backend_session.cpp
   src/state/persistent_object_state.cpp
   src/surface/closed_object_background.cpp

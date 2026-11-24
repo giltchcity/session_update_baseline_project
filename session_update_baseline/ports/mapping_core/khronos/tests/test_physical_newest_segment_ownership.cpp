@@ -50,6 +50,7 @@
 #include "session_core/state/persistent_object_state.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/khronos_attribute_utils.h"
+#include <session_core/objects/physical_objects.h>
 
 namespace {
 
@@ -126,7 +127,7 @@ const KhronosObjectAttributes* runMerge(DynamicSceneGraph& dsg,
                                         const std::string& scenario,
                                         khronos::PersistentObjectState* registry = nullptr) {
   const size_t merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(dsg, registry);
+      khronos::session::canonicalizePhysicalObjects(dsg, registry);
   require(merged == num_segments - 1,
           scenario + ": all same-instance segments are merged into one");
   return &dsg.getNode(objectId(1)).attributes<KhronosObjectAttributes>();
@@ -237,7 +238,7 @@ int main() {
     khronos::PersistentObjectState registry;
     {
       auto establish =
-          khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(*dsg, {objectId(1)});
+          khronos::session::mergePhysicalAttributes(*dsg, {objectId(1)});
       auto* establish_attrs = dynamic_cast<KhronosObjectAttributes*>(establish.get());
       require(establish_attrs != nullptr, "S3: old segment merges to Khronos attributes");
       registry.applyPhysicalGeometry(*dsg, {objectId(1)}, *establish_attrs);

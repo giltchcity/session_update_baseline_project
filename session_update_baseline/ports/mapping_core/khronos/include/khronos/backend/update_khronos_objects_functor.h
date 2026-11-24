@@ -39,32 +39,6 @@ struct UpdateKhronosObjectsFunctor : public hydra::UpdateFunctor {
 
   MergeList findMerges(const DynamicSceneGraph& graph, const UpdateInfo::ConstPtr& info) const;
 
-  static std::optional<size_t> physicalInstanceId(const KhronosObjectAttributes& attrs);
-  static spark_dsg::NodeAttributes::Ptr mergeObjectAttributes(
-      const DynamicSceneGraph& graph, const std::vector<NodeId>& nodes);
-
-  /**
-   * @brief Consolidate duplicate segments carrying one physical instance ID.
-   *
-   * Change detection operates on an unmerged snapshot, whereas ordinary DSG
-   * update merges are materialized only in the private graph. This explicit
-   * canonicalization therefore runs on the snapshot that is reconciled and
-   * saved, guaranteeing one current node per physical object in both D2 and D3.
-   *
-   * @param registry Backend-domain persistent physical-object registry. When
-   * non-null, the merged geometry-authoritative fields (mesh, bounding box,
-   * position, geometry-support details) for each physical ID are taken from
-   * that ID's persistent canonical geometry rather than solely from the
-   * segments visible in this one call: track segments become observations
-   * of one accumulating physical object rather than each canonicalization
-   * round re-electing a winner from scratch. When null, a temporary
-   * registry local to this call is used, which reproduces the previous
-   * fresh/single-round reduction (existing single-argument call sites keep
-   * their prior behavior unchanged).
-   */
-  static size_t canonicalizePhysicalObjects(DynamicSceneGraph& graph,
-                                            PersistentObjectState* registry = nullptr);
-
   const hydra::MergeProposer merge_proposer;
   const hydra::DeformationInterpolator deformation_interpolator;
 

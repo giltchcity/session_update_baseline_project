@@ -5,6 +5,7 @@
 #include <hydra/input/sensor_extrinsics.h>
 #include <khronos/active_window/object_extraction/mesh_object_extractor.h>
 #include <khronos/utils/geometry_utils.h>
+#include <session_core/objects/static_surface.h>
 using namespace khronos;
 namespace {
 void require(bool value, const char* message) {
@@ -47,9 +48,9 @@ std::vector<std::pair<FrameData::Ptr,int>> select(const std::vector<FrameData::P
   FrameDataBuffer buffer(bc); Track track{}; track.physical_instance_id=7;
   // No dynamic flag: the detector may have missed motion, or D1 rejected it.
   for(const auto& f:fs) {buffer.storeData(f); track.observations.emplace_back(f->input.timestamp_ns,7,-1);}
-  MeshObjectExtractor::Config config; config.mesh_integrator.integrator_threads=1;
-  MeshObjectExtractor extractor(config);
-  return extractor.selectStaticFrames(track,buffer);
+  MeshObjectExtractor::Config config;
+  return session::latestStaticSurface(MeshObjectExtractor::collectSemanticFrames(track,buffer),track,
+                                      {config.static_consistency_tolerance,config.static_consistency_min_pixels});
 }
 }
 int main() {

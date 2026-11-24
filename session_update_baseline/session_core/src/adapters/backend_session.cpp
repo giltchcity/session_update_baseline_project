@@ -50,6 +50,7 @@
 #include <limits>
 #include <malloc.h>
 #include <glog/logging.h>
+#include "session_core/objects/physical_objects.h"
 namespace khronos {
 namespace {
 // Return memory freed at session end (stored evidence) to the system: glibc
@@ -273,7 +274,7 @@ void Backend::sessionAfterReconcile(
   // makes the old-site ray result incorrectly close the new current segment.
   // Reduce to one logical node per physical ID only after every segment has
   // been detected and reconciled.
-  UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
+  session::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
   if (finalize_pending) {
     // Canonicalization above ingests the last extractor segments. They did
     // not exist in the registry during the preceding state decision. Drain
@@ -296,7 +297,7 @@ void Backend::sessionAfterReconcile(
         reconciler_->reconcile(*dsg, terminal_changes, stamp);
       }
     }
-    UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
+    session::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
     LOG(INFO) << "TERMINAL_STATE_DRAIN stamp=" << stamp << " closed=" << terminal_closed;
   }
   if (!present_surface_) return;
@@ -385,7 +386,7 @@ void Backend::sessionAfterReconcile(
     for (const auto& [node_id, node] : dsg->getLayer(DsgLayers::OBJECTS).nodes()) {
       auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
       if (!attrs) continue;
-      if (const auto physical = UpdateKhronosObjectsFunctor::physicalInstanceId(*attrs)) {
+      if (const auto physical = session::physicalInstanceId(*attrs)) {
         persistent_objects_.appendClosedGeometry(*physical, *attrs);
       }
     }

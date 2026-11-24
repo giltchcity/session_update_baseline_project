@@ -25,6 +25,7 @@
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/utils/geometry_utils.h"
 #include "khronos/utils/khronos_attribute_utils.h"
+#include <session_core/objects/physical_objects.h>
 
 namespace {
 
@@ -715,7 +716,7 @@ void testPhysicalIdentityMergeKeepsNewestCurrentState() {
                             makePhysicalObject(10, 300, 400, 2.0f, 9.0f, 350)),
           "insert new I10 segment");
 
-  auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+  auto merged = khronos::session::mergePhysicalAttributes(
       graph, {old_id, new_id});
   const auto* attrs =
       dynamic_cast<const khronos::KhronosObjectAttributes*>(merged.get());
@@ -744,7 +745,7 @@ void testPhysicalIdentityMergeKeepsNewestCurrentState() {
                             other_id,
                             makePhysicalObject(7, 300, 400, 2.0f, 7.0f, 350)),
           "insert I7 monitor");
-  auto not_physical = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+  auto not_physical = khronos::session::mergePhysicalAttributes(
       graph, {new_id, other_id});
   const auto* unmerged =
       dynamic_cast<const khronos::KhronosObjectAttributes*>(not_physical.get());
@@ -757,14 +758,14 @@ void testPhysicalIdentityMergeKeepsNewestCurrentState() {
   // decided. Supply that measurement, as a session that revisits the old site would.
   khronos::PersistentObjectState registry;
   {
-    auto establish = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(graph, {old_id});
+    auto establish = khronos::session::mergePhysicalAttributes(graph, {old_id});
     auto* establish_attrs = dynamic_cast<khronos::KhronosObjectAttributes*>(establish.get());
     require(establish_attrs != nullptr, "old I10 segment merges to Khronos attributes");
     registry.applyPhysicalGeometry(graph, {old_id}, *establish_attrs);
   }
   require(registry.reportCurrentContradicted(10, 250),
           "the old I10 site is later seen through, closing that state");
-  require(khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph, &registry) == 1,
+  require(khronos::session::canonicalizePhysicalObjects(graph, &registry) == 1,
           "two I10 temporal segments collapse into one logical graph node");
   std::size_t i10_count = 0;
   const khronos::KhronosObjectAttributes* canonical_i10 = nullptr;

@@ -40,6 +40,7 @@
 #include <spark_dsg/node_symbol.h>
 
 #include "session_update_baseline/runtime/session_state.h"
+#include <session_core/objects/physical_objects.h>
 
 namespace {
 
@@ -460,7 +461,7 @@ khronos::ObjectChanges updateHidden(
     khronos::Reconciler(makeReconcilerConfig()).reconcile(
         graph, changes, stamp);
     const auto merged =
-        khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(graph);
+        khronos::session::canonicalizePhysicalObjects(graph);
     require(merged == 1,
             "physical visibility segments were not reduced after reconciliation");
     return result;
@@ -472,7 +473,7 @@ khronos::ObjectChanges updateHidden(
   khronos::Reconciler(makeReconcilerConfig()).reconcile(
       graph, changes, stamp);
   const auto merged =
-      khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+      khronos::session::canonicalizePhysicalObjects(
           graph, registry);
   require(merged == 1,
           "physical visibility segments were not reduced after reconciliation");
@@ -496,7 +497,7 @@ khronos::ObjectChanges updateHidden(
     (void)node;
     auto& attrs = graph.getNode(node_id).attributes<ObjectAttrs>();
     const auto physical_id =
-        khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs);
+        khronos::session::physicalInstanceId(attrs);
     if (!physical_id || registry->currentFragment(*physical_id) ||
         attrs.last_observed_ns.empty() ||
         attrs.last_observed_ns.back() != std::numeric_limits<Stamp>::max()) {
@@ -505,7 +506,7 @@ khronos::ObjectChanges updateHidden(
     attrs.last_observed_ns.back() = stamp;
   }
 
-  khronos::UpdateKhronosObjectsFunctor::canonicalizePhysicalObjects(
+  khronos::session::canonicalizePhysicalObjects(
       graph, registry);
   return result;
 }
@@ -545,7 +546,7 @@ CurrentSummary summarizeCurrent(const Dsg& graph) {
     (void)node_id;
     const auto& attrs = node->attributes<ObjectAttrs>();
     const auto physical_id =
-        khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs);
+        khronos::session::physicalInstanceId(attrs);
     require(physical_id.has_value(), "current object lacks physical identity");
     require(!result.objects.count(*physical_id),
             "latest state has duplicate physical instance IDs");
@@ -606,7 +607,7 @@ const ObjectAttrs* findPhysicalObject(const Dsg& graph, size_t physical_id) {
        graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
     (void)unused_id;
     const auto& attrs = node->attributes<ObjectAttrs>();
-    if (khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs) !=
+    if (khronos::session::physicalInstanceId(attrs) !=
         std::optional<size_t>(physical_id)) {
       continue;
     }
@@ -628,7 +629,7 @@ const khronos::ObjectChange* findPhysicalChange(
   for (const auto& [node_id, node] :
        graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
     const auto& attrs = node->attributes<ObjectAttrs>();
-    if (khronos::UpdateKhronosObjectsFunctor::physicalInstanceId(attrs) !=
+    if (khronos::session::physicalInstanceId(attrs) !=
         std::optional<size_t>(physical_id)) {
       continue;
     }
@@ -800,7 +801,7 @@ void testSessionCandidateAbsorption() {
       auto observation = makeObject(instance, x, static_cast<float>(index), stamp);
       observation->semantic_label = semantic;
       graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node, std::move(observation));
-      auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+      auto merged = khronos::session::mergePhysicalAttributes(
           *graph, {node});
       auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
       require(attrs != nullptr, "candidate fixture merge attributes");
@@ -858,7 +859,7 @@ void testSupportedSessionOverlap() {
     const khronos::NodeId node = spark_dsg::NodeSymbol('O', index);
     graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node,
         makeMultiVertexObject(instance, static_cast<float>(index), stamp, points));
-    auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(*graph, {node});
+    auto merged = khronos::session::mergePhysicalAttributes(*graph, {node});
     auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
     require(attrs != nullptr, "supported overlap fixture attributes");
     registry.applyPhysicalGeometry(*graph, {node}, *attrs);
@@ -898,7 +899,7 @@ void testTopCandidateAbsorption() {
       auto observation = makeObject(instance, x, static_cast<float>(index), stamp);
       observation->semantic_label = semantic;
       graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS, node, std::move(observation));
-      auto merged = khronos::UpdateKhronosObjectsFunctor::mergeObjectAttributes(
+      auto merged = khronos::session::mergePhysicalAttributes(
           *graph, {node});
       auto* attrs = dynamic_cast<ObjectAttrs*>(merged.get());
       require(attrs != nullptr, "candidate fixture merge attributes");
