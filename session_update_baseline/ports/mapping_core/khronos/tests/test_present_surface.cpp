@@ -268,7 +268,9 @@ void testOnlineSurface() {
           next->mesh()->numVertices()>q->mesh()->numVertices(),"next snapshot consumes its new observation");
 
   // Retraction changes the accumulated volume itself, including already
-  // published geometry; a newer observation at another place stays intact.
+  // published geometry; a newer observation at another place stays intact. An
+  // archived face the old state's readings support goes with them; one no
+  // reading falls on stays shown (no evidence either way, as a memory face).
   PresentSurface moving(mapConfig(),integrationConfig(),meshConfig());
   moving.integrate(camera,frame(1000000000ULL,1.f));
   auto old_site=graph();
@@ -277,14 +279,24 @@ void testOnlineSurface() {
   auto moved_frame=frame(2000000000ULL,2.f);
   moved_frame.world_T_sensor.translation().x()=10.;
   moving.integrate(camera,std::move(moved_frame));
+  {
+    auto& mesh=*old_site->mesh();
+    const uint32_t b=static_cast<uint32_t>(mesh.points.size());
+    mesh.points.insert(mesh.points.end(),{{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f}});
+    mesh.faces.push_back({b,b+1,b+2});
+  }
   moving.compose(*old_site,2000000000ULL,{{7,2000000000ULL}}, {},false);
   require(!old_site->mesh()->faces.empty(),"new state remains after old contributions are removed");
+  bool unread_kept=false;
   for (const auto& point:old_site->mesh()->points) {
     require(point.x()>5.f,"no old-state surface survives publication");
+    unread_kept|=point.x()>=20.f;
   }
+  require(unread_kept,"an archived face no reading falls on stays shown while a state restricts frames");
 
-  // Fill: an archived window face stays where a counted frame measured it (the
-  // one valid pixel, (1,1) at 1 m), and only there.
+  // Fill: an archived window face a counted frame measured (the one valid pixel,
+  // (1,1) at 1 m) is filled in; one no frame measured stays as shown, as a
+  // memory face (11-01).
   PresentSurface sparse(mapConfig(),integrationConfig(),meshConfig());
   sparse.integrate(camera,frame(1000000000ULL,1.f,true));
   auto observed=graph();
@@ -293,12 +305,13 @@ void testOnlineSurface() {
                             measured,{-.615f,-.465f,1.f},{-.62f,-.455f,1.f}};
   observed->mesh()->faces={{0,1,2},{3,4,5}};
   sparse.compose(*observed,1000000000ULL,{}, {},false);
-  bool filled=false;
+  bool filled=false,unmeasured_kept=false;
   for (const auto& point:observed->mesh()->points) {
-    require(point.x()<10.f,"an archived face no frame measured is not filled in");
+    unmeasured_kept|=point.x()>=20.f;
     filled|=point==measured;
   }
   require(filled,"an archived face a counted frame measured is filled in");
+  require(unmeasured_kept,"an archived face no frame measured stays shown, as a memory face");
 
   // One volume holds one surface per place: a shown face behind the present's
   // layer within the truncation, facing the same way, with no direct majority
