@@ -87,6 +87,7 @@ add_executable(session_khronos_node
   app/session_khronos_node.cpp
   session_core/src/runtime/fastdds_ack_contract.cpp
   session_core/src/runtime/session_backend.cpp
+  session_core/src/runtime/session_loop.cpp
   session_core/src/runtime/session_rounds.cpp
 )
 

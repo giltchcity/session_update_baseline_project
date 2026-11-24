@@ -1,7 +1,7 @@
 #include <array>
 #include <filesystem>
 #include <fstream>
-#include "khronos/backend/change_detection/ray_verificator.h"
+#include <chrono>
 #include <algorithm>
 #include "session_update_baseline/runtime/session_backend.h"
 
@@ -21,39 +21,62 @@ namespace session_update::runtime {
 void declare_config(SessionBackend::Config& config) {
   using namespace config;
   name("SessionBackend");
-  base<khronos::Backend::Config>(config);
+  base<hydra::BackendModule::Config>(config);
+  field(config.verbosity, "verbosity");
+  {
+    NameSpace rounds("change_detection");
+    field(config.run_change_detection_every_n_frames, "run_every_n_frames");
+    {
+      NameSpace evidence("ray_verificator");
+      field(config.evidence.depth_tolerance, "depth_tolerance", "m");
+      field(config.evidence.min_absent_surface_fraction, "min_absent_surface_fraction");
+      field(config.evidence.surface_match_tolerance, "surface_match_tolerance", "m");
+      field(config.evidence.max_absence_incidence_deg, "max_absence_incidence_deg", "deg");
+      field(config.evidence.min_judged_samples, "min_judged_samples");
+      field(config.evidence.real_sensor_noise, "real_sensor_noise");
+    }
+  }
+  field(config.piece_history, "piece_history");
+  field(config.spatio_temporal_map, "spatio_temporal_map");
   field(config.input_state, "input_state");
   field(config.high_mobility_semantic_labels, "high_mobility_semantic_labels");
 }
 
-namespace {
-// The session decides every background element itself: a closed state's old-site surface goes
-// with the state (object level) and every other face by its own votes (element level). Khronos's
-// background change detection, which deletes background vertices its mesh rays see through, is
-// left empty ("Leave empty to disable background change detection").
-khronos::Backend::Config withoutKhronosBackgroundDetection(const SessionBackend::Config& config) {
-  khronos::Backend::Config base = config;
-  base.change_detection.background = {};
-  base.change_detection.background.setOptional();
-  return base;
-}
-}  // namespace
-
 SessionBackend::SessionBackend(const Config& config,
                                const hydra::SharedDsgInfo::Ptr& dsg,
                                const hydra::SharedModuleState::Ptr& state)
-    : khronos::Backend(withoutKhronosBackgroundDetection(config), dsg, state),
+    : hydra::BackendModule(config::checkValid(config), dsg, state),
+      config(config),
+      map_(config.spatio_temporal_map),
       high_mobility_semantic_labels_(config.high_mobility_semantic_labels),
-      surface_evidence_(khronos::session::SurfaceEvidence::Config::of(
-          config.change_detection.ray_verificator)) {
+      surface_evidence_(config.evidence) {
+  round_worker_ = std::make_unique<khronos::LatestOnlyWorker>([this] {
+    // Every requested round, in request order, each on its own state.
+    while (true) {
+      Round round;
+      {
+        std::lock_guard<std::mutex> lock(rounds_mutex_);
+        if (rounds_.empty()) return;
+        round = std::move(rounds_.front());
+        rounds_.pop_front();
+      }
+      const auto start = std::chrono::steady_clock::now();
+      runRound(std::move(round.dsg), round.stamp, false);
+      round_compute_time_ns_.fetch_add(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start).count(),
+          std::memory_order_relaxed);
+    }
+  });
   if (!config.input_state.empty()) {
     loadInputState(config.input_state);
   }
 }
 
 SessionBackend::~SessionBackend() {
+  // Hydra's module stops its spin thread in its own destructor, after this one: stop it here first
+  // so no new round can be requested while the worker is joined.
   stop();
-  waitForChangeDetection();
+  waitForRounds();
 }
 
 void SessionBackend::loadInputState(const std::string& state_path) {

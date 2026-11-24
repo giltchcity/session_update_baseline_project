@@ -176,21 +176,18 @@ void SessionBackend::afterTerminalRound() {
   releaseFreedMemory();
 }
 
-void SessionBackend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg, RPGOMerges /*rpgo_merges*/,
-                                              const TimeStamp stamp, bool /*had_loopclosure*/,
-                                              const bool finalize_pending) {
-  // One round at a time on the 4D map (the base's lock); the round's own state is the request's clone.
+void SessionBackend::runRound(DynamicSceneGraph::Ptr dsg, const TimeStamp stamp, const bool finalize_pending) {
+  // One round at a time on the 4D map; the round's own state is the request's clone.
   std::lock_guard<std::mutex> lock(map_mutex_);
-  beforeChangeDetection(dsg);
-  Changes none;
-  beforeReconcile(dsg, none, stamp, finalize_pending);
-  afterReconcile(dsg, stamp, finalize_pending);
+  mergeIdentities(dsg);
+  decideStates(dsg, stamp, finalize_pending);
+  composeRound(dsg, stamp, finalize_pending);
   storeSnapshot(dsg, stamp);
-  afterSnapshotStored(*dsg, stamp);
+  showStatesFromStart(*dsg, stamp);
   CLOG(3) << "Session round completed: " << map_.numTimeSteps() << " time steps in 4D map.";
 }
 
-void SessionBackend::beforeChangeDetection(const DynamicSceneGraph::Ptr& dsg) {
+void SessionBackend::mergeIdentities(const DynamicSceneGraph::Ptr& dsg) {
   auto& aliases = PhysicalIdAliases::instance();
   if (!aliases.active()) return;
   for (const auto& [gone, keep] : aliases.takeNew()) {
@@ -215,13 +212,11 @@ void SessionBackend::beforeChangeDetection(const DynamicSceneGraph::Ptr& dsg) {
   if (relabelled) LOG(INFO) << "IDENTITY_RELABEL nodes=" << relabelled;
 }
 
-void SessionBackend::beforeReconcile(
-    const DynamicSceneGraph::Ptr& dsg, Changes& changes, TimeStamp stamp, bool finalize_pending) {
-  // One change-detection round is one observation event: every state decision
-  // until the next round reads the persistence history resolved before it.
+void SessionBackend::decideStates(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {
+  // One round is one observation event: every state decision until the next round reads the
+  // persistence history resolved before it.
   persistent_objects_.beginObservationEvent(stamp);
-  // Object CURRENT states must face the same measurements the background mesh does. Before the
-  // reconciler touches any mesh, while the ray index still matches the geometry it was built from.
+  // Every CURRENT state faces the measurements the round's frames made of its surface.
   const size_t closed = verifyCurrentObjectStates(stamp);
   if (closed > 0) {
     CLOG(3) << "[Backend] Closed " << closed
@@ -231,7 +226,7 @@ void SessionBackend::beforeReconcile(
     persistent_objects_.finalizePendingAbsences(stamp);
   }
   estimatePhysicalPresence(*dsg, stamp);
-  // A closed state's old-site background goes with it in the round's composition (afterReconcile).
+  // A closed state's old-site background goes with it in the round's composition (composeRound).
 }
 
 void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const TimeStamp stamp) {
@@ -264,15 +259,12 @@ void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const Time
   CLOG(3) << "[SessionBackend] presence of " << opened << " physical object node(s), " << dated
           << " dated after the session's start";
 }
-void SessionBackend::afterReconcile(
-    const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {
-  // Change detection must see every visibility segment independently. In
-  // particular, an old physical object can be cleared at its previous site
-  // while a newer segment with the same stable ID materializes its current
-  // geometry elsewhere. Folding the segments before the evidence transition
-  // makes the old-site ray result incorrectly close the new current segment.
-  // Reduce to one logical node per physical ID only after every segment has
-  // been detected and reconciled.
+void SessionBackend::composeRound(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {
+  // The state decision sees every visibility segment independently: an old physical object can be
+  // cleared at its previous site while a newer segment with the same stable ID materializes its
+  // current geometry elsewhere, and folding the segments first would let the old site's evidence
+  // close the new current segment. Reduce to one logical node per physical ID only after every
+  // segment has been decided.
   session::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
   if (finalize_pending) {
     // Canonicalization above ingests the last extractor segments. They did
@@ -391,7 +383,7 @@ void SessionBackend::afterReconcile(
   }
   refusion_report_ = std::move(round.report_json);
 }
-void SessionBackend::afterSnapshotStored(const DynamicSceneGraph& dsg, TimeStamp stamp) {
+void SessionBackend::showStatesFromStart(const DynamicSceneGraph& dsg, TimeStamp stamp) {
   if (session_new_states_.empty()) return;
   std::vector<std::pair<size_t, TimeStamp>> pending;
   pending.swap(session_new_states_);
@@ -460,7 +452,7 @@ void SessionBackend::afterSnapshotStored(const DynamicSceneGraph& dsg, TimeStamp
   }
 }
 
-void SessionBackend::afterFinalMapSaved(const hydra::DataDirectory& log_setup) {
+void SessionBackend::saveSessionState(const hydra::DataDirectory& log_setup) {
   const auto path = log_setup.path();
   saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());
     if (map_.numTimeSteps() > 0) {

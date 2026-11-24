@@ -44,10 +44,9 @@
 #include <hydra_ros/hydra_ros_pipeline.h>
 #include <ianvs/node_handle.h>
 #include <khronos/active_window/active_window.h>
-#include <khronos/backend/backend.h>
 #include <session_core/evidence/physical_evidence_store.h>
+#include <session_core/runtime/mapping_backend.h>
 #include <khronos/common/common_types.h>
-#include <khronos_msgs/msg/changes.hpp>
 
 namespace khronos {
 
@@ -88,7 +87,7 @@ class KhronosPipeline : public hydra::HydraRosPipeline {
    * @brief Finalize the stopped pipeline into one terminal reconciled state.
    *
    * Call this after stop(), which drains all module queues, and before the
-   * terminal save. It is idempotent through Backend::finishProcessing().
+   * terminal save. It is idempotent through the session backend's finishProcessing().
    */
   void finishProcessing();
 
@@ -114,13 +113,13 @@ class KhronosPipeline : public hydra::HydraRosPipeline {
  private:
   // ROS.
   ianvs::NodeHandle nh_;
-  rclcpp::Publisher<khronos_msgs::msg::Changes>::SharedPtr changes_pub_;
 
   // One evidence timeline per independently started session. It is shared by
   // the active window producer and backend consumer but is never serialized.
   PhysicalEvidenceStore::Ptr physical_evidence_store_;
 
-  Backend* khronos_backend_;
+  // The session's backend (session_update's SessionBackend), as the pipeline drives it.
+  session::MappingBackend* khronos_backend_;
   ActiveWindow* khronos_active_window_;
 
   // Callbacks.

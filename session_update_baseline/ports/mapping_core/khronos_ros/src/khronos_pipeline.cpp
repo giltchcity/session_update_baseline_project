@@ -52,20 +52,15 @@
 #include <hydra_ros/backend/ros_backend_publisher.h>
 #include <hydra_ros/frontend/ros_frontend_publisher.h>
 #include <khronos/active_window/active_window.h>
-#include <khronos/backend/backend.h>
 #include <khronos/utils/khronos_attribute_utils.h>
-#include <khronos_msgs/msg/changes.hpp>
 
 #include "khronos_ros/utils/ros_conversions.h"
 #include "khronos_ros/utils/ros_namespaces.h"
 
 namespace khronos {
 
-using ChangeMsg = khronos_msgs::msg::Changes;
-
 KhronosPipeline::Config::Config() : hydra::HydraRosPipeline::Config() {
   active_window = ActiveWindow::Config{};
-  backend = Backend::Config{};
   verbosity = hydra::GlobalInfo::instance().getConfig().default_verbosity;
 }
 
@@ -79,7 +74,6 @@ KhronosPipeline::KhronosPipeline(ianvs::NodeHandle nh)
     : hydra::HydraRosPipeline(0, 5),
       config(config::checkValid(config::fromContext<Config>())),
       nh_(nh),
-      changes_pub_(nh_.create_publisher<ChangeMsg>("changes", rclcpp::QoS(10).transient_local())),
       physical_evidence_store_(std::make_shared<PhysicalEvidenceStore>()),
       khronos_backend_(nullptr),
       khronos_active_window_(nullptr) {}
@@ -87,17 +81,17 @@ KhronosPipeline::KhronosPipeline(ianvs::NodeHandle nh)
 void KhronosPipeline::init() {
   HydraRosPipeline::init();
   khronos_active_window_ = dynamic_cast<ActiveWindow*>(active_window_.get());
-  khronos_backend_ = dynamic_cast<Backend*>(backend_.get());
+  khronos_backend_ = dynamic_cast<session::MappingBackend*>(backend_.get());
 
   if (khronos_active_window_) {
     khronos_active_window_->setPhysicalEvidenceStore(physical_evidence_store_);
   }
   if (khronos_backend_) {
-    Backend::SessionInputs session;
+    session::MappingBackend::SessionInputs session;
     session.evidence = physical_evidence_store_;
     if (khronos_active_window_) {
       session.object_surface_resolution = khronos_active_window_->config.volumetric_map.voxel_size;
-      if (khronos_backend_->config.piece_history) {
+      if (khronos_backend_->usesPieceHistory()) {
         // The 4D map's history as versioned pieces, split by the active window's own voxel blocks.
         const auto& volume = khronos_active_window_->config.volumetric_map;
         const double block_edge = static_cast<double>(volume.voxel_size) * volume.voxels_per_side;
@@ -107,7 +101,7 @@ void KhronosPipeline::init() {
     }
     // The persistent surface uses the same native reconstruction settings as
     // the active window; tracking retains its original temporal lifetime.
-    if (khronos_backend_->hasSessionLayer() && khronos_active_window_) {
+    if (khronos_active_window_) {
       const auto& window = khronos_active_window_->config;
       auto present = std::make_shared<PresentSurface>(
           window.volumetric_map, window.projective_integrator, window.mesh_integrator);
@@ -116,13 +110,12 @@ void KhronosPipeline::init() {
       LOG(INFO) << "[PresentSurface] native Hydra voxel " << window.volumetric_map.voxel_size
                 << " truncation " << window.volumetric_map.truncation_distance;
     }
-    // The session layer (SessionBackend) takes what it shares with the active window; the plain
-    // backend ignores it.
+    // The session takes what it shares with the active window.
     khronos_backend_->connectSession(session);
   }
 
   backend_->addSink(
-      Backend::Sink::fromCallback([this](uint64_t timestamp_ns, const auto& dsg, const auto& dfg) {
+      hydra::BackendModule::Sink::fromCallback([this](uint64_t timestamp_ns, const auto& dsg, const auto& dfg) {
         if (backend_evaluation_callback_) {
         backend_evaluation_callback_(timestamp_ns, dsg, dfg);
         }
@@ -139,15 +132,8 @@ void KhronosPipeline::init() {
     LOG(ERROR) << "Active window is not khronos::ActiveWindow!";
   }
 
-  if (khronos_backend_) {
-    khronos_backend_->addChangeSink(
-        Backend::ChangeSink::fromCallback([this](TimeStamp stamp, const Changes& changes) {
-          auto msg = toMsg(changes);
-          msg.header.stamp = rclcpp::Time(stamp);
-          changes_pub_->publish(msg);
-        }));
-  } else {
-    LOG(ERROR) << "Backend is not khronos::Backend!";
+  if (!khronos_backend_) {
+    LOG(ERROR) << "Backend is not the session's backend (SessionBackend)!";
   }
 }
 
@@ -197,7 +183,6 @@ bool KhronosPipeline::save(const hydra::DataDirectory& log_setup, bool save_full
     // clone and serialize the same multi-hundred-MB DSG through frontend,
     // backend, JSON and evaluation paths when save_full_state is false.
     if (khronos_backend_) {
-      khronos_backend_->saveProposedMerges(log_setup);
       khronos_backend_->saveFinalMap(log_setup);
     }
     return true;
@@ -232,7 +217,7 @@ bool KhronosPipeline::save(const hydra::DataDirectory& log_setup, bool save_full
 void KhronosPipeline::finishProcessing() {
   if (!khronos_backend_) {
     throw std::runtime_error(
-        "Cannot finalize Khronos pipeline: backend is not khronos::Backend");
+        "Cannot finalize the pipeline: the backend is not the session's backend");
   }
   khronos_backend_->finishProcessing();
 }
