@@ -773,6 +773,21 @@ void SpatioTemporalMap::update(const DynamicSceneGraph::Ptr& dsg, TimeStamp stam
   }
 }
 
+size_t SpatioTemporalMap::amendSnapshots(TimeStamp from, TimeStamp to,
+                                         const std::function<bool(DynamicSceneGraph&, TimeStamp)>& edit) {
+  size_t amended = 0;
+  for (size_t i = 0; i < stamps_.size(); ++i) {
+    if (stamps_[i] < from || stamps_[i] >= to) continue;
+    auto dsg = sourceDsg(i);
+    if (!edit(*dsg, stamps_[i])) continue;
+    // A replacement gets a fresh blob; a later snapshot stored as a delta keeps its own base.
+    setSnapshot(i, dsg);
+    ++amended;
+  }
+  if (amended) resetQueryCache();
+  return amended;
+}
+
 void SpatioTemporalMap::finalize() {
   if (finalized_) {
     return;

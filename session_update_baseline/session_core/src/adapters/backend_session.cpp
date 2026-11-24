@@ -37,6 +37,7 @@
 
 #include "khronos/backend/backend.h"
 #include "khronos/active_window/online_front.h"
+#include "session_core/adapters/physical_object_access.h"
 #include "session_core/state/mechanism_ablation.h"
 #include "session_core/surface/closed_object_background.h"
 #include "session_core/surface/triangle_grid.h"
@@ -315,6 +316,20 @@ void Backend::sessionAfterReconcile(
                 << " (session start " << session_start << ")";
     }
   }
+  // A CURRENT that is not the previous round's fragment (a successor, a new object, a return) and
+  // began in this session is shown from its start: noted here, written once the snapshot is stored.
+  // Its start is its birth, the first observation it kept (after a motion's cut), as the 3DGS map's
+  // t_L; not the tracker's first sighting, which a watched move carries over from before the move.
+  for (const size_t id : persistent_objects_.trackedIds()) {
+    const auto current = persistent_objects_.currentFragment(id);
+    const uint64_t uid = current ? current->uid : 0;
+    uint64_t& last_uid = session_current_uid_[id];
+    if (uid != 0 && uid != last_uid && current->birth_time >= session_start &&
+        current->birth_time < stamp) {
+      session_new_states_.emplace_back(id, current->birth_time);
+    }
+    last_uid = uid;
+  }
   PresentSurface::Inputs inputs;
   inputs.shown = shown_memory_.get();
   // The state layer already knows which states closed. The shown memory reads the
@@ -386,6 +401,63 @@ void Backend::sessionAfterReconcile(
   }
   refusion_report_ = std::move(round.report_json);
 }
+void Backend::sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp) {
+  if (session_new_states_.empty()) return;
+  std::vector<std::pair<size_t, TimeStamp>> pending;
+  pending.swap(session_new_states_);
+  if (!dsg.hasLayer(DsgLayers::OBJECTS)) return;
+  // This round's node of each identity (one per physical id after canonicalization).
+  std::map<size_t, std::pair<spark_dsg::NodeId, const KhronosObjectAttributes*>> shown_now;
+  for (const auto& [node_id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
+    const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    if (!attrs) continue;
+    if (const auto id = session_detail::getPhysicalInstanceId(*attrs)) shown_now[*id] = {node_id, attrs};
+  }
+  for (const auto& [id, start] : pending) {
+    const auto it = shown_now.find(id);
+    if (it == shown_now.end()) continue;
+    const spark_dsg::NodeId node_now = it->second.first;
+    const KhronosObjectAttributes& shown = *it->second.second;
+    // In every snapshot stored since the state's start, the identity's node shows this state's
+    // surface (its predecessor ends there); a snapshot without the identity gains its node, with
+    // the trajectory known at that snapshot only.
+    const size_t amended = map_.amendSnapshots(start, stamp, [&](DynamicSceneGraph& past, TimeStamp t) {
+      if (!past.hasLayer(DsgLayers::OBJECTS)) return false;
+      std::vector<spark_dsg::NodeId> nodes;
+      for (const auto& [node_id, node] : past.getLayer(DsgLayers::OBJECTS).nodes()) {
+        const auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+        if (attrs && session_detail::getPhysicalInstanceId(*attrs) == id) nodes.push_back(node_id);
+      }
+      if (nodes.empty()) {
+        auto copy = shown.clone();
+        auto& c = static_cast<KhronosObjectAttributes&>(*copy);
+        size_t known = 0;
+        while (known < c.trajectory_timestamps.size() && c.trajectory_timestamps[known] <= t) ++known;
+        c.trajectory_timestamps.resize(known);
+        c.trajectory_positions.resize(std::min(c.trajectory_positions.size(), known));
+        return past.emplaceNode(DsgLayers::OBJECTS, node_now, std::move(copy));
+      }
+      for (size_t k = 0; k < nodes.size(); ++k) {
+        auto copy = past.getNode(nodes[k]).attributes<KhronosObjectAttributes>().clone();
+        auto& c = static_cast<KhronosObjectAttributes&>(*copy);
+        if (k == 0) {
+          c.mesh = shown.mesh;
+          c.bounding_box = shown.bounding_box;
+          c.position = shown.position;
+          c.semantic_label = shown.semantic_label;
+        } else {
+          c.mesh = spark_dsg::Mesh(c.mesh.has_colors, c.mesh.has_timestamps, c.mesh.has_labels,
+                                   c.mesh.has_first_seen_stamps);
+        }
+        past.setNodeAttributes(nodes[k], std::move(copy));
+      }
+      return true;
+    });
+    LOG(INFO) << "STATE_START_HISTORY inst=" << id << " start=" << start << " round=" << stamp
+              << " snapshots=" << amended;
+  }
+}
+
 void Backend::saveSessionState(const hydra::DataDirectory& log_setup) {
   const auto path = log_setup.path();
   saveAbsenceSensorStatistics((path / "sensor_statistics.txt").string());

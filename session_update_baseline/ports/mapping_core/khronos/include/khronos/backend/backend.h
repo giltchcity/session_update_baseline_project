@@ -213,6 +213,12 @@ class Backend : public hydra::BackendModule {
   void sessionAfterReconcile(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp,
                              bool finalize_pending);
   void saveSessionState(const hydra::DataDirectory& log_setup);
+  // A state begun in this session is shown from its start (its first sighting), as the 3DGS map
+  // dates its rows: the round that makes it CURRENT notes it (sessionAfterReconcile) and, once that
+  // round's snapshot is stored, the snapshots stored since its start take its surface.
+  void sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp);
+  std::map<size_t, uint64_t> session_current_uid_;
+  std::vector<std::pair<size_t, TimeStamp>> session_new_states_;
 
   // Members.
   SpatioTemporalMap map_;

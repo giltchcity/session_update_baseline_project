@@ -38,6 +38,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <iomanip>
 #include <limits>
 #include <memory>
@@ -85,6 +86,15 @@ class SpatioTemporalMap {
    * @param stamp The time of the update.
    */
   void update(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp);
+
+  /**
+   * @brief Rewrite the stored snapshots whose stamps lie in [from, to) through `edit`, which
+   * returns whether it changed the graph (it also receives the snapshot's stamp). A state the map
+   * learns of late is shown from its start.
+   * @return The number of snapshots rewritten.
+   */
+  size_t amendSnapshots(TimeStamp from, TimeStamp to,
+                        const std::function<bool(DynamicSceneGraph&, TimeStamp)>& edit);
 
   /**
    * @brief Finalize the map by computing an efficient to lookup structure of the current data.

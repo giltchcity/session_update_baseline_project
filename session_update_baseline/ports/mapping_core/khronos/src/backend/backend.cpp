@@ -280,6 +280,7 @@ void Backend::runChangeDetectionThread(DynamicSceneGraph::Ptr dsg,
 
   if (session_extensions_enabled_) sessionAfterReconcile(dsg, stamp, finalize_pending);
   map_.update(dsg, stamp);
+  if (session_extensions_enabled_) sessionAmendHistory(*dsg, stamp);
 
   ChangeSink::callAll(change_sinks_, stamp, changes);
   CLOG(3) << "Change detection completed: " << map_.numTimeSteps() << " time steps in 4D map.";

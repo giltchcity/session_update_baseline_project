@@ -121,6 +121,10 @@ if(BUILD_TESTING)
     COMMAND test_spatio_temporal_snapshot_storage
   )
 
+  add_executable(test_spatio_temporal_amend tests/test_spatio_temporal_amend.cpp)
+  target_link_libraries(test_spatio_temporal_amend PRIVATE ${PROJECT_NAME})
+  add_test(NAME spatio_temporal_amend COMMAND test_spatio_temporal_amend)
+
   add_executable(test_explicit_labels_and_external_tracker
     tests/test_explicit_labels_and_external_tracker.cpp
   )
