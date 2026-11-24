@@ -350,17 +350,6 @@ class RayVerificator {
     float absence_llr = 0.f;
   };
 
-  // Only measurements after the state's latest support can establish its
-  // subsequent disappearance. Earlier free space belongs to an earlier world.
-  // prior_log_odds: logit of the measured state's change prior where the round tests one
-  // unresolved relation (an inherited state); 0 otherwise.
-  SurfaceEvidenceCounts countCurrentPhysicalSurface(
-      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
-      uint64_t last_support, uint64_t latest, bool* projected = nullptr,
-      int state_slot = 0, uint64_t state_birth = 0, double prior_log_odds = 0.0,
-      uint64_t state_id = 0) const;
-
   SurfaceEvidenceCounts countPhysicalSurface(
       size_t physical_id,
       const spark_dsg::Mesh& mesh,
@@ -368,29 +357,6 @@ class RayVerificator {
       const PhysicalEvidenceSnapshot& evidence_snapshot,
       const uint64_t earliest = 0ul,
       const uint64_t latest = std::numeric_limits<uint64_t>::max()) const;
-
-  // Fallback for real RGB-D coverage missing from the mesh-derived ray index.
-  // Surface sampling uses the map voxel size; sensor pixels are counted once.
-  SurfaceEvidenceCounts countProjectedPhysicalSurface(
-      size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot, float map_resolution,
-      uint64_t earliest, uint64_t latest) const;
-
-  // Replaces the fixed absent-surface fraction by the observed-absence test and
-  // stores its counts in `counts`.
-  void applyObservedAbsence(size_t physical_id, const spark_dsg::Mesh& mesh,
-                            const BoundingBox& bbox,
-                            const PhysicalEvidenceSnapshot& evidence_snapshot,
-                            uint64_t earliest, uint64_t latest,
-                            SurfaceEvidenceCounts& counts,
-                            int state_slot = 0, uint64_t state_birth = 0,
-                            double prior_log_odds = 0.0,
-                            uint64_t state_id = 0) const;
-
-  CheckResult checkProjectedPhysical(
-      const Point& point, size_t physical_id,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest) const;
 
   void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
   PhysicalEvidenceSnapshot physicalEvidenceSnapshot() const;
@@ -444,7 +410,6 @@ class RayVerificator {
  private:
   // Unique per instance: the observed-absence records are keyed by it, never
   // by a reusable address.
-  const uint64_t absence_owner_;
   CheckResult checkPhysicalImpl(
       const Point& point, size_t physical_id,
       const PhysicalEvidenceSnapshot& evidence_snapshot,

@@ -438,7 +438,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countPhysicalSurface(
     classify_one((p0 + p1 + p2) / 3.0f);
   }
   // Mesh-ray proxy alone (no observed-absence test ran): the counts decide, as
-  // before. countCurrentPhysicalSurface replaces this with the observed-absence test.
+  // before. SurfaceEvidence::countCurrent replaces this with the observed-absence test.
   result.absence_coverage_sufficient = result.contradiction_rays > result.support_rays;
   return result;
 }

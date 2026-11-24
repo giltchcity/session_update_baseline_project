@@ -12,6 +12,7 @@
 #include <khronos/backend/backend.h>
 
 #include "session_core/evidence/physical_evidence_store.h"
+#include "session_core/evidence/surface_evidence.h"
 #include "session_core/state/persistent_object_state.h"
 #include "session_core/surface/present_surface.h"
 
@@ -88,6 +89,8 @@ class SessionBackend : public khronos::Backend {
   size_t verifyCurrentObjectStates(khronos::TimeStamp stamp);
 
   const std::vector<int> high_mobility_semantic_labels_;
+  // The session's own measurement of its objects' surfaces (stored pixels, observed absence).
+  khronos::session::SurfaceEvidence surface_evidence_;
   khronos::PhysicalEvidenceStore::Ptr physical_evidence_store_;
   khronos::PresentSurface::Ptr present_surface_;
   // The previous session's surfaces.

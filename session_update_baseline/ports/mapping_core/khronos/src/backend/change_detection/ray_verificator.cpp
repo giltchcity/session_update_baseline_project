@@ -78,15 +78,8 @@ void declare_config(RayVerificator::Config& config) {
   check(config.min_judged_samples, GT, 0, "min_judged_samples");
 }
 
-namespace {
-uint64_t nextAbsenceOwner() {
-  static std::atomic<uint64_t> counter{1};
-  return counter++;
-}
-}  // namespace
-
 RayVerificator::RayVerificator(const Config& config)
-    : config(config::checkValid(config)), grid_(config.block_size), seed_(0), absence_owner_(nextAbsenceOwner()) {}
+    : config(config::checkValid(config)), grid_(config.block_size), seed_(0) {}
 
 bool RayVerificator::facesSurface(const Eigen::Vector3f* normal,
                                   const Eigen::Vector3f& view_direction,

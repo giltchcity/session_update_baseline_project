@@ -98,7 +98,7 @@ size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
           target.reliable_seen_through = result.reliable_seen_through;
           target.reliable_samples = result.reliable_samples;
           const auto likelihood =
-              physicalAbsenceLookLikelihood(verificator.get(), id, state_slot, stamp, state_id);
+              physicalAbsenceLookLikelihood(&surface_evidence_, id, state_slot, stamp, state_id);
           target.measured_absence_log_ratio = likelihood.log_ratio;
           target.has_measured_absence_likelihood = likelihood.has_measurement;
           target.has_calibrated_absence_source = likelihood.calibrated_source;
@@ -107,11 +107,11 @@ size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
                              const int state_slot) {
       bool projected = false;
       const double prior_log_odds = persistent_objects_.changePriorLogOdds(id, state_slot);
-      auto counts = verificator->countCurrentPhysicalSurface(
+      auto counts = surface_evidence_.countCurrent(
           id, *fragment.geometry, *fragment.bbox, evidence,
           object_surface_resolution_,
-          std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp, &projected,
-          state_slot, fragment.birth_time, prior_log_odds, fragment.uid);
+          std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp,
+          verificator.get(), &projected, state_slot, fragment.birth_time, prior_log_odds, fragment.uid);
       LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
                 << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
                 << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp

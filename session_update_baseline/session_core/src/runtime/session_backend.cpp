@@ -29,7 +29,9 @@ SessionBackend::SessionBackend(const Config& config,
                                const hydra::SharedDsgInfo::Ptr& dsg,
                                const hydra::SharedModuleState::Ptr& state)
     : khronos::Backend(config, dsg, state),
-      high_mobility_semantic_labels_(config.high_mobility_semantic_labels) {
+      high_mobility_semantic_labels_(config.high_mobility_semantic_labels),
+      surface_evidence_(khronos::session::SurfaceEvidence::Config::of(
+          config.change_detection.ray_verificator)) {
   if (!config.input_state.empty()) {
     loadInputState(config.input_state);
   }

@@ -26,8 +26,10 @@ struct PhysicalAbsenceLookLikelihood {
   bool has_measurement = false;
   bool calibrated_source = false;
 };
+namespace session { class SurfaceEvidence; }
+// The latest look of a tested state as the session's surface evidence (`owner`) measured it.
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
-    const RayVerificator* owner, size_t physical_id, int state_slot, TimeStamp stamp,
+    const session::SurfaceEvidence* owner, size_t physical_id, int state_slot, TimeStamp stamp,
     uint64_t state_id = 0);
 
 /** The identity carried by the measured endpoint at an exact image pixel. */

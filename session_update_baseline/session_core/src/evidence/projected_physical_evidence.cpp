@@ -1,3 +1,4 @@
+#include "session_core/evidence/surface_evidence.h"
 #include "khronos/backend/change_detection/ray_verificator.h"
 
 #include <algorithm>
@@ -146,7 +147,7 @@ struct ObjectAbsenceState {
   bool first_window = true;
   // The latest look as a finite-count ratio, read by the empty-interval test (M1e) and the
   // hand-over U term (README 1.1).
-  const RayVerificator* likelihood_owner = nullptr;
+  const session::SurfaceEvidence* likelihood_owner = nullptr;
   TimeStamp likelihood_stamp = 0;
   PhysicalAbsenceLookLikelihood likelihood;
   std::map<AbsenceCell, AbsenceSample> samples;
@@ -758,7 +759,7 @@ void commitReliability(ObjectAbsenceState& state, const bool in_place) {
 }  // namespace
 
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
-    const RayVerificator* owner, const size_t physical_id, const int state_slot,
+    const session::SurfaceEvidence* owner, const size_t physical_id, const int state_slot,
     const TimeStamp stamp, const uint64_t state_id) {
   const uint64_t state_key = absenceStateKey(state_id, state_slot);
   std::lock_guard<std::mutex> lock(absence_mutex);
@@ -794,9 +795,35 @@ bool loadAbsenceSensorStatistics(const std::string& path) {
   return true;
 }
 
-RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
+namespace {
+uint64_t nextAbsenceOwner() {
+  static std::atomic<uint64_t> counter{1};
+  return counter++;
+}
+}  // namespace
+
+session::SurfaceEvidence::Config session::SurfaceEvidence::Config::of(const RayVerificator::Config& rays) {
+  Config config;
+  config.depth_tolerance = rays.depth_tolerance;
+  config.min_absent_surface_fraction = rays.min_absent_surface_fraction;
+  config.surface_match_tolerance = rays.surface_match_tolerance;
+  config.max_absence_incidence_deg = rays.max_absence_incidence_deg;
+  config.min_judged_samples = rays.min_judged_samples;
+  config.real_sensor_noise = rays.real_sensor_noise;
+  return config;
+}
+
+session::SurfaceEvidence::SurfaceEvidence(const Config& config)
+    : config(config), absence_owner_(nextAbsenceOwner()) {}
+
+float session::SurfaceEvidence::minAbsenceCos() const {
+  if (!config.real_sensor_noise) return 0.f;
+  return std::cos(config.max_absence_incidence_deg * static_cast<float>(M_PI) / 180.f);
+}
+
+RayVerificator::CheckResult session::SurfaceEvidence::checkProjected(
     const Point& point, const size_t physical_id,
-    const PhysicalEvidenceSnapshot& evidence_snapshot,
+    const Snapshot& evidence_snapshot,
     const uint64_t earliest, const uint64_t latest) const {
   CheckResult result;
   if (!evidence_snapshot) return result;
@@ -824,11 +851,11 @@ RayVerificator::CheckResult RayVerificator::checkProjectedPhysical(
   return result;
 }
 
-RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurface(
+RayVerificator::SurfaceEvidenceCounts session::SurfaceEvidence::countProjected(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-    const PhysicalEvidenceSnapshot& evidence_snapshot, const float map_resolution,
+    const Snapshot& evidence_snapshot, const float map_resolution,
     const uint64_t earliest, const uint64_t latest) const {
-  SurfaceEvidenceCounts result;
+  Counts result;
   if (!evidence_snapshot || !std::isfinite(map_resolution) || map_resolution <= 0) return result;
 
   // One actual surface sample per map cell keeps duplicate triangle storage
@@ -885,7 +912,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
     if (sample_absence > sample_support) ++result.contradicted_surface_samples;
   }
   // Compatibility layer (P20, kept pending, user 2026-10-05): the proxy-free coverage verdict of
-  // the unit interface. Its only production caller, countCurrentPhysicalSurface, overwrites it at
+  // the unit interface. Its only production caller, SurfaceEvidence::countCurrent, overwrites it at
   // once with the observed-absence test (7) (applyObservedAbsence).
   result.absence_coverage_sufficient = result.surface_samples > 0 &&
       result.contradicted_surface_samples > 0 &&
@@ -896,10 +923,10 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countProjectedPhysicalSurf
   return result;
 }
 
-void RayVerificator::applyObservedAbsence(
+void session::SurfaceEvidence::applyObservedAbsence(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-    const PhysicalEvidenceSnapshot& evidence_snapshot, const uint64_t /*earliest*/,
-    const uint64_t latest, SurfaceEvidenceCounts& counts, const int state_slot,
+    const Snapshot& evidence_snapshot, const uint64_t /*earliest*/,
+    const uint64_t latest, Counts& counts, const int state_slot,
     const uint64_t state_birth, const double prior_log_odds, const uint64_t state_id) const {
   counts.absence_coverage_sufficient = false;
   if (!evidence_snapshot) return;
@@ -1043,15 +1070,16 @@ void RayVerificator::applyObservedAbsence(
   }
 }
 
-RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurface(
+RayVerificator::SurfaceEvidenceCounts session::SurfaceEvidence::countCurrent(
     size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
-    const PhysicalEvidenceSnapshot& snapshot, float map_resolution,
-    uint64_t last_support, uint64_t latest, bool* projected, const int state_slot,
-    const uint64_t state_birth, const double prior_log_odds, const uint64_t state_id) const {
+    const Snapshot& snapshot, float map_resolution,
+    uint64_t last_support, uint64_t latest, const RayVerificator* rays, bool* projected,
+    const int state_slot, const uint64_t state_birth, const double prior_log_odds,
+    const uint64_t state_id) const {
   if (projected) *projected = false;
   // Also prevents unsigned overflow and invalid inclusive intervals.
   if (last_support >= latest) {
-    SurfaceEvidenceCounts none;
+    Counts none;
     applyObservedAbsence(physical_id, mesh, bbox, snapshot, latest, latest, none, state_slot, state_birth,
                          0.0, state_id);
     none.absence_coverage_sufficient = false;
@@ -1063,7 +1091,8 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
     // every verification round has the session's frame archive, so this branch is reached only by
     // offline tools and unit fixtures (test_hidden_change_session_equivalence); the sparse
     // mesh-ray proxy of the native verificator stands in, decided by its majority.
-    auto counts = countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
+    if (!rays) return Counts{};
+    auto counts = rays->countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
     counts.absence_coverage_sufficient = counts.contradiction_rays > counts.support_rays;
     return counts;
   }
@@ -1071,8 +1100,7 @@ RayVerificator::SurfaceEvidenceCounts RayVerificator::countCurrentPhysicalSurfac
   // state's own surface, and the observed-absence test (7) on the same frames. Its proxy-free
   // coverage verdict (P20) is replaced by that test.
   if (projected) *projected = true;
-  auto measured = countProjectedPhysicalSurface(physical_id, mesh, bbox, snapshot, map_resolution,
-                                                earliest, latest);
+  auto measured = countProjected(physical_id, mesh, bbox, snapshot, map_resolution, earliest, latest);
   applyObservedAbsence(physical_id, mesh, bbox, snapshot, earliest, latest, measured, state_slot,
                        state_birth, prior_log_odds, state_id);
   return measured;
