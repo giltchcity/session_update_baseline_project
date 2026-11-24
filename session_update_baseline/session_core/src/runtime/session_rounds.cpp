@@ -217,13 +217,7 @@ void SessionBackend::beforeReconcile(
   if (finalize_pending) {
     persistent_objects_.finalizePendingAbsences(stamp);
   }
-  // (Ablation no_object_rule: a closed state's old-site background stays.)
-  if (dsg->hasMesh() && !mechanismAblation().no_object_rule) {
-    const auto closed_surfaces = closedStateSurfaces(persistent_objects_, stamp);
-    markClosedObjectBackground(*dsg->mesh(), closed_surfaces,
-                               object_surface_resolution_,
-                               changes.background_changes);
-  }
+  // A closed state's old-site background goes with it in the round's composition (afterReconcile).
 }
 void SessionBackend::afterReconcile(
     const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {
@@ -246,17 +240,6 @@ void SessionBackend::afterReconcile(
     change_detector_->setDsg(dsg);
     const size_t terminal_closed = verifyCurrentObjectStates(stamp);
     persistent_objects_.finalizePendingAbsences(stamp);
-    Changes terminal_changes;
-    if (dsg->hasMesh() && !mechanismAblation().no_object_rule) {
-      const auto closed_surfaces = closedStateSurfaces(persistent_objects_, stamp);
-      const auto background_closed = markClosedObjectBackground(
-          *dsg->mesh(), closed_surfaces, object_surface_resolution_,
-          terminal_changes.background_changes);
-      if (background_closed) {
-        // No object changes: only the newly confirmed background removals.
-        reconciler_->reconcile(*dsg, terminal_changes, stamp);
-      }
-    }
     session::canonicalizePhysicalObjects(*dsg, &persistent_objects_);
     LOG(INFO) << "TERMINAL_STATE_DRAIN stamp=" << stamp << " closed=" << terminal_closed;
   }
@@ -293,12 +276,16 @@ void SessionBackend::afterReconcile(
   }
   PresentSurface::Inputs inputs;
   inputs.shown = shown_memory_.get();
-  // The state layer already knows which states closed. The shown memory reads the
-  // same ownership, so a closed state's old-site faces follow its death atomically
-  // instead of waiting for the per-face evidence to see through every pixel.
-  // (Ablation no_object_rule: the shown memory is not hidden for a closed state.)
+  // The state layer already knows which states closed. The shown memory and the snapshot's
+  // own background read the same ownership, so a closed state's old-site faces follow its
+  // death atomically instead of waiting for the per-face evidence to see through every pixel
+  // (the object-level rule; every other face is decided by its votes, the element level).
+  // (Ablation no_object_rule: neither the shown memory nor the background is hidden for a
+  // closed state.)
   if (!mechanismAblation().no_object_rule) {
-    for (const auto& state : closedStateSurfaces(persistent_objects_, stamp)) {
+    inputs.closed_background = closedStateSurfaces(persistent_objects_, stamp);
+    inputs.closed_background_cell = object_surface_resolution_;
+    for (const auto& state : inputs.closed_background) {
       inputs.closed_memory.insert(inputs.closed_memory.end(), state.points.begin(),
                                   state.points.end());
     }

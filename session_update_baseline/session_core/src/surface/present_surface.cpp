@@ -1434,13 +1434,23 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       addTested(S.vertices[S.faces[f][0]], S.vertices[S.faces[f][1]], S.vertices[S.faces[f][2]]);
     }
   }
-  // The snapshot's own background arrives with its closed states' old sites already
-  // removed (markClosedObjectBackground: a vertex measured no later than the state's
+  // A closed state's duplicate layer in the snapshot's own background goes with the state
+  // (closedStateBackground: a vertex within a cell of its surface, measured no later than its
   // support); a surface measured after a state left is not that state's.
+  std::vector<uint8_t> closed_vertex(pos.size(), 0);
+  if (bg_slot >= 0 && !inputs.closed_background.empty()) {
+    const auto owned = closedStateBackground(*slots[bg_slot].mesh, inputs.closed_background,
+                                             inputs.closed_background_cell);
+    for (size_t i = 0; i < owned.size(); ++i) closed_vertex[slots[bg_slot].begin + i] = owned[i];
+  }
   std::vector<uint32_t> fill;  // snapshot background faces the evidence decides
-  size_t fill_outvoted = 0, fill_covered = 0, fill_unreached = 0;
+  size_t fill_outvoted = 0, fill_covered = 0, fill_unreached = 0, fill_closed = 0;
   for (uint32_t f = 0; f < faces.size(); ++f) {
     if (static_cast<int32_t>(fslot[f]) != bg_slot || memory_face[f]) continue;
+    if (closed_vertex[faces[f][0]] || closed_vertex[faces[f][1]] || closed_vertex[faces[f][2]]) {
+      ++fill_closed;
+      continue;
+    }
     fill.push_back(f);
     addTested(pos[faces[f][0]], pos[faces[f][1]], pos[faces[f][2]]);
   }
@@ -1901,6 +1911,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   report << ",\"fill\":{\"faces\":" << fill.size() << ",\"outvoted\":" << fill_outvoted
          << ",\"covered\":" << fill_covered << ",\"unreached\":" << fill_unreached
          << ",\"ended\":" << fill_ended << ",\"ended_frames_decoded\":" << ended_decoded
+         << ",\"closed_state\":" << fill_closed
          << ",\"kept\":" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "}";
   report << "}";
 

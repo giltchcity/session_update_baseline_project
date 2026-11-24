@@ -23,6 +23,16 @@ struct ClosedStateSurface {
 std::vector<ClosedStateSurface> closedStateSurfaces(
     const PersistentObjectState& objects, TimeStamp latest);
 
+// The background vertices owned by the closed states (1 per owned vertex of `background`). A
+// vertex is owned when it lies within one map cell of the state's surface and was measured no
+// later than the state's support: the duplicate layer the state left in the background (its
+// pixels integrated as static background). Ownership is atomic: a closed state never leaves half
+// of its duplicate behind. Logs BACKGROUND_STATE_CLOSURE per state that owns vertices.
+std::vector<uint8_t> closedStateBackground(
+    const spark_dsg::Mesh& background,
+    const std::vector<ClosedStateSurface>& states,
+    float map_resolution);
+
 // Remove the background vertices owned by the closed states. A vertex is owned when
 // it lies within one map cell of the state's surface and was measured no later than
 // the state's support: the duplicate layer the state left in the background. The

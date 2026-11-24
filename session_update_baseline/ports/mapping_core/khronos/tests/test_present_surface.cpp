@@ -313,6 +313,39 @@ void testOnlineSurface() {
   require(filled,"an archived face a counted frame measured is filled in");
   require(unmeasured_kept,"an archived face no frame measured stays shown, as a memory face");
 
+  // A closed state's duplicate layer in the snapshot's own background (within a cell of its
+  // surface, measured no later than its support) goes with the state; a face it does not own,
+  // or one measured after its support, stays.
+  PresentSurface closing(mapConfig(),integrationConfig(),meshConfig());
+  closing.integrate(camera,frame(1000000000ULL,1.f,true));
+  auto closed_graph=std::make_shared<spark_dsg::DynamicSceneGraph>();
+  closed_graph->setMesh(std::make_shared<spark_dsg::Mesh>(false,true,false,false));
+  {
+    auto& m=*closed_graph->mesh();
+    const std::vector<Eigen::Vector3f> at={{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f},
+                                           {30.f,0.f,1.f},{31.f,0.f,1.f},{30.f,1.f,1.f},
+                                           {40.f,0.f,1.f},{41.f,0.f,1.f},{40.f,1.f,1.f}};
+    m.resizeVertices(at.size());
+    for (size_t i=0;i<at.size();++i) {
+      m.setPos(i,at[i]);
+      m.setTimestamp(i,i>=6 ? 3000000000ULL : 500000000ULL);
+    }
+    m.faces={{0,1,2},{3,4,5},{6,7,8}};
+  }
+  PresentSurface::Inputs closed_inputs;
+  closed_inputs.closed_background.push_back({5,{{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f},
+                                                {40.f,0.f,1.f},{41.f,0.f,1.f},{40.f,1.f,1.f}},2000000000ULL});
+  closed_inputs.closed_background_cell=.05f;
+  closing.compose(*closed_graph,1000000000ULL,{},closed_inputs,false);
+  bool unowned_kept=false,later_kept=false;
+  for (const auto& point:closed_graph->mesh()->points) {
+    require(point.x()<19.f || point.x()>22.f,"a closed state's duplicate layer goes with the state");
+    unowned_kept|=point.x()>=30.f && point.x()<=31.f;
+    later_kept|=point.x()>=40.f;
+  }
+  require(unowned_kept,"a background face no closed state owns stays");
+  require(later_kept,"a surface measured after the state's support is not the state's");
+
   // One volume holds one surface per place: a shown face behind the present's
   // layer within the truncation, facing the same way, with no direct majority
   // (every reading lands in front of it) gives way; the same face facing the

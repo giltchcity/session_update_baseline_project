@@ -25,10 +25,23 @@ void declare_config(SessionBackend::Config& config) {
   field(config.high_mobility_semantic_labels, "high_mobility_semantic_labels");
 }
 
+namespace {
+// The session decides every background element itself: a closed state's old-site surface goes
+// with the state (object level) and every other face by its own votes (element level). Khronos's
+// background change detection, which deletes background vertices its mesh rays see through, is
+// left empty ("Leave empty to disable background change detection").
+khronos::Backend::Config withoutKhronosBackgroundDetection(const SessionBackend::Config& config) {
+  khronos::Backend::Config base = config;
+  base.change_detection.background = {};
+  base.change_detection.background.setOptional();
+  return base;
+}
+}  // namespace
+
 SessionBackend::SessionBackend(const Config& config,
                                const hydra::SharedDsgInfo::Ptr& dsg,
                                const hydra::SharedModuleState::Ptr& state)
-    : khronos::Backend(config, dsg, state),
+    : khronos::Backend(withoutKhronosBackgroundDetection(config), dsg, state),
       high_mobility_semantic_labels_(config.high_mobility_semantic_labels),
       surface_evidence_(khronos::session::SurfaceEvidence::Config::of(
           config.change_detection.ray_verificator)) {

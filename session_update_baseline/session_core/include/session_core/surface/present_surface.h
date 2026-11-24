@@ -19,6 +19,7 @@
 
 #include "session_core/state/mechanism_ablation.h"
 #include "khronos/common/common_types.h"
+#include "session_core/surface/closed_object_background.h"
 #include "session_core/surface/frame_archive.h"
 #include "session_core/surface/present_tsdf.h"
 
@@ -64,6 +65,11 @@ class PresentSurface {
     // face of the previous final map that lies on one of them is the closed state's
     // own old surface: it follows the state atomically instead of the per-face test.
     std::vector<Eigen::Vector3f> closed_memory;
+    // The same closed states with their last support, and the map cell: a background vertex of
+    // the round's snapshot within a cell of one's surface and measured no later than its support
+    // is that state's duplicate layer (closedStateBackground); the faces on it go with the state.
+    std::vector<ClosedStateSurface> closed_background;
+    float closed_background_cell = 0.f;
     // Optional diagnostics (KHRONOS_REFUSION_DUMP): the terminal round writes the frame
     // archive (archive.kfa), the present with its face identities (present.ply) and
     // its report (refusion_report.json) there, for refusion_replay.
