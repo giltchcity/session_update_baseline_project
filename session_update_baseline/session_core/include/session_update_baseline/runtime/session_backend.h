@@ -10,6 +10,7 @@
 #include <hydra/common/shared_module_state.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
 #include <khronos/backend/backend.h>
+#include <khronos/backend/change_detection/ray_change_detector.h>
 
 #include "session_core/evidence/physical_evidence_store.h"
 #include "session_core/evidence/surface_evidence.h"
@@ -88,9 +89,27 @@ class SessionBackend : public khronos::Backend {
    */
   size_t verifyCurrentObjectStates(khronos::TimeStamp stamp);
 
+  /**
+   * @brief Estimate every physical object node's presence interval from the session's own pixels.
+   *
+   * Before its first and after its last real observation, each sampled surface point of the node is
+   * looked up in the stored frames (SurfaceEvidence::checkProjected, through the round's stamp);
+   * the change detection's temporal estimator (its ray_change_detector settings, physical coverage)
+   * gives the closest absence and the furthest persistence on either side, and the reconciler's rule
+   * turns them into the interval: an observed absence ends (starts) presence halfway between it
+   * and the nearest evidence of presence (minimum expected risk); without one, an unobserved site
+   * is not an absent object (time_estimates_conservative: the evidence itself). The object's state
+   * then ends a closed identity's presence no later than its own decision (applyPhysicalGeometry).
+   */
+  void estimatePhysicalPresence(khronos::DynamicSceneGraph& dsg, khronos::TimeStamp stamp);
+
   const std::vector<int> high_mobility_semantic_labels_;
   // The session's own measurement of its objects' surfaces (stored pixels, observed absence).
   khronos::session::SurfaceEvidence surface_evidence_;
+  // The temporal estimator and the object query settings of the change detection (the same keys).
+  khronos::RayChangeDetector presence_estimator_;
+  khronos::TimeStamp presence_query_margin_ns_ = 0;
+  int presence_query_subsampling_ = 100;
   khronos::PhysicalEvidenceStore::Ptr physical_evidence_store_;
   khronos::PresentSurface::Ptr present_surface_;
   // The previous session's surfaces.

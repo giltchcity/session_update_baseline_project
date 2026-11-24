@@ -27,6 +27,7 @@
 #include "khronos/backend/reconciliation/mesh/change_merger.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 #include <session_core/evidence/surface_evidence.h>
+#include <session_core/objects/physical_presence.h>
 
 namespace {
 
@@ -711,6 +712,7 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     require(graph->emplaceNode(spark_dsg::DsgLayers::OBJECTS,spark_dsg::NodeSymbol('O',0),std::move(object)),"physical reducer fixture inserted");
     auto store=std::make_shared<PhysicalEvidenceStore>();
     require(store->ingest(makeEndpointFrame(camera,missing?kT1:kT2,EndpointClass::kBackground,0,2)),"sensor frame stored");
+    // Khronos's object detector leaves physical objects to the session layer.
     auto verifier=std::make_shared<RayVerificator>(makeVerifierConfig());
     verifier->setPhysicalEvidenceStore(store);verifier->setDsg(graph);
     RayChangeDetector::Config tc;tc.temporal_resolution=1;tc.window_size=1;
@@ -718,9 +720,17 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     khronos::RayObjectChangeDetector::Config dc;dc.time_filtering_threshold=0;dc.query_subsampling=1;
     khronos::RayObjectChangeDetector detector(dc,verifier,temporal);
     khronos::ObjectChanges changes;detector.detectChanges(*graph,{},changes);
-    require(changes.size()==1,"physical reducer emits one change record");
-    require((changes.begin()->last_absent!=0)==(mode==2),
-      "physical object reducer must reject unavailable pixels and accept actual later free space; mode="+std::to_string(mode));
+    require(changes.empty(),"Khronos's object detector emits no record for a physical object");
+    // The session's estimate from its stored pixels rejects unavailable pixels and evidence not
+    // after the observation, and accepts actual later free space.
+    khronos::session::SurfaceEvidence evidence(khronos::session::SurfaceEvidence::Config::of(verifier->config));
+    auto attrs=graph->getNode(spark_dsg::NodeSymbol('O',0)).attributes<khronos::KhronosObjectAttributes>().clone();
+    auto& object_attrs=static_cast<khronos::KhronosObjectAttributes&>(*attrs);
+    const auto seen=khronos::session::observePresence(object_attrs,49,evidence,store->snapshot(),*temporal,{0,1},kT2);
+    khronos::session::estimatePresence(seen,false,object_attrs);
+    const bool ended=object_attrs.last_observed_ns.back()!=std::numeric_limits<uint64_t>::max();
+    require(ended==(mode==2),
+      "the physical presence estimate must reject unavailable pixels and accept actual later free space; mode="+std::to_string(mode));
   }
 }
 

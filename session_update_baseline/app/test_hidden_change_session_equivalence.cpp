@@ -41,6 +41,8 @@
 
 #include "session_update_baseline/runtime/session_state.h"
 #include <session_core/objects/physical_objects.h>
+#include <session_core/objects/physical_presence.h>
+#include <session_core/evidence/surface_evidence.h>
 
 namespace {
 
@@ -384,9 +386,7 @@ khronos::SequentialChangeDetector::Config makeDetectorConfig() {
   objects.time_filtering_threshold = 0.1F;
   objects.query_subsampling = 1;
   config.objects = objects;
-  khronos::RayBackgroundChangeDetector::Config background;
-  background.time_filtering_threshold = 0.1F;
-  config.background = background;
+  // No Khronos background detection: the session layer decides the background (SessionBackend).
   return config;
 }
 
@@ -454,7 +454,40 @@ khronos::ObjectChanges updateHidden(
   detector.setPhysicalEvidenceStore(evidence_store);
   detector.setDsg(snapshot);
   const auto& changes = detector.detectChanges({}, stamp, true);
-  const auto result = changes.object_changes;
+  // Physical objects: the session layer's presence estimate from the stored pixels, written before
+  // reconciliation (SessionBackend::estimatePhysicalPresence); Khronos's object detector leaves them
+  // out. The records returned carry that estimate for the checks.
+  auto result = changes.object_changes;
+  {
+    const auto detector_config = makeDetectorConfig();
+    const khronos::session::SurfaceEvidence evidence(
+        khronos::session::SurfaceEvidence::Config::of(detector_config.ray_verificator));
+    const khronos::RayChangeDetector estimator(detector_config.ray_change_detector);
+    const auto* objects =
+        detector_config.objects.getUnderlying<khronos::RayObjectChangeDetector::Config>();
+    require(objects != nullptr, "the harness configures the object change detection");
+    const khronos::session::PresenceQuery query{
+        static_cast<Stamp>(objects->time_filtering_threshold * 1e9),
+        static_cast<size_t>(objects->query_subsampling)};
+    const auto stored = evidence_store->snapshot();
+    const bool conservative = makeReconcilerConfig().time_estimates_conservative;
+    for (const auto& [node_id, node] : graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+      (void)node;
+      auto& attrs = graph.getNode(node_id).attributes<ObjectAttrs>();
+      const auto physical_id = khronos::session::physicalInstanceId(attrs);
+      if (!physical_id || attrs.first_observed_ns.empty() || attrs.last_observed_ns.empty()) continue;
+      const auto seen = khronos::session::observePresence(attrs, *physical_id, evidence, stored,
+                                                          estimator, query, stamp);
+      khronos::ObjectChange record;
+      record.node_id = node_id;
+      record.first_absent = seen.first_absent;
+      record.first_persistent = seen.first_persistent;
+      record.last_absent = seen.last_absent;
+      record.last_persistent = seen.last_persistent;
+      result.push_back(record);
+      khronos::session::estimatePresence(seen, conservative, attrs);
+    }
+  }
 
   if (!registry) {
     // Legacy winner-takes-all: mergeObjectAttributes directly owns geometry.
@@ -648,9 +681,10 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
                              spark_dsg::NodeSymbol('O', 8),
                              makeObject(8, 0.0F, 8.0F, kInitialStamp)),
           "insert old I8 segment");
-  // Every ray avoids I8's old x=0 surface, so this historical segment stays
-  // unobserved/open. It must still be unable to overrule the newest segment's
-  // finite right edge after the object moves.
+  // The terminal frame sees 2 m of background through I8's old x=0 surface (1 m):
+  // the session's pixel evidence observes that site empty (Khronos's mesh rays,
+  // pose to mesh vertex, happened to pass beside it). Neither segment may keep
+  // the identity present past the move.
   setBackground(*graph,
                 {{khronos::Point(-1.0F, 0.0F, 1.0F),
                   kInitialStamp,
@@ -679,9 +713,9 @@ void testMovedThenTerminalAbsent(const std::filesystem::path& output_dir,
       *graph, makeBackgroundEvidenceStore(camera, kTerminalStamp), kTerminalStamp);
   const auto old_change = changes.find(spark_dsg::NodeSymbol('O', 8));
   const auto newest_change = changes.find(spark_dsg::NodeSymbol('O', 108));
-  require(old_change != changes.end() && old_change->last_absent == 0 &&
+  require(old_change != changes.end() && old_change->last_absent == kTerminalStamp &&
               old_change->last_persistent == 0,
-          "unobserved old I8 site acquired fabricated ray evidence");
+          "the old I8 site seen empty in the terminal frame was not classified absent");
   require(newest_change != changes.end() &&
               newest_change->last_absent == kTerminalStamp &&
               newest_change->last_persistent == 0,
@@ -1022,14 +1056,13 @@ int main(int argc, char** argv) {
           "typed background replacement did not remove I20");
   const auto* i7_change =
       findPhysicalChange(*continuous, continuous_changes, 7);
-  // The change detector still reports no single majority absence: its 0.5
-  // relative-confidence threshold sees 4/10 background replacements (the six
-  // I9 pixels are inconclusive different-id coverage). The registry below
-  // closes I7 by *per-sample* replacement voting (10 replacement votes vs 0
-  // support), which is a different, threshold-free ledger.
-  require(i7_change != nullptr && i7_change->last_absent == 0 &&
+  // The session's evidence reads another identity on I7's surface (the six I9
+  // pixels) as a replacement, as the registry's per-sample ledger does (10
+  // replacement votes vs 0 support): with the four background replacements a
+  // majority absence ends I7's presence in this round.
+  require(i7_change != nullptr && i7_change->last_absent == kNewStamp &&
               i7_change->last_persistent == 0,
-          "change detector's per-ray majority threshold must stay at 0 for I7");
+          "another identity on I7's surface replaces it, as in the registry's ledger");
   const auto* i21_change =
       findPhysicalChange(*continuous, continuous_changes, 21);
   require(i21_change != nullptr && i21_change->last_absent == 0 &&
@@ -1083,7 +1116,7 @@ int main(int argc, char** argv) {
       findPhysicalChange(*restarted, restarted_changes, 7);
   const auto* restarted_i21 =
       findPhysicalChange(*restarted, restarted_changes, 21);
-  require(restarted_i7 != nullptr && restarted_i7->last_absent == 0 &&
+  require(restarted_i7 != nullptr && restarted_i7->last_absent == kNewStamp &&
               restarted_i21 != nullptr && restarted_i21->last_absent == 0,
           "serialized D3 changed mixed/unknown coverage semantics");
 
@@ -1120,8 +1153,11 @@ int main(int argc, char** argv) {
   require(d2.objects.at(12).presence_last ==
               std::numeric_limits<Stamp>::max(),
           "unobserved terminal I12 did not remain open/current");
-  require(d2.background.size() == 15,
-          "old background was not removed while new background was retained");
+  // Reconciliation keeps every background vertex, old and new: no Khronos background detection
+  // deletes the old one its rays see through. Which background faces a snapshot shows is the
+  // session's composition (votes, closed states), covered by test_present_surface.
+  require(d2.background.size() == 16,
+          "reconciliation deleted or lost a background vertex: " + std::to_string(d2.background.size()));
 
   // An absent terminal object must not leak through serialization into the
   // next recursive seed.

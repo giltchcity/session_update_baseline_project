@@ -2,6 +2,8 @@
 #include <filesystem>
 #include <fstream>
 #include "khronos/backend/change_detection/ray_verificator.h"
+#include "khronos/backend/change_detection/objects/ray_object_change_detector.h"
+#include <algorithm>
 #include "session_update_baseline/runtime/session_backend.h"
 
 #include <stdexcept>
@@ -44,7 +46,13 @@ SessionBackend::SessionBackend(const Config& config,
     : khronos::Backend(withoutKhronosBackgroundDetection(config), dsg, state),
       high_mobility_semantic_labels_(config.high_mobility_semantic_labels),
       surface_evidence_(khronos::session::SurfaceEvidence::Config::of(
-          config.change_detection.ray_verificator)) {
+          config.change_detection.ray_verificator)),
+      presence_estimator_(config.change_detection.ray_change_detector) {
+  if (const auto* objects =
+          config.change_detection.objects.getUnderlying<khronos::RayObjectChangeDetector::Config>()) {
+    presence_query_margin_ns_ = static_cast<khronos::TimeStamp>(objects->time_filtering_threshold * 1e9);
+    presence_query_subsampling_ = std::max(1, objects->query_subsampling);
+  }
   if (!config.input_state.empty()) {
     loadInputState(config.input_state);
   }

@@ -420,10 +420,8 @@ void testPhysicalSegmentsMatchIncrementalOracle() {
   SequentialChangeDetector incremental(config);
   incremental.setDsg(first);
   const Changes initial = incremental.detectChanges({}, kT1, false);
-  const auto initial_old = initial.object_changes.find(objectId(60));
-  require(initial_old != initial.object_changes.end() &&
-              initial_old->last_persistent == 0,
-          "initial physical segment has no fabricated later direct evidence");
+  require(initial.object_changes.find(objectId(60)) == initial.object_changes.end(),
+          "a physical segment gets no record from Khronos's object detector (the session layer estimates it)");
 
   require(incremental.setDsg(second) ==
               RayVerificator::UpdateMode::kIncremental,
@@ -432,16 +430,9 @@ void testPhysicalSegmentsMatchIncrementalOracle() {
   requireChangesEqual(updated,
                       freshChanges(config, second, kT2),
                       "physical-ID incremental detector oracle");
-  const auto old_segment = updated.object_changes.find(objectId(60));
-  const auto new_segment = updated.object_changes.find(objectId(160));
-  require(old_segment != updated.object_changes.end() &&
-              old_segment->last_absent == 0 &&
-              old_segment->last_persistent == 0,
-          "direct same-ID segment fabricated old-site ray persistence");
-  require(new_segment != updated.object_changes.end() &&
-              new_segment->first_absent == 0 &&
-              new_segment->first_persistent == 0,
-          "old same-ID segment fabricated new-site ray persistence");
+  require(updated.object_changes.find(objectId(60)) == updated.object_changes.end() &&
+              updated.object_changes.find(objectId(160)) == updated.object_changes.end(),
+          "neither segment of a physical identity gets a record from Khronos's object detector");
 
   khronos::RPGOMerges proposals;
   proposals.emplace_back(objectId(160), objectId(60), true);
@@ -453,9 +444,8 @@ void testPhysicalSegmentsMatchIncrementalOracle() {
       proposed_changes.object_changes.find(objectId(160));
   const auto geometric_proposal =
       proposed_changes.object_changes.find(objectId(62));
-  require(physical_proposal != proposed_changes.object_changes.end() &&
-              physical_proposal->merged_id == 0,
-          "physical RPGO proposal bypassed segment-wise reconciliation");
+  require(physical_proposal == proposed_changes.object_changes.end(),
+          "a physical RPGO proposal gets no record: the reconciler never merges physical segments");
   require(geometric_proposal != proposed_changes.object_changes.end() &&
               geometric_proposal->merged_id == objectId(61),
           "non-physical verified RPGO merge path was disabled");

@@ -18,6 +18,7 @@
 #include <malloc.h>
 #include <glog/logging.h>
 #include "session_core/objects/physical_objects.h"
+#include "session_core/objects/physical_presence.h"
 namespace khronos {
 namespace {
 // Return memory freed at session end (stored evidence) to the system: glibc
@@ -217,7 +218,28 @@ void SessionBackend::beforeReconcile(
   if (finalize_pending) {
     persistent_objects_.finalizePendingAbsences(stamp);
   }
+  estimatePhysicalPresence(*dsg, stamp);
   // A closed state's old-site background goes with it in the round's composition (afterReconcile).
+}
+
+void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const TimeStamp stamp) {
+  if (!dsg.hasLayer(DsgLayers::OBJECTS)) return;
+  RayVerificator::PhysicalEvidenceSnapshot evidence;
+  if (physical_evidence_store_) evidence = physical_evidence_store_->snapshot();
+  const session::PresenceQuery query{presence_query_margin_ns_, static_cast<size_t>(presence_query_subsampling_)};
+  size_t estimated = 0;
+  for (const auto& [node_id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {
+    (void)node_id;
+    auto* attrs = node->tryAttributes<KhronosObjectAttributes>();
+    if (!attrs) continue;
+    const auto physical_id = session::physicalInstanceId(*attrs);
+    if (!physical_id || attrs->first_observed_ns.empty() || attrs->last_observed_ns.empty()) continue;
+    const auto seen = session::observePresence(*attrs, *physical_id, surface_evidence_, evidence,
+                                               presence_estimator_, query, stamp);
+    session::estimatePresence(seen, config.reconciler.time_estimates_conservative, *attrs);
+    ++estimated;
+  }
+  CLOG(3) << "[SessionBackend] presence of " << estimated << " physical object node(s) from the stored pixels";
 }
 void SessionBackend::afterReconcile(
     const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp, bool finalize_pending) {

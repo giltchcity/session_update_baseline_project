@@ -122,6 +122,11 @@ void RayObjectChangeDetector::detectChanges(const DynamicSceneGraph& dsg,
 
     auto& attrs = object.second->attributes<KhronosObjectAttributes>();
     const auto physical_id = physicalInstanceId(attrs);
+    // A physical object's presence is the session layer's to estimate (SessionBackend, from the
+    // pixels the session stores): this detector decides objects without a physical identity only.
+    if (physical_id) {
+      continue;
+    }
 
     // Change detection estimates the presence of what persists at a site or under
     // an identity. An object with neither a surface nor a physical identity is a

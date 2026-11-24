@@ -3,6 +3,7 @@
 add_library(session_core OBJECT
   src/adapters/physical_ray_queries.cpp
   src/objects/physical_objects.cpp
+  src/objects/physical_presence.cpp
   src/objects/static_surface.cpp
   src/state/persistent_object_state.cpp
   src/surface/closed_object_background.cpp
