@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <memory>
 #include <sstream>
@@ -21,6 +22,7 @@
 #include <spark_dsg/serialization/graph_binary_serialization.h>
 #include <spark_dsg/serialization/versioning.h>
 
+#include "khronos/spatio_temporal_map/piece_history.h"
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
 #include "khronos/utils/khronos_attribute_utils.h"
 
@@ -506,11 +508,109 @@ void testBoundedFileDescriptors() {
           "timeline remains exact below a one-fd-per-snapshot descriptor limit");
 }
 
+
+// A piece history cut back to a snapshot and stored again from there on (rewriteSnapshots: a move
+// told after the snapshots it belongs to were stored) is, byte for byte, the history stored with
+// the changed snapshots from the start, and keeps appending and replacing its last snapshot.
+void testPieceHistoryRewrite() {
+  using khronos::PieceHistory;
+  constexpr double kEdge = 0.8;
+  // Seven snapshots: the fourth equals the third (no piece changes), the sixth has no object node
+  // (its pieces end there).
+  std::vector<Dsg::Ptr> source;
+  for (size_t step = 0; step < 7; ++step) {
+    source.push_back(step == 3 ? source[2]->clone() : makeRichSnapshot(step));
+  }
+  require(source[5]->removeNode(spark_dsg::NodeSymbol('O', 10)), "the object node is removed");
+  // What a move told late writes: one more trajectory sample on the object, in snapshots 2 to 4.
+  const auto changes = [](size_t index) { return index >= 2 && index <= 4; };
+  const auto change = [](Dsg& dsg, size_t index) {
+    for (const auto& [id, node] : dsg.getLayer(spark_dsg::DsgLayers::OBJECTS).nodes()) {
+      auto* attrs = node->tryAttributes<ObjectAttrs>();
+      require(attrs != nullptr, "the object node has object attributes");
+      attrs->trajectory_timestamps.push_back(kBaseStamp * (index + 1) + 7);
+      attrs->trajectory_positions.push_back(Eigen::Vector3f(0.5f, 0.5f, static_cast<float>(index)));
+    }
+  };
+  const auto bytes = [](const PieceHistory& history) {
+    std::ostringstream out;
+    history.write(out);
+    return out.str();
+  };
+  PieceHistory stored(kEdge), expected(kEdge);
+  std::vector<Dsg::Ptr> changed;
+  for (size_t i = 0; i < source.size(); ++i) {
+    stored.append(*source[i]);
+    auto dsg = source[i]->clone();
+    if (changes(i)) change(*dsg, i);
+    expected.append(*dsg);
+    changed.push_back(dsg);
+  }
+  require(bytes(stored) != bytes(expected), "the late move changes the history");
+  for (const size_t first : {size_t{0}, size_t{2}, size_t{6}}) {
+    PieceHistory rewritten(stored);
+    rewritten.truncate(first);
+    require(rewritten.size() == first, "a truncated piece history keeps the snapshots before the cut");
+    for (size_t i = first; i < source.size(); ++i) {
+      auto dsg = stored.snapshot(i);
+      if (changes(i)) change(*dsg, i);
+      rewritten.append(*dsg);
+    }
+    const PieceHistory& reference = first <= 2 ? expected : stored;
+    require(bytes(rewritten) == bytes(reference),
+            "a piece history stored again from a cut equals the one stored so from the start");
+    for (size_t i = 0; i < source.size(); ++i) {
+      require(PieceHistory::split(*rewritten.snapshot(i), kEdge) ==
+                  PieceHistory::split(first <= 2 ? *changed[i] : *source[i], kEdge),
+              "every snapshot of a rewritten piece history restores what was stored");
+    }
+    // The terminal pass replaces the last snapshot after a rewrite as after an append.
+    auto last = changed.back()->clone();
+    require(last->removeNode(spark_dsg::NodeSymbol('O', 10)), "the last snapshot loses its object");
+    PieceHistory replaced(reference);
+    replaced.replaceLast(*last);
+    rewritten.replaceLast(*last);
+    require(bytes(rewritten) == bytes(replaced), "a rewritten piece history replaces its last snapshot exactly");
+  }
+
+  // Through the map: rewriteSnapshots on a piece-history map stores what the map stored with the
+  // changed snapshots from the start would.
+  SpatioTemporalMap late(SpatioTemporalMap::Config{}), early(SpatioTemporalMap::Config{});
+  late.usePieceHistory(kEdge);
+  early.usePieceHistory(kEdge);
+  for (size_t i = 0; i < source.size(); ++i) {
+    late.update(source[i]->clone(), (i + 1) * kBaseStamp);
+    early.update(changed[i]->clone(), (i + 1) * kBaseStamp);
+  }
+  const size_t stored_anew = late.rewriteSnapshots(
+      [&](size_t index, TimeStamp) { return changes(index); },
+      [&](Dsg& dsg, size_t index, TimeStamp) {
+        change(dsg, index);
+        return true;
+      });
+  require(stored_anew == source.size() - 2, "a piece-history map stores again from the first changed snapshot on");
+  require(late.rewriteSnapshots([](size_t, TimeStamp) { return false; },
+                                [](Dsg&, size_t, TimeStamp) { return false; }) == 0,
+          "nothing to change stores nothing again");
+  const auto root = std::filesystem::temp_directory_path();
+  const auto unique = std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
+  const auto late_path = root / ("piece_rewrite_late_" + unique + ".4dmap");
+  const auto early_path = root / ("piece_rewrite_early_" + unique + ".4dmap");
+  require(late.save(late_path.string()) && early.save(early_path.string()), "piece-history maps are saved");
+  const auto read = [](const std::filesystem::path& path) {
+    std::ifstream in(path, std::ios::binary);
+    return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+  };
+  require(read(late_path) == read(early_path), "a rewritten piece-history map saves as the map stored so from the start");
+  std::filesystem::remove(late_path);
+  std::filesystem::remove(early_path);
+}
 }  // namespace
 
 int main() {
   testExactTimelineAndLegacyCompatibility();
   testBoundedResidentMemory();
   testBoundedFileDescriptors();
+  testPieceHistoryRewrite();
   return EXIT_SUCCESS;
 }

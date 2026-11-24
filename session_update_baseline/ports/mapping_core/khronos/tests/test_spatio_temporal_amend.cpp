@@ -1,5 +1,6 @@
-// SpatioTemporalMap::amendSnapshots: only the snapshots stamped in [from, to) are rewritten; every
-// other snapshot, including the later ones stored as deltas of a rewritten one, decodes unchanged.
+// SpatioTemporalMap::rewriteSnapshots, as the backend uses it to show a state from its start: only the
+// snapshots named are changed; every other snapshot, including the later ones stored as deltas of a
+// changed one or stored again from a piece history, decodes unchanged. Run with both stores.
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
@@ -72,43 +73,58 @@ float meshX(const Dsg& dsg, spark_dsg::NodeId id) {
   return dsg.getNode(id).attributes<ObjectAttrs>().mesh.pos(0).x();
 }
 
-}  // namespace
-
-int main() {
+void check(bool piece_history) {
+  const std::string store = piece_history ? " (piece history)" : " (deltas)";
   SpatioTemporalMap map(SpatioTemporalMap::Config{});
+  if (piece_history) map.usePieceHistory(1.0);
   constexpr size_t kSnapshots = 25;  // crosses the delta keyframes at 10 and 20
   for (size_t k = 0; k < kSnapshots; ++k) map.update(snapshot(k), (k + 1) * kSecond);
 
   const auto id10 = spark_dsg::NodeSymbol('O', 10);
   const auto id20 = spark_dsg::NodeSymbol('O', 20);
+  const auto within = [](TimeStamp from, TimeStamp to) {
+    return [from, to](size_t, TimeStamp t) { return t >= from && t < to; };
+  };
   // Object 10 shown at x = 5 from 12 s to (not including) 16 s.
-  const size_t moved = map.amendSnapshots(12 * kSecond, 16 * kSecond, [&](Dsg& past, TimeStamp) {
+  size_t moved = 0;
+  map.rewriteSnapshots(within(12 * kSecond, 16 * kSecond), [&](Dsg& past, size_t, TimeStamp) {
     auto copy = past.getNode(id10).attributes<ObjectAttrs>().clone();
     auto& c = static_cast<ObjectAttrs&>(*copy);
     for (size_t i = 0; i < 3; ++i) c.mesh.setPos(i, Eigen::Vector3f(5.0f, 0.1f * i, 0.0f));
     past.setNodeAttributes(id10, std::move(copy));
+    ++moved;
     return true;
   });
-  require(moved == 4, "four snapshots stamped 12-15 s are rewritten, got " + std::to_string(moved));
+  require(moved == 4, "four snapshots stamped 12-15 s are changed" + store + ", got " + std::to_string(moved));
   // Object 20 inserted where it is missing, from 1 s to 3 s.
+  size_t inserted = 0;
   size_t seen_stamp_ok = 0;
-  const size_t inserted = map.amendSnapshots(1 * kSecond, 3 * kSecond, [&](Dsg& past, TimeStamp t) {
-    seen_stamp_ok += (t == 1 * kSecond || t == 2 * kSecond);
+  map.rewriteSnapshots(within(1 * kSecond, 3 * kSecond), [&](Dsg& past, size_t index, TimeStamp t) {
+    seen_stamp_ok += (t == (index + 1) * kSecond && (t == 1 * kSecond || t == 2 * kSecond));
     if (past.hasNode(id20)) return false;
-    return past.emplaceNode(spark_dsg::DsgLayers::OBJECTS, id20, object(20, 9.0f));
+    const bool added = past.emplaceNode(spark_dsg::DsgLayers::OBJECTS, id20, object(20, 9.0f));
+    inserted += added;
+    return added;
   });
-  require(inserted == 2 && seen_stamp_ok == 2, "object 20 is inserted into the snapshots at 1 s and 2 s");
+  require(inserted == 2 && seen_stamp_ok == 2, "object 20 is inserted into the snapshots at 1 s and 2 s" + store);
 
   for (size_t k = 0; k < kSnapshots; ++k) {
     const auto dsg = map.rawDsg(k);
     const TimeStamp stamp = (k + 1) * kSecond;
     const float x = meshX(*dsg, id10);
     const bool in_window = stamp >= 12 * kSecond && stamp < 16 * kSecond;
-    require(x == (in_window ? 5.0f : 0.0f), "object 10 at the expected place in snapshot " + std::to_string(k));
+    require(x == (in_window ? 5.0f : 0.0f), "object 10 at the expected place in snapshot " + std::to_string(k) + store);
     const bool has20 = dsg->hasNode(id20);
-    require(has20 == (k <= 1 || k >= 3), "object 20 present as expected in snapshot " + std::to_string(k));
+    require(has20 == (k <= 1 || k >= 3), "object 20 present as expected in snapshot " + std::to_string(k) + store);
   }
-  require(map.getDsgPtr(13 * kSecond) != nullptr, "the map still answers queries after the rewrite");
+  require(map.getDsgPtr(13 * kSecond) != nullptr, "the map still answers queries after the rewrite" + store);
+}
+
+}  // namespace
+
+int main() {
+  check(false);
+  check(true);
   std::cout << "spatio_temporal_amend: ok\n";
   return EXIT_SUCCESS;
 }

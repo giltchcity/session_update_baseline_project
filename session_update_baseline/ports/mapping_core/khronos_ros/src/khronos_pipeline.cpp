@@ -98,6 +98,13 @@ void KhronosPipeline::init() {
     if (khronos_active_window_) {
       khronos_backend_->setObjectSurfaceResolution(
           khronos_active_window_->config.volumetric_map.voxel_size);
+      if (khronos_backend_->config.piece_history) {
+        // The 4D map's history as versioned pieces, split by the active window's own voxel blocks.
+        const auto& volume = khronos_active_window_->config.volumetric_map;
+        const double block_edge = static_cast<double>(volume.voxel_size) * volume.voxels_per_side;
+        khronos_backend_->usePieceHistory(block_edge);
+        LOG(INFO) << "[4DMap] piece history, block edge " << block_edge << " m";
+      }
     }
     // The persistent surface uses the same native reconstruction settings as
     // the active window; tracking retains its original temporal lifetime.

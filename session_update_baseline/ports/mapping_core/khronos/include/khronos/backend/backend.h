@@ -63,6 +63,7 @@
 #include "khronos/backend/reconciliation/reconciler.h"
 #include "khronos/backend/update_khronos_objects_functor.h"
 #include "khronos/common/common_types.h"
+#include "khronos/active_window/object_extraction/move_trajectories.h"
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
 
 namespace khronos {
@@ -100,6 +101,11 @@ class Backend : public hydra::BackendModule {
     // ontology disabled (only observed D1 history and past relocation
     // frequency are used).
     std::vector<int> high_mobility_semantic_labels;
+
+    // Keep the 4D map's history as versioned pieces (SpatioTemporalMap::usePieceHistory), split by the active
+    // window's own voxel blocks: a mesh block, node or edge is stored again only when it changed. False: one
+    // keyframe/delta snapshot per update, as before.
+    bool piece_history = true;
 
     // Member configs.
     UpdateKhronosObjectsFunctor::Config update_objects;
@@ -171,6 +177,8 @@ class Backend : public hydra::BackendModule {
 
   /** Inherit the active map resolution for surface correspondence checks. */
   void setObjectSurfaceResolution(float resolution);
+  /** The 4D map keeps its history as versioned pieces; block_edge: the active window's voxel block edge. */
+  void usePieceHistory(double block_edge) { map_.usePieceHistory(block_edge); }
 
   /** Install the config-driven semantic ontology prior for moveability. */
   void setHighMobilitySemanticLabels(const std::vector<int>& labels);
@@ -219,6 +227,22 @@ class Backend : public hydra::BackendModule {
   void sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp);
   std::map<size_t, uint64_t> session_current_uid_;
   std::vector<std::pair<size_t, TimeStamp>> session_new_states_;
+
+  // The trajectories of the session's moves (MoveTrajectories), written to the snapshots of the
+  // 4D map only: a snapshot as it is stored, the snapshots stored before a move was told as soon
+  // as it is told (the latest few), and before the map is saved those of the moves told last.
+  // The graph the mapping works on never carries them.
+  void storeSnapshot(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp);
+  void fillMoveTrajectories();
+  // Writes the moves told by now to the stored snapshots they belong to; returns how many snapshots were stored anew.
+  size_t writeToldMoves(const std::map<int, std::vector<MoveTrajectories::Sample>>& moves);
+  // Snapshots stored anew while the session ran, as moves were told.
+  size_t snapshots_stored_anew_ = 0;
+  // Keeps one record of move_samples_ per snapshot of the map: a snapshot stored without storeSnapshot (a chained
+  // session's seed, its first) carries no sample of this session's moves.
+  void alignMoveSamples();
+  // Per snapshot and instance: how many samples of its moves the snapshot carries.
+  std::vector<std::map<int, size_t>> move_samples_;
 
   // Members.
   SpatioTemporalMap map_;

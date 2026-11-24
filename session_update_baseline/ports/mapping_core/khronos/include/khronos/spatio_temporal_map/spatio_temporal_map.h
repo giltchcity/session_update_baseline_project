@@ -37,6 +37,7 @@
 
 #pragma once
 
+#include <functional>
 #include <filesystem>
 #include <functional>
 #include <iomanip>
@@ -54,6 +55,7 @@ namespace khronos {
 
 struct SnapshotSpillDirectory;
 struct SnapshotBlob;
+class PieceHistory;
 
 /**
  * @brief Map structure that allows queries in space and time.
@@ -88,18 +90,20 @@ class SpatioTemporalMap {
   void update(const DynamicSceneGraph::Ptr& dsg, TimeStamp stamp);
 
   /**
-   * @brief Rewrite the stored snapshots whose stamps lie in [from, to) through `edit`, which
-   * returns whether it changed the graph (it also receives the snapshot's stamp). A state the map
-   * learns of late is shown from its start.
-   * @return The number of snapshots rewritten.
-   */
-  size_t amendSnapshots(TimeStamp from, TimeStamp to,
-                        const std::function<bool(DynamicSceneGraph&, TimeStamp)>& edit);
-
-  /**
    * @brief Finalize the map by computing an efficient to lookup structure of the current data.
    */
   void finalize();
+
+  /**
+   * @brief Change stored snapshots in place of time: `change` is given each snapshot `needs`
+   * names (index, stamp) and tells whether it changed it. A changed snapshot is stored anew, and
+   * with it the snapshots after it that are stored as increments on it (with a piece history,
+   * every snapshot from the first that `needs` names on).
+   * @returns The number of snapshots stored anew.
+   */
+  size_t rewriteSnapshots(
+      const std::function<bool(size_t, TimeStamp)>& needs,
+      const std::function<bool(DynamicSceneGraph&, size_t, TimeStamp)>& change);
 
   // Query the map at a given robot time.
   TimeStamp earliest() const { return earliest_; }
@@ -127,6 +131,16 @@ class SpatioTemporalMap {
   /** Save the indexed, lossless 4dmap-zpk v1 keyframe/delta container directly. */
   bool saveZpk(std::string filepath, size_t keyframe = 10) const;
 
+  /** Save the chosen snapshots (indices into stamps()) as a plain serialization-version-1 4D map. */
+  bool saveSnapshots(const std::vector<size_t>& indices, std::string filepath) const;
+
+  /**
+   * Save the whole map, a piece-history map included, as a plain serialization-version-1 4D map with its own time
+   * range and flags (what save() writes for a map kept as keyframe/delta snapshots), for readers built before the piece
+   * format. Written straight to `filepath` (no temporary file), so that it can be a pipe.
+   */
+  bool savePlain(std::string filepath) const;
+
   /**
    * @brief Load the map from a binary file.
    * @param filepath Full path to load the file from.
@@ -153,7 +167,20 @@ class SpatioTemporalMap {
   /** @brief Compressed bytes of unique current snapshots and their immutable bases. */
   uintmax_t snapshotStorageBytes() const;
 
+  /**
+   * @brief Keep the history as versioned pieces (PieceHistory) from now on: a piece of a snapshot (a mesh block, a
+   * node, an edge) is stored again only when it changed, and any snapshot is restored from the versions alive at its
+   * index. The snapshots held so far are converted. Saved maps then use the piece format.
+   * @param block_edge The edge of the mapper's voxel blocks (voxel size times voxels per side).
+   */
+  void usePieceHistory(double block_edge);
+  bool usesPieceHistory() const { return history_ != nullptr; }
+
  private:
+  PieceHistory& writableHistory();
+  bool savePieces(std::string filepath) const;
+  static std::unique_ptr<SpatioTemporalMap> loadPieces(std::string filepath);
+
   // Store the state of the DSG at each major update. Every entry is an immutable
   // compressed extent in one process-owned anonymous spill container. Keeping offsets
   // with immutable prefix references and a keyframe every ten snapshots
@@ -196,6 +223,11 @@ class SpatioTemporalMap {
 
   // Whether all data is finalized.
   bool finalized_;
+
+  // The history as versioned pieces (usePieceHistory). Shared between copies until one of them stores a snapshot.
+  // Last among the members: programs built against the header without it keep every other member's offset (they
+  // read the map through the shared library, e.g. eval_fast's exporters).
+  std::shared_ptr<PieceHistory> history_;
 
   // Index of the last required vertex for each mesh face in each dsg.
   // std::vector<std::vector<size_t>> mesh_face_indices_;

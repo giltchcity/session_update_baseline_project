@@ -191,7 +191,7 @@ SurfaceCompatibility compareSurfaceFrames(
 
 std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFrames(
     const Track& track, const FrameDataBuffer& frame_data,
-    std::optional<TimeStamp> after_stamp) const {
+    std::optional<TimeStamp> after_stamp, TimeStamp* rejected) const {
   auto frames = collectSemanticFrames(track, frame_data, after_stamp);
   if (!track.physical_instance_id || frames.size() < 2) return frames;
   std::stable_sort(frames.begin(), frames.end(), [](const auto& a, const auto& b) {
@@ -248,6 +248,7 @@ std::vector<std::pair<FrameData::Ptr, int>> MeshObjectExtractor::selectStaticFra
               << " forward_support=" << forward.supported << " forward_free=" << forward.free
               << " reverse_support=" << reverse.supported << " reverse_free=" << reverse.free
               << " forward_sampled=" << forward.sampled << " reverse_sampled=" << reverse.sampled;
+    if (rejected) *rejected = frames[offset - 1].first->input.timestamp_ns;  // the end of a move (D1)
     frames.erase(frames.begin(), frames.begin() + offset);
     break;
   }

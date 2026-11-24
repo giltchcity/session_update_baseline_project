@@ -421,7 +421,9 @@ void Backend::sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp)
     // In every snapshot stored since the state's start, the identity's node shows this state's
     // surface (its predecessor ends there); a snapshot without the identity gains its node, with
     // the trajectory known at that snapshot only.
-    const size_t amended = map_.amendSnapshots(start, stamp, [&](DynamicSceneGraph& past, TimeStamp t) {
+    size_t amended = 0;
+    map_.rewriteSnapshots([&](size_t, TimeStamp t) { return t >= start && t < stamp; },
+                          [&](DynamicSceneGraph& past, size_t, TimeStamp t) {
       if (!past.hasLayer(DsgLayers::OBJECTS)) return false;
       std::vector<spark_dsg::NodeId> nodes;
       for (const auto& [node_id, node] : past.getLayer(DsgLayers::OBJECTS).nodes()) {
@@ -431,11 +433,20 @@ void Backend::sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp)
       if (nodes.empty()) {
         auto copy = shown.clone();
         auto& c = static_cast<KhronosObjectAttributes&>(*copy);
+        // Every sample not later than the snapshot: the node's own, then the moves it carries (the
+        // backend counts those per snapshot, as many as are not later than the snapshot).
         size_t known = 0;
-        while (known < c.trajectory_timestamps.size() && c.trajectory_timestamps[known] <= t) ++known;
+        for (size_t s = 0; s < c.trajectory_timestamps.size(); ++s) {
+          if (c.trajectory_timestamps[s] > t) continue;
+          c.trajectory_timestamps[known] = c.trajectory_timestamps[s];
+          if (s < c.trajectory_positions.size()) c.trajectory_positions[known] = c.trajectory_positions[s];
+          ++known;
+        }
         c.trajectory_timestamps.resize(known);
         c.trajectory_positions.resize(std::min(c.trajectory_positions.size(), known));
-        return past.emplaceNode(DsgLayers::OBJECTS, node_now, std::move(copy));
+        const bool added = past.emplaceNode(DsgLayers::OBJECTS, node_now, std::move(copy));
+        amended += added;
+        return added;
       }
       for (size_t k = 0; k < nodes.size(); ++k) {
         auto copy = past.getNode(nodes[k]).attributes<KhronosObjectAttributes>().clone();
@@ -451,6 +462,7 @@ void Backend::sessionAmendHistory(const DynamicSceneGraph& dsg, TimeStamp stamp)
         }
         past.setNodeAttributes(nodes[k], std::move(copy));
       }
+      ++amended;
       return true;
     });
     LOG(INFO) << "STATE_START_HISTORY inst=" << id << " start=" << start << " round=" << stamp

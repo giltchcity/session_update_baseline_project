@@ -36,9 +36,11 @@
  * -------------------------------------------------------------------------- */
 
 #include "khronos/spatio_temporal_map/spatio_temporal_map.h"
+#include "khronos/spatio_temporal_map/piece_history.h"
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -282,6 +284,8 @@ std::vector<T> readPackedIntegralVector(std::istream& in, const char* field) {
 
 
 constexpr char kZpkMagic[] = "4DMAPZPK\0\1";
+// A map whose history is a PieceHistory (usePieceHistory); its first byte differs from both other formats.
+constexpr char kPieceMapMagic[] = "KHRONOS-PIECE-MAP-1";
 constexpr size_t kZpkMagicSize = 10;
 constexpr char kZpkTrailerMagic[] = "ZPKEND01";
 constexpr size_t kZpkTrailerSize = 24;
@@ -542,10 +546,9 @@ std::shared_ptr<SnapshotBlob> readPackedByteBlob(
   return blob;
 }
 
-void writePackedByteVector(std::ostream& out, const SnapshotBlob& blob) {
-  const auto header = snapshotHeader(blob.size);
+void writePackedBytes(std::ostream& out, const std::vector<uint8_t>& raw) {
+  const auto header = snapshotHeader(raw.size());
   out.write(reinterpret_cast<const char*>(header.data()), header.size());
-  const auto raw = decodeSnapshot(blob);
   constexpr size_t kChunkElements = 1u << 20;
   std::vector<uint8_t> encoded(2 * std::min(raw.size(), kChunkElements));
   for (size_t offset = 0; offset < raw.size(); offset += kChunkElements) {
@@ -557,6 +560,10 @@ void writePackedByteVector(std::ostream& out, const SnapshotBlob& blob) {
     out.write(reinterpret_cast<const char*>(encoded.data()), 2 * count);
     if (!out) throw std::runtime_error("Failed while streaming a 4D-map snapshot");
   }
+}
+
+void writePackedByteVector(std::ostream& out, const SnapshotBlob& blob) {
+  writePackedBytes(out, decodeSnapshot(blob));
 }
 
 void trimTrajectoryHistory(KhronosObjectAttributes& attrs, TimeStamp target_time) {
@@ -574,6 +581,31 @@ void trimTrajectoryHistory(KhronosObjectAttributes& attrs, TimeStamp target_time
     // visualization points were not stored.
     attrs.dynamic_object_points.resize(keep);
   }
+}
+
+// Diagnostic, with KHRONOS_VERIFY_PIECE_HISTORY set: every snapshot stored in a piece history is restored right away
+// and compared with the mapper's snapshot (mesh vertex and face counts, canonical pieces, and the serialization without
+// the mesh byte for byte); one log line per snapshot.
+void verifyStoredSnapshot(const PieceHistory& history, size_t index, const DynamicSceneGraph& dsg, double append_s) {
+  static const bool verify = std::getenv("KHRONOS_VERIFY_PIECE_HISTORY") != nullptr;
+  if (!verify) {
+    return;
+  }
+  const auto restored = history.snapshot(index);
+  auto counts = [](const DynamicSceneGraph& g) {
+    return g.hasMesh() ? std::make_pair(g.mesh()->numVertices(), g.mesh()->numFaces()) : std::make_pair(size_t{0}, size_t{0});
+  };
+  auto without_mesh = [](const DynamicSceneGraph& g) {
+    std::vector<uint8_t> bytes;
+    spark_dsg::io::binary::writeGraph(g, bytes, false);
+    return bytes;
+  };
+  const bool exact = counts(*restored) == counts(dsg) &&
+                     PieceHistory::split(*restored, history.blockEdge()) == PieceHistory::split(dsg, history.blockEdge()) &&
+                     without_mesh(*restored) == without_mesh(dsg);
+  (exact ? LOG(INFO) : LOG(ERROR)) << "[4DMap] piece history snapshot " << index << (exact ? " restores exactly" : " DOES NOT restore exactly")
+                                   << ": " << counts(dsg).first << " vertices, " << counts(dsg).second << " faces, stored in "
+                                   << append_s << " s, history " << history.storedBytes() << " bytes";
 }
 
 }  // namespace
@@ -596,6 +628,7 @@ void SpatioTemporalMap::copyMembers(const SpatioTemporalMap& other) {
   const_cast<Config&>(config) = other.config;
   stamps_ = other.stamps_;
   snapshots_ = other.snapshots_;
+  history_ = other.history_;  // shared until either copy stores a snapshot (writableHistory)
   spill_directory_ = other.spill_directory_;
   serialization_header_ = other.serialization_header_;
   source_dsg_cache_idx_ = other.source_dsg_cache_idx_;
@@ -612,6 +645,7 @@ void SpatioTemporalMap::moveMembers(SpatioTemporalMap&& other) {
   const_cast<Config&>(config) = std::move(other.config);
   stamps_ = std::move(other.stamps_);
   snapshots_ = std::move(other.snapshots_);
+  history_ = std::move(other.history_);
   spill_directory_ = std::move(other.spill_directory_);
   serialization_header_ = std::move(other.serialization_header_);
   source_dsg_cache_idx_ = other.source_dsg_cache_idx_;
@@ -666,6 +700,16 @@ std::shared_ptr<SnapshotBlob> SpatioTemporalMap::spillSnapshot(
 }
 
 DynamicSceneGraph::Ptr SpatioTemporalMap::sourceDsg(size_t index) const {
+  if (history_) {
+    if (index >= stamps_.size()) {
+      throw std::out_of_range("4D-map snapshot index is out of range");
+    }
+    if (!(source_dsg_cache_ && source_dsg_cache_idx_ == index)) {
+      source_dsg_cache_ = history_->snapshot(index);
+      source_dsg_cache_idx_ = index;
+    }
+    return source_dsg_cache_;
+  }
   if (index >= snapshots_.size()) {
     throw std::out_of_range("4D-map snapshot index is out of range");
   }
@@ -700,6 +744,24 @@ void SpatioTemporalMap::setSnapshot(size_t index,
   if (!dsg) {
     throw std::invalid_argument("Cannot store a null DSG snapshot");
   }
+  if (history_) {
+    // A piece history appends, or replaces its last snapshot (a terminal pass at the same stamp).
+    if (index + 1 != stamps_.size()) {
+      throw std::logic_error("A piece-history 4D map stores only its latest snapshot");
+    }
+    auto& history = writableHistory();
+    const auto start = std::chrono::steady_clock::now();
+    if (history.size() == stamps_.size()) {
+      history.replaceLast(*dsg);
+    } else {
+      history.append(*dsg);
+    }
+    verifyStoredSnapshot(history, index, *dsg,
+                         std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
+    source_dsg_cache_idx_ = index;
+    source_dsg_cache_ = dsg;
+    return;
+  }
   if (index >= snapshots_.size()) {
     throw std::out_of_range("Cannot replace an out-of-range DSG snapshot");
   }
@@ -721,7 +783,33 @@ void SpatioTemporalMap::resetQueryCache() {
   current_dsg_.reset();
 }
 
+PieceHistory& SpatioTemporalMap::writableHistory() {
+  if (history_.use_count() > 1) {
+    history_ = std::make_shared<PieceHistory>(*history_);  // a copy shared it: store into our own
+  }
+  return *history_;
+}
+
+void SpatioTemporalMap::usePieceHistory(double block_edge) {
+  if (history_) {
+    return;
+  }
+  auto history = std::make_shared<PieceHistory>(block_edge);
+  for (size_t i = 0; i < snapshots_.size(); ++i) {
+    history->append(*sourceDsg(i));
+  }
+  history_ = std::move(history);
+  snapshots_.clear();
+  last_raw_blob_.reset();
+  last_raw_bytes_.clear();
+  source_dsg_cache_.reset();
+  source_dsg_cache_idx_ = std::numeric_limits<size_t>::max();
+}
+
 uintmax_t SpatioTemporalMap::snapshotStorageBytes() const {
+  if (history_) {
+    return history_->storedBytes();
+  }
   uintmax_t total = 0;
   std::unordered_set<const SnapshotBlob*> counted;
   for (const auto& snapshot : snapshots_) {
@@ -754,11 +842,13 @@ void SpatioTemporalMap::update(const DynamicSceneGraph::Ptr& dsg, TimeStamp stam
     // A terminal change-detection pass intentionally revisits the last input
     // timestamp. Replace that state so the reconciled snapshot is authoritative;
     // appending a second/raw state at the same time makes latest ambiguous.
-    setSnapshot(snapshots_.size() - 1, dsg);
+    setSnapshot(stamps_.size() - 1, dsg);
   } else {
     stamps_.push_back(stamp);
-    snapshots_.push_back({});
-    setSnapshot(snapshots_.size() - 1, dsg);
+    if (!history_) {
+      snapshots_.push_back({});
+    }
+    setSnapshot(stamps_.size() - 1, dsg);
   }
 
   // A query may have populated the mutable lookup cache. Any state update
@@ -773,23 +863,23 @@ void SpatioTemporalMap::update(const DynamicSceneGraph::Ptr& dsg, TimeStamp stam
   }
 }
 
-size_t SpatioTemporalMap::amendSnapshots(TimeStamp from, TimeStamp to,
-                                         const std::function<bool(DynamicSceneGraph&, TimeStamp)>& edit) {
-  size_t amended = 0;
-  for (size_t i = 0; i < stamps_.size(); ++i) {
-    if (stamps_[i] < from || stamps_[i] >= to) continue;
-    auto dsg = sourceDsg(i);
-    if (!edit(*dsg, stamps_[i])) continue;
-    // A replacement gets a fresh blob; a later snapshot stored as a delta keeps its own base.
-    setSnapshot(i, dsg);
-    ++amended;
-  }
-  if (amended) resetQueryCache();
-  return amended;
-}
-
 void SpatioTemporalMap::finalize() {
   if (finalized_) {
+    return;
+  }
+
+  if (history_) {
+    // A piece history stores snapshots in order: rebuild it from the finalized snapshots.
+    auto rebuilt = std::make_shared<PieceHistory>(history_->blockEdge());
+    for (size_t i = 0; i < stamps_.size(); ++i) {
+      auto dsg = history_->snapshot(i);
+      finalizeDsg(*dsg);
+      rebuilt->append(*dsg);
+    }
+    history_ = std::move(rebuilt);
+    source_dsg_cache_.reset();
+    source_dsg_cache_idx_ = std::numeric_limits<size_t>::max();
+    finalized_ = true;
     return;
   }
 
@@ -800,6 +890,69 @@ void SpatioTemporalMap::finalize() {
     setSnapshot(i, dsg);
   }
   finalized_ = true;
+}
+
+size_t SpatioTemporalMap::rewriteSnapshots(
+    const std::function<bool(size_t, TimeStamp)>& needs,
+    const std::function<bool(DynamicSceneGraph&, size_t, TimeStamp)>& change) {
+  if (history_) {
+    // A piece history stores its snapshots in order: it is cut back to the first snapshot that
+    // changes, and every snapshot from there on is stored again, read from the history as it was
+    // (in time order: each decodes only what changed since the one before).
+    size_t first = stamps_.size();
+    for (size_t i = 0; i < stamps_.size(); ++i) {
+      if (needs(i, stamps_[i])) {
+        first = i;
+        break;
+      }
+    }
+    if (first == stamps_.size()) {
+      return 0;
+    }
+    const std::shared_ptr<const PieceHistory> before = history_;
+    auto history = std::make_shared<PieceHistory>(*before);
+    history->truncate(first);
+    for (size_t i = first; i < stamps_.size(); ++i) {
+      auto dsg = before->snapshot(i);
+      if (needs(i, stamps_[i])) {
+        change(*dsg, i, stamps_[i]);
+      }
+      const auto start = std::chrono::steady_clock::now();
+      history->append(*dsg);
+      verifyStoredSnapshot(*history, i, *dsg,
+                           std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count());
+    }
+    history_ = std::move(history);
+    source_dsg_cache_.reset();
+    source_dsg_cache_idx_ = std::numeric_limits<size_t>::max();
+    resetQueryCache();
+    return stamps_.size() - first;
+  }
+  size_t rewritten = 0;
+  // Whether the snapshot before this one was stored anew: an increment on its old bytes must
+  // then be stored anew as well (a keyframe is stored whole).
+  bool follows_rewritten = false;
+  for (size_t i = 0; i < snapshots_.size(); ++i) {
+    if (i % kSnapshotKeyframe == 0) {
+      follows_rewritten = false;
+    }
+    const bool wanted = needs(i, stamps_[i]);
+    if (!wanted && !follows_rewritten) {
+      continue;
+    }
+    auto dsg = sourceDsg(i);
+    const bool changed = wanted && change(*dsg, i, stamps_[i]);
+    if (!changed && !follows_rewritten) {
+      continue;
+    }
+    setSnapshot(i, dsg);
+    follows_rewritten = true;
+    ++rewritten;
+  }
+  if (rewritten > 0) {
+    resetQueryCache();
+  }
+  return rewritten;
 }
 
 void SpatioTemporalMap::finalizeDsg(DynamicSceneGraph& dsg) {
@@ -858,7 +1011,7 @@ DynamicSceneGraph::Ptr SpatioTemporalMap::getDsgPtr(TimeStamp robot_time) {
 }
 
 DynamicSceneGraph::Ptr SpatioTemporalMap::rawDsg(size_t idx) const {
-  if (idx >= snapshots_.size()) {
+  if (idx >= stamps_.size()) {
     throw std::out_of_range("rawDsg index out of range");
   }
   return sourceDsg(idx);
@@ -1245,6 +1398,10 @@ void SpatioTemporalMap::finalizeMesh(Mesh& mesh) {
 }
 
 bool SpatioTemporalMap::saveZpk(std::string filepath, size_t keyframe) const {
+  if (history_) {
+    LOG(ERROR) << "A piece-history 4D map is saved by save(), not as a keyframe/delta archive: " << filepath;
+    return false;
+  }
   if (std::filesystem::path(filepath).extension() != ".zpk") {
     if (std::filesystem::path(filepath).extension().empty()) filepath += kExtension;
     filepath += ".zpk";
@@ -1524,6 +1681,9 @@ std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::loadZpk(std::string filepa
 }
 
 bool SpatioTemporalMap::save(std::string filepath) const {
+  if (history_) {
+    return savePieces(std::move(filepath));
+  }
   if (std::filesystem::path(filepath).extension() == ".zpk") {
     return saveZpk(std::move(filepath));
   }
@@ -1609,6 +1769,10 @@ std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::load(std::string filepath)
 
   // Peek without consuming or seeking: legacy raw maps can arrive through a
   // FIFO. Only archives need a seekable file for their manifest and index.
+  if (in.peek() == kPieceMapMagic[0]) {
+    in.close();
+    return loadPieces(std::move(filepath));
+  }
   if (in.peek() == kZpkMagic[0]) {
     in.close();
     return loadZpk(std::move(filepath));
@@ -1698,6 +1862,159 @@ std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::load(std::string filepath)
     return result;
   } catch (const std::exception& error) {
     LOG(ERROR) << "Could not load 4D map from " << filepath << ": " << error.what();
+    return nullptr;
+  }
+}
+
+bool SpatioTemporalMap::saveSnapshots(const std::vector<size_t>& indices,
+                                      std::string filepath) const {
+  static std::atomic<uint64_t> sequence{0};
+  const std::filesystem::path destination(filepath);
+  const auto temporary = destination.string() + ".tmp." + std::to_string(::getpid()) + "." +
+                         std::to_string(sequence.fetch_add(1));
+  try {
+    if (indices.empty()) throw std::runtime_error("No snapshot chosen");
+    std::vector<TimeStamp> chosen;
+    for (const auto index : indices) {
+      if (index >= stamps_.size()) throw std::out_of_range("4D-map snapshot index is out of range");
+      chosen.push_back(stamps_[index]);
+    }
+    std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+    if (!out) throw std::runtime_error("Could not create the snapshot file");
+    // Serialization version 1 with the chosen moments only: this map's flags, the chosen stamps, the bounds of the
+    // chosen stamps as the map's time range.
+    std::vector<uint8_t> metadata;
+    spark_dsg::serialization::BinarySerializer serializer(&metadata);
+    serializer.write(kSerializationVersion);
+    serializer.write(config.finalize_incrementally);
+    serializer.write(chosen.size());
+    serializer.write(chosen);
+    serializer.write(*std::min_element(chosen.begin(), chosen.end()));
+    serializer.write(*std::max_element(chosen.begin(), chosen.end()));
+    serializer.write(finalized_);
+    serializer.write(serialization_header_);
+    out.write(reinterpret_cast<const char*>(metadata.data()), metadata.size());
+    for (const auto index : indices) {
+      std::vector<uint8_t> bytes;
+      spark_dsg::io::binary::writeGraph(*sourceDsg(index), bytes, true);
+      writePackedBytes(out, bytes);
+    }
+    out.close();
+    if (!out) throw std::runtime_error("Could not write the snapshot file");
+    std::filesystem::rename(temporary, destination);
+    return true;
+  } catch (const std::exception& e) {
+    std::error_code ignored;
+    std::filesystem::remove(temporary, ignored);
+    LOG(ERROR) << "Could not save snapshots to " << filepath << ": " << e.what();
+    return false;
+  }
+}
+
+bool SpatioTemporalMap::savePlain(std::string filepath) const {
+  try {
+    std::ofstream out(filepath, std::ios::binary | std::ios::trunc);
+    if (!out) throw std::runtime_error("Could not open the file");
+    std::vector<uint8_t> metadata;
+    spark_dsg::serialization::BinarySerializer serializer(&metadata);
+    serializer.write(kSerializationVersion);
+    serializer.write(config.finalize_incrementally);
+    serializer.write(stamps_.size());
+    serializer.write(stamps_);
+    serializer.write(earliest_);
+    serializer.write(latest_);
+    serializer.write(finalized_);
+    serializer.write(serialization_header_);
+    out.write(reinterpret_cast<const char*>(metadata.data()), metadata.size());
+    for (size_t i = 0; i < stamps_.size(); ++i) {
+      if (history_) {
+        std::vector<uint8_t> bytes;
+        spark_dsg::io::binary::writeGraph(*history_->snapshot(i), bytes, true);
+        writePackedBytes(out, bytes);
+      } else {
+        if (i >= snapshots_.size() || !snapshots_[i]) throw std::runtime_error("4D-map snapshot storage is incomplete");
+        writePackedByteVector(out, *snapshots_[i]);
+      }
+    }
+    out.close();
+    if (!out) throw std::runtime_error("Could not write the file");
+    return true;
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Could not save the plain 4D map " << filepath << ": " << e.what();
+    return false;
+  }
+}
+
+bool SpatioTemporalMap::savePieces(std::string filepath) const {
+  static std::atomic<uint64_t> sequence{0};
+  const std::filesystem::path destination(filepath);
+  const auto temporary = destination.string() + ".tmp." + std::to_string(::getpid()) + "." +
+                         std::to_string(sequence.fetch_add(1));
+  try {
+    if (history_->size() != stamps_.size()) {
+      throw std::runtime_error("4D-map stamps and piece history have different sizes");
+    }
+    std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+    if (!out) throw std::runtime_error("Could not create the piece-history map");
+    auto put = [&out](const auto& value) {
+      out.write(reinterpret_cast<const char*>(&value), sizeof(value));
+    };
+    out.write(kPieceMapMagic, sizeof(kPieceMapMagic));
+    put(static_cast<uint8_t>(config.finalize_incrementally));
+    put(static_cast<uint8_t>(finalized_));
+    put(earliest_);
+    put(latest_);
+    put(static_cast<uint64_t>(stamps_.size()));
+    out.write(reinterpret_cast<const char*>(stamps_.data()),
+              static_cast<std::streamsize>(stamps_.size() * sizeof(TimeStamp)));
+    history_->write(out);
+    out.close();
+    if (!out) throw std::runtime_error("Could not write the piece-history map");
+    std::filesystem::rename(temporary, destination);
+    return true;
+  } catch (const std::exception& e) {
+    std::error_code ignored;
+    std::filesystem::remove(temporary, ignored);
+    LOG(ERROR) << "Could not save " << filepath << ": " << e.what();
+    return false;
+  }
+}
+
+std::unique_ptr<SpatioTemporalMap> SpatioTemporalMap::loadPieces(std::string filepath) {
+  try {
+    std::ifstream in(filepath, std::ios::binary);
+    if (!in) throw std::runtime_error("Could not open the piece-history map");
+    auto get = [&in](auto& value) {
+      in.read(reinterpret_cast<char*>(&value), sizeof(value));
+      if (!in) throw std::runtime_error("Truncated piece-history map");
+    };
+    char magic[sizeof(kPieceMapMagic)];
+    in.read(magic, sizeof(magic));
+    if (!in || std::memcmp(magic, kPieceMapMagic, sizeof(magic)) != 0) {
+      throw std::runtime_error("Invalid piece-history map magic");
+    }
+    uint8_t incremental = 0, finalized = 0;
+    get(incremental);
+    get(finalized);
+    Config config;
+    config.finalize_incrementally = incremental != 0;
+    auto result = std::make_unique<SpatioTemporalMap>(config);
+    result->finalized_ = finalized != 0;
+    get(result->earliest_);
+    get(result->latest_);
+    uint64_t count = 0;
+    get(count);
+    result->stamps_.resize(count);
+    in.read(reinterpret_cast<char*>(result->stamps_.data()),
+            static_cast<std::streamsize>(count * sizeof(TimeStamp)));
+    if (!in) throw std::runtime_error("Truncated piece-history map stamps");
+    result->history_ = std::shared_ptr<PieceHistory>(PieceHistory::read(in));
+    if (result->history_->size() != count) {
+      throw std::runtime_error("Piece-history map stamps and snapshots differ");
+    }
+    return result;
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Could not load " << filepath << ": " << e.what();
     return nullptr;
   }
 }

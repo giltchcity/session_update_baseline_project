@@ -49,6 +49,24 @@
 
 namespace khronos {
 
+void declare_config(MoveTrajectories::Config& config) {
+  using namespace config;
+  name("MoveTrajectories::Config");
+  field(config.enabled, "enabled");
+  field(config.before_s, "before_s", "s");
+  field(config.settled_s, "settled_s", "s");
+  field(config.smoothing_frames, "smoothing_frames");
+  field(config.start_fraction, "start_fraction");
+  field(config.min_settled_frames, "min_settled_frames");
+  field(config.min_before_frames, "min_before_frames");
+  check(config.before_s, GT, 0.0, "before_s");
+  check(config.settled_s, GT, 0.0, "settled_s");
+  check(config.smoothing_frames, GE, 1, "smoothing_frames");
+  checkInRange(config.start_fraction, 0.0, 1.0, "start_fraction");
+  check(config.min_settled_frames, GE, 1, "min_settled_frames");
+  check(config.min_before_frames, GE, 1, "min_before_frames");
+}
+
 void declare_config(MeshObjectExtractor::Config& config) {
   using namespace config;
   name("MeshObjectExtractor::Config");
@@ -62,6 +80,7 @@ void declare_config(MeshObjectExtractor::Config& config) {
   field(config.static_consistency_min_pixels, "static_consistency_min_pixels");
   field(config.accept_semantic_dynamic_tracks, "accept_semantic_dynamic_tracks");
   field(config.preserve_settled_dynamic_history, "preserve_settled_dynamic_history");
+  field(config.move_trajectory, "move_trajectory");
   field(config.min_object_reconstruction_confidence, "min_object_reconstruction_confidence");
   field(config.min_object_reconstruction_observations, "min_object_reconstruction_observations");
   field(config.object_reconstruction_resolution, "object_reconstruction_resolution");
@@ -85,7 +104,9 @@ void declare_config(MeshObjectExtractor::Config& config) {
 }
 
 MeshObjectExtractor::MeshObjectExtractor(const Config& config)
-    : config(config), mesh_integrator_(config.mesh_integrator) {}
+    : config(config), mesh_integrator_(config.mesh_integrator) {
+  MoveTrajectories::configure(config.move_trajectory);
+}
 
 KhronosObjectAttributes::Ptr MeshObjectExtractor::extractObject(const Track& track,
                                                                 const FrameDataBuffer& frame_data) {
@@ -236,7 +257,13 @@ KhronosObjectAttributes::Ptr MeshObjectExtractor::extractStaticObject(
   const auto after_motion = track.has_dynamic_history && track.last_motion_seen > 0
                                 ? std::optional<TimeStamp>(track.last_motion_seen)
                                 : std::nullopt;
-  const auto frames = selectStaticFrames(track, frame_data, after_motion);
+  TimeStamp rejected = 0;
+  const auto frames = selectStaticFrames(track, frame_data, after_motion, &rejected);
+  // The boundary is the end of a move of the object: its trajectory is written to the object's
+  // node in the 4D map once the time after the end has passed (an output; nothing reads it).
+  if (rejected != 0 && track.physical_instance_id) {
+    MoveTrajectories::markEnd(*track.physical_instance_id, rejected);
+  }
   if (frames.empty()) {
     CLOG(5) << "[MeshObjectExtractor] Dropping " << getTrackName(track)
             << ": no semantic observations.";
