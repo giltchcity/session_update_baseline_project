@@ -9,6 +9,9 @@
 #include <memory>
 #include <limits>
 #include <mutex>
+#include <string>
+#include <optional>
+#include <unordered_set>
 #include <vector>
 
 #include <hydra/input/sensor.h>
@@ -18,7 +21,6 @@
 namespace khronos {
 
 struct FrameData;
-class RayVerificator;
 
 // Finite-count view of the existing calibrated absence measurement (README M1e).
 struct PhysicalAbsenceLookLikelihood {
@@ -28,6 +30,11 @@ struct PhysicalAbsenceLookLikelihood {
 };
 namespace session { class SurfaceEvidence; }
 // The latest look of a tested state as the session's surface evidence (`owner`) measured it.
+// The population statistics of the observed-absence test across sessions (the sensor's own
+// in-place look statistics): saved with the session state, loaded by the next session.
+bool saveAbsenceSensorStatistics(const std::string& path);
+bool loadAbsenceSensorStatistics(const std::string& path);
+
 PhysicalAbsenceLookLikelihood physicalAbsenceLookLikelihood(
     const session::SurfaceEvidence* owner, size_t physical_id, int state_slot, TimeStamp stamp,
     uint64_t state_id = 0);
@@ -163,6 +170,38 @@ class PhysicalEvidenceStore {
  private:
   mutable std::mutex mutex_;
   std::shared_ptr<const Storage> storage_;
+};
+
+// An immutable view of the store for one round (none: no store).
+using PhysicalEvidenceSnapshot = std::optional<PhysicalEvidenceStore::Snapshot>;
+
+// Support and contradiction on a state's surface from the stored pixels, and the observed-absence
+// test's look on it (SurfaceEvidence::countCurrent).
+struct SurfaceEvidenceCounts {
+  size_t support_rays = 0;
+  size_t contradiction_rays = 0;
+  size_t surface_samples = 0;
+  size_t contradicted_surface_samples = 0;
+  bool absence_coverage_sufficient = false;  // set only by the observed-absence test
+  std::unordered_set<size_t> support_indices;
+  std::unordered_set<size_t> contradiction_indices;
+
+  // Per-(sample, pixel) six-class evidence votes for the verification ledger. These are NOT
+  // unique-pixel counts: one pixel reading several samples votes several times, so ratios between
+  // vote classes are comparable, but the sums differ from support_rays/contradiction_rays by design.
+  size_t supported_votes = 0;
+  size_t free_space_votes = 0;
+  size_t replaced_by_other_votes = 0;
+  size_t replaced_by_background_votes = 0;
+  size_t occluded_votes = 0;
+  size_t unobserved_samples = 0;
+  TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
+
+  // Observed-absence test over reliable surface samples.
+  size_t reliable_samples = 0;
+  size_t reliable_in_view = 0;
+  size_t reliable_seen_through = 0;
+  float absence_llr = 0.f;
 };
 
 }  // namespace khronos

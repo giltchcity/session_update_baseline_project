@@ -2,7 +2,6 @@
 // the present surface with the memory, the dated history and the saved session state.
 #include "session_update_baseline/runtime/session_backend.h"
 
-#include "khronos/backend/backend.h"
 #include "khronos/active_window/online_front.h"
 #include "session_core/adapters/physical_object_access.h"
 #include "session_core/state/mechanism_ablation.h"
@@ -61,7 +60,7 @@ size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
   }
   // One frozen snapshot for the whole pass, so an asynchronous frame ingest cannot split a single
   // state decision across two store versions.
-  const RayVerificator::PhysicalEvidenceSnapshot evidence = physical_evidence_store_->snapshot();
+  const PhysicalEvidenceSnapshot evidence = physical_evidence_store_->snapshot();
 
   size_t closed = 0;
   for (const size_t id : persistent_objects_.trackedIds()) {
@@ -79,7 +78,7 @@ size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
     PersistentObjectState::SurfaceEvidence session_evidence;
     const auto copy_evidence =
         [&](PersistentObjectState::SurfaceEvidence& target,
-            const RayVerificator::SurfaceEvidenceCounts& result, int state_slot,
+            const SurfaceEvidenceCounts& result, int state_slot,
             const uint64_t state_id) {
           target.latest_support_stamp = result.latest_support_stamp;
           target.absence_coverage_sufficient = result.absence_coverage_sufficient;
@@ -110,7 +109,7 @@ size_t SessionBackend::verifyCurrentObjectStates(const TimeStamp stamp) {
           id, *fragment.geometry, *fragment.bbox, evidence,
           object_surface_resolution_,
           std::max(fragment.last_support_time, fragment.last_confirmed_support), stamp,
-          nullptr, &projected, state_slot, fragment.birth_time, prior_log_odds, fragment.uid);
+          &projected, state_slot, fragment.birth_time, prior_log_odds, fragment.uid);
       LOG(INFO) << "STATE_EVIDENCE_WINDOW inst=" << id
                 << " after=" << std::max(fragment.last_support_time, fragment.last_confirmed_support)
                 << " latest_measured_support=" << counts.latest_support_stamp << " through=" << stamp
@@ -233,7 +232,7 @@ void SessionBackend::estimatePhysicalPresence(DynamicSceneGraph& dsg, const Time
   // Each round ends one look of the stored frames (the absence test's unit of evidence).
   if (round_ends_.empty() || stamp > round_ends_.back()) round_ends_.push_back(stamp);
   if (!dsg.hasLayer(DsgLayers::OBJECTS)) return;
-  RayVerificator::PhysicalEvidenceSnapshot evidence;
+  PhysicalEvidenceSnapshot evidence;
   if (physical_evidence_store_) evidence = physical_evidence_store_->snapshot();
   size_t opened = 0, dated = 0;
   for (const auto& [node_id, node] : dsg.getLayer(DsgLayers::OBJECTS).nodes()) {

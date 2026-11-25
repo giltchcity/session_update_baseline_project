@@ -94,21 +94,4 @@ std::vector<uint8_t> closedStateBackground(
   return owned;
 }
 
-size_t markClosedObjectBackground(
-    const spark_dsg::Mesh& background,
-    const std::vector<ClosedStateSurface>& states,
-    const float map_resolution,
-    BackgroundChanges& changes) {
-  const auto owned = closedStateBackground(background, states, map_resolution);
-  if (owned.empty()) return 0;
-  changes.resize(background.numVertices(), ChangeState::kUnobserved);
-  size_t removed = 0;
-  for (size_t i = 0; i < owned.size(); ++i) {
-    if (!owned[i] || changes[i] == ChangeState::kAbsent) continue;
-    changes[i] = ChangeState::kAbsent;
-    ++removed;
-  }
-  return removed;
-}
-
 }  // namespace khronos

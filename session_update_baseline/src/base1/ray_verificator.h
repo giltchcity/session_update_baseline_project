@@ -1,3 +1,6 @@
+// The legacy base1 tool's own copy of Khronos's ray verificator (official Khronos 63faadde, as the
+// session layer's port had it until 11-25): mesh rays hashed by block, check() against them. The
+// mapping system no longer has it; only run_session_update_baseline compiles it.
 /** -----------------------------------------------------------------------------
  * Copyright (c) 2024 Massachusetts Institute of Technology.
  * All Rights Reserved.
@@ -51,7 +54,6 @@
 #include <hydra/common/robot_prefix_config.h>
 #include <spatial_hash/grid.h>
 
-#include "session_core/evidence/physical_evidence_store.h"
 #include "khronos/common/common_types.h"
 
 namespace khronos {
@@ -70,8 +72,6 @@ class RayVerificator {
   using ConstPtr = std::shared_ptr<const RayVerificator>;
   using IndexSet = std::unordered_set<size_t>;
   using SpatialHash = BlockIndexMap<IndexSet>;
-  using PhysicalEvidenceSnapshot =
-      std::optional<PhysicalEvidenceStore::Snapshot>;
 
   enum class UpdateMode { kFullReset, kIncremental };
 
@@ -241,125 +241,6 @@ class RayVerificator {
                     CheckDetails* details = nullptr,
                     const Eigen::Vector3f* normal = nullptr) const;
 
-  /**
-   * @brief Check a surface belonging to one stable physical identity.
-   *
-   * Unlike check(), an endpoint from another object or an occluding surface is
-   * coverage but not evidence that the queried object is absent. The overload
-   * without a snapshot is intended for isolated queries and captures the
-   * store's current immutable snapshot for that call.
-   */
-  CheckResult checkPhysical(
-      const Point& point,
-      size_t physical_id,
-      const uint64_t earliest = 0ul,
-      const uint64_t latest = std::numeric_limits<uint64_t>::max(),
-      CheckDetails* details = nullptr) const;
-
-  /**
-   * @brief Check against a caller-frozen evidence snapshot.
-   *
-   * Batch callers must use one snapshot for their complete update so an
-   * asynchronous frame ingest cannot split one change decision across store
-   * versions.
-   */
-  CheckResult checkPhysical(
-      const Point& point,
-      size_t physical_id,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      const uint64_t earliest = 0ul,
-      const uint64_t latest = std::numeric_limits<uint64_t>::max(),
-      CheckDetails* details = nullptr) const;
-
-  /**
-   * Check a duplicate background surface of an already-closed physical state.
-   * Uses the exact measured endpoint depth to reject occlusion and recognizes
-   * another identified surface at/behind the old site as replacement. Ordinary
-   * object change detection retains its original checkPhysical semantics.
-   */
-  // Per-ray lifetime policy, retaining its conservative different-ID votes,
-  // but requiring an actual source pixel and respecting its measured depth.
-  CheckResult checkPhysicalObserved(
-      const Point& point, size_t physical_id,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest) const;
-
-  CheckResult checkPhysicalReplacement(
-      const Point& point, size_t physical_id,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest) const;
-
-  /**
-   * @brief Check the actual triangle surface of one physical object, not its
-   * sparse vertex set.
-   *
-   * A reconstructed object mesh is a sampling of a continuous surface. Querying
-   * only vertices lets rays pass through the holes between samples and turn
-   * "this sparse view is not the whole object" into false absence evidence.
-   * This overload intersects every mesh triangle against the indexed ray
-   * segments and classifies each intersection with the endpoint identity at
-   * the exact timestamp, so a ray only contradicts a surface it actually
-   * crossed.
-   *
-   * If the mesh has no faces the vertex-based check is used as the only
-   * available fallback.
-   */
-  CheckResult checkPhysicalSurface(
-      size_t physical_id,
-      const spark_dsg::Mesh& mesh,
-      const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      const uint64_t earliest = 0ul,
-      const uint64_t latest = std::numeric_limits<uint64_t>::max(),
-      CheckDetails* details = nullptr) const;
-
-  /**
-   * @brief Unique-ray surface evidence for one physical object mesh.
-   *
-   * Each sensor ray is one measurement; if one ray passes several surface
-   * samples it must not be counted several times. The returned counts are
-   * therefore unique ray indices, and `surface_samples` is the number of mesh
-   * triangle centroids (or vertices for topology-free meshes) that were
-   * queried. Ratios of these counts are scale-free.
-   */
-  struct SurfaceEvidenceCounts {
-    size_t support_rays = 0;
-    size_t contradiction_rays = 0;
-    size_t surface_samples = 0;
-    size_t contradicted_surface_samples = 0;
-    bool absence_coverage_sufficient = false;  // set only by the observed-absence test
-    std::unordered_set<size_t> support_indices;
-    std::unordered_set<size_t> contradiction_indices;
-
-    // Per-(sample, ray) six-class evidence votes for the verification ledger.
-    // These are NOT unique-ray counts: one ray passing several samples votes
-    // several times, so ratios between vote classes are comparable, but the
-    // sums differ from support_rays/contradiction_rays by design.
-    size_t supported_votes = 0;
-    size_t free_space_votes = 0;
-    size_t replaced_by_other_votes = 0;
-    size_t replaced_by_background_votes = 0;
-    size_t occluded_votes = 0;
-    size_t unobserved_samples = 0;
-    TimeStamp latest_support_stamp = 0;  // Actual sensor time, never reducer/check time.
-
-    // Observed-absence test over reliable surface samples.
-    size_t reliable_samples = 0;
-    size_t reliable_in_view = 0;
-    size_t reliable_seen_through = 0;
-    float absence_llr = 0.f;
-  };
-
-  SurfaceEvidenceCounts countPhysicalSurface(
-      size_t physical_id,
-      const spark_dsg::Mesh& mesh,
-      const BoundingBox& bbox,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      const uint64_t earliest = 0ul,
-      const uint64_t latest = std::numeric_limits<uint64_t>::max()) const;
-
-  void setPhysicalEvidenceStore(PhysicalEvidenceStore::Ptr store);
-  PhysicalEvidenceSnapshot physicalEvidenceSnapshot() const;
 
   /**
    * @brief Bind a DSG snapshot for absence checks. A verified append-only
@@ -408,13 +289,6 @@ class RayVerificator {
   const Statistics& getStatistics() const { return statistics_; }
 
  private:
-  // Unique per instance: the observed-absence records are keyed by it, never
-  // by a reusable address.
-  CheckResult checkPhysicalImpl(
-      const Point& point, size_t physical_id,
-      const PhysicalEvidenceSnapshot& evidence_snapshot,
-      uint64_t earliest, uint64_t latest, CheckDetails* details,
-      bool measured_replacement, bool require_observed = false) const;
 
   struct Ray {
     Ray() = default;
@@ -448,7 +322,6 @@ class RayVerificator {
 
   // Cached data.
   std::shared_ptr<const DynamicSceneGraph> dsg_;
-  PhysicalEvidenceStore::Ptr physical_evidence_store_;
   unsigned int seed_;
 
   // Variables.

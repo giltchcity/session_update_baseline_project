@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "session_core/state/persistent_object_state.h"
-#include "khronos/backend/change_state.h"
 
 namespace khronos {
 
@@ -32,15 +31,5 @@ std::vector<uint8_t> closedStateBackground(
     const spark_dsg::Mesh& background,
     const std::vector<ClosedStateSurface>& states,
     float map_resolution);
-
-// Remove the background vertices owned by the closed states. A vertex is owned when
-// it lies within one map cell of the state's surface and was measured no later than
-// the state's support: the duplicate layer the state left in the background. The
-// removal is atomic, so a closed state never leaves half of its duplicate behind.
-size_t markClosedObjectBackground(
-    const spark_dsg::Mesh& background,
-    const std::vector<ClosedStateSurface>& states,
-    float map_resolution,
-    BackgroundChanges& changes);
 
 }  // namespace khronos

@@ -65,6 +65,7 @@ add_subdirectory(ports/panoptic_core)
 add_executable(run_session_update_baseline
   app/run_session_update_baseline.cpp
   src/base1/object_guided_map_reconciler.cpp
+  src/base1/ray_verificator.cpp
 )
 
 target_include_directories(run_session_update_baseline
@@ -259,53 +260,7 @@ add_test(
           "${CMAKE_CURRENT_BINARY_DIR}/session_state_fingerprint_test"
 )
 
-add_executable(test_d3_provenance_and_presence
-  app/test_d3_provenance_and_presence.cpp
-)
 
-target_include_directories(test_d3_provenance_and_presence
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
-)
-
-target_link_libraries(test_d3_provenance_and_presence
-  PRIVATE
-    khronos::khronos
-    ${hydra_LIBRARIES}
-    Eigen3::Eigen
-    glog::glog
-)
-
-add_test(
-  NAME d3_provenance_and_presence
-  COMMAND test_d3_provenance_and_presence
-          "${CMAKE_CURRENT_BINARY_DIR}/d3_provenance_and_presence_test"
-)
-
-add_executable(test_hidden_change_session_equivalence
-  app/test_hidden_change_session_equivalence.cpp
-)
-
-target_include_directories(test_hidden_change_session_equivalence
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/session_core/include
-)
-
-target_link_libraries(test_hidden_change_session_equivalence
-  PRIVATE
-    khronos::khronos
-    ${hydra_LIBRARIES}
-    Eigen3::Eigen
-    glog::glog
-)
-
-add_test(
-  NAME hidden_change_session_equivalence
-  COMMAND test_hidden_change_session_equivalence
-          "${CMAKE_CURRENT_BINARY_DIR}/hidden_change_session_equivalence_test"
-)
 
 add_executable(test_physical_presence_recursion
   app/test_physical_presence_recursion.cpp

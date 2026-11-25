@@ -1,5 +1,4 @@
 #include "session_core/evidence/surface_evidence.h"
-#include "khronos/backend/change_detection/ray_verificator.h"
 
 #include <algorithm>
 #include <array>
@@ -67,6 +66,12 @@ namespace {
 
 enum class Vote { Unavailable, Invalid, Occluded, Supported, Free,
                   Background, Other, Unidentified };
+
+// A seen-through reading counts for a sample only if it meets the sample's surface within the judged
+// incidence (|cos| >= min_cos); a sample without a normal is judged at any incidence.
+bool facesSurface(const Eigen::Vector3f* normal, const Eigen::Vector3f& view_direction, const float min_cos) {
+  return !normal || std::abs(normal->dot(view_direction)) >= min_cos;
+}
 
 Vote classifyMeasurement(const ProjectedEndpointEvidence& p, size_t id, float tolerance) {
   const auto mass = projectedRelationProbabilities(p, id, tolerance);
@@ -302,7 +307,7 @@ void estimateCellModel(const TimeStamp stamp) {
 // full chain L2_P9 its look gate learned fewer, higher-share looks, widening the in-place model, and
 // delayed real C closures by 11-107 s with one D2 miss.)
 
-// min_judged_samples (RayVerificator::Config, 30): judged samples for a share to stand for the finite
+// min_judged_samples (SurfaceEvidence::Config, 30): judged samples for a share to stand for the finite
 // counts (P25). Relation to a published rule: with
 // a full sampling budget (1500 cells) 30 is 2 % of it, Panoptic Multi-TSDFs' relative threshold
 // tau_rel = 2 % (Schmid et al., sec. D Map Management: "Submaps count as conflicting or matching if
@@ -379,7 +384,7 @@ std::vector<AbsenceQuery> absenceQueries(const spark_dsg::Mesh& mesh, const Boun
 // enter the tentative reliability record; another identity on the surface vetoes the sample
 // like a seen-through ray, a background label is only a missing detection.
 void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& queries,
-                    const RayVerificator::PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
+                    const PhysicalEvidenceSnapshot& snapshot, const size_t physical_id,
                     const float tolerance, const float min_cos, const TimeStamp latest,
                     const uint64_t record_key = 0, const bool diag = true) {
   std::vector<int8_t> observed(queries.size()), raw(queries.size());
@@ -409,7 +414,7 @@ void classifyFrames(ObjectAbsenceState& state, const std::vector<AbsenceQuery>& 
       if (e.type == EndpointClass::kUnavailable) continue;
       const float cos_view = queries[i].has_normal
           ? std::abs(queries[i].normal.dot(p.view_direction_world)) : 1.f;
-      const bool facing = RayVerificator::facesSurface(
+      const bool facing = facesSurface(
           queries[i].has_normal ? &queries[i].normal : nullptr, p.view_direction_world, min_cos);
       const bool measured = e.type != EndpointClass::kInvalid &&
           std::isfinite(e.measured_depth_m) && e.measured_depth_m > 0 &&
@@ -802,17 +807,6 @@ uint64_t nextAbsenceOwner() {
 }
 }  // namespace
 
-session::SurfaceEvidence::Config session::SurfaceEvidence::Config::of(const RayVerificator::Config& rays) {
-  Config config;
-  config.depth_tolerance = rays.depth_tolerance;
-  config.min_absent_surface_fraction = rays.min_absent_surface_fraction;
-  config.surface_match_tolerance = rays.surface_match_tolerance;
-  config.max_absence_incidence_deg = rays.max_absence_incidence_deg;
-  config.min_judged_samples = rays.min_judged_samples;
-  config.real_sensor_noise = rays.real_sensor_noise;
-  return config;
-}
-
 session::SurfaceEvidence::SurfaceEvidence(const Config& config)
     : config(config), absence_owner_(nextAbsenceOwner()) {}
 
@@ -883,7 +877,7 @@ session::SurfaceEvidence::PresenceStart session::SurfaceEvidence::presenceStart(
           if (std::abs(delta) <= tolerance) {
             verdict[i] = 1;
           } else if (delta > tolerance &&
-                     RayVerificator::facesSurface(q.has_normal ? &q.normal : nullptr, p.view_direction_world, min_cos)) {
+                     facesSurface(q.has_normal ? &q.normal : nullptr, p.view_direction_world, min_cos)) {
             verdict[i] = 2;
           } else {
             continue;
@@ -979,7 +973,7 @@ session::SurfaceEvidence::PresenceStart session::SurfaceEvidence::presenceStart(
   return result;
 }
 
-RayVerificator::SurfaceEvidenceCounts session::SurfaceEvidence::countProjected(
+SurfaceEvidenceCounts session::SurfaceEvidence::countProjected(
     const size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const Snapshot& evidence_snapshot, const float map_resolution,
     const uint64_t earliest, const uint64_t latest) const {
@@ -1198,10 +1192,10 @@ void session::SurfaceEvidence::applyObservedAbsence(
   }
 }
 
-RayVerificator::SurfaceEvidenceCounts session::SurfaceEvidence::countCurrent(
+SurfaceEvidenceCounts session::SurfaceEvidence::countCurrent(
     size_t physical_id, const spark_dsg::Mesh& mesh, const BoundingBox& bbox,
     const Snapshot& snapshot, float map_resolution,
-    uint64_t last_support, uint64_t latest, const RayVerificator* rays, bool* projected,
+    uint64_t last_support, uint64_t latest, bool* projected,
     const int state_slot, const uint64_t state_birth, const double prior_log_odds,
     const uint64_t state_id) const {
   if (projected) *projected = false;
@@ -1214,16 +1208,8 @@ RayVerificator::SurfaceEvidenceCounts session::SurfaceEvidence::countCurrent(
     return none;
   }
   const uint64_t earliest = last_support + 1;
-  if (!snapshot || snapshot->numFrames() == 0) {
-    // Compatibility layer (P19, kept pending, user 2026-10-05): no stored pixels. In production
-    // every verification round has the session's frame archive, so this branch is reached only by
-    // offline tools and unit fixtures (test_hidden_change_session_equivalence); the sparse
-    // mesh-ray proxy of the native verificator stands in, decided by its majority.
-    if (!rays) return Counts{};
-    auto counts = rays->countPhysicalSurface(physical_id, mesh, bbox, snapshot, earliest, latest);
-    counts.absence_coverage_sufficient = counts.contradiction_rays > counts.support_rays;
-    return counts;
-  }
+  // Without stored frames there is no measurement of the surface.
+  if (!snapshot || snapshot->numFrames() == 0) return Counts{};
   // The measurement is the stored pixels (README M1m): support and contradiction on the
   // state's own surface, and the observed-absence test (7) on the same frames. Its proxy-free
   // coverage verdict (P20) is replaced by that test.

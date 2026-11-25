@@ -24,7 +24,6 @@ find_package(khronos_msgs REQUIRED)
 
 add_library(
   ${PROJECT_NAME}
-  src/utils/ros_conversions.cpp
   src/experiments/experiment_logger.cpp
   src/experiments/experiment_manager.cpp
   src/experiments/experiment_directory.cpp

@@ -54,7 +54,6 @@
 #include <khronos/active_window/active_window.h>
 #include <khronos/utils/khronos_attribute_utils.h>
 
-#include "khronos_ros/utils/ros_conversions.h"
 #include "khronos_ros/utils/ros_namespaces.h"
 
 namespace khronos {

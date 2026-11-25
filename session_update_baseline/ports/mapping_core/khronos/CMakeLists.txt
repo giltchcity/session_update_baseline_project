@@ -41,24 +41,12 @@ add_library(${PROJECT_NAME}
         src/active_window/object_extraction/mesh_object_extractor.cpp
         src/active_window/object_extraction/object_worker_pool.cpp
         src/active_window/tracking/external_tracker.cpp
-        src/backend/backend.cpp
-        src/backend/change_detection/background/ray_background_change_detector.cpp
-        src/backend/change_detection/objects/ray_object_change_detector.cpp
-        src/backend/change_detection/ray_change_detector.cpp
-        src/backend/change_detection/ray_verificator.cpp
-        src/backend/change_detection/sequential_change_detector.cpp
-        src/backend/change_state.cpp
         src/backend/latest_only_worker.cpp
-        src/backend/reconciliation/mesh/change_merger.cpp
-        src/backend/reconciliation/mesh/mesh_merger.cpp
-        src/backend/reconciliation/reconciler.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
         src/spatio_temporal_map/piece_history.cpp
-        src/spatio_temporal_map/incremental_mesh.cpp
         src/utils/geometry_utils.cpp
         src/utils/khronos_attribute_utils.cpp
-        src/utils/output_file_utils.cpp
         )
 target_include_directories(
         ${PROJECT_NAME}
@@ -149,14 +137,6 @@ if(BUILD_TESTING)
   target_link_libraries(test_ever_free_reset PRIVATE ${PROJECT_NAME})
   add_test(NAME ever_free_reset COMMAND test_ever_free_reset)
 
-  add_executable(test_incremental_change_detection_oracle
-    tests/test_incremental_change_detection_oracle.cpp
-  )
-  target_link_libraries(test_incremental_change_detection_oracle PRIVATE ${PROJECT_NAME})
-  add_test(
-    NAME incremental_change_detection_oracle
-    COMMAND test_incremental_change_detection_oracle
-  )
 
   add_executable(test_online_front_surface_owner tests/test_online_front_surface_owner.cpp)
   target_link_libraries(test_online_front_surface_owner PRIVATE ${PROJECT_NAME})
@@ -180,15 +160,6 @@ if(BUILD_TESTING)
     COMMAND test_physical_low_motion_fallback
   )
 
-  add_executable(test_backend_trigger_and_sink
-    tests/test_backend_trigger_and_sink.cpp
-  )
-  target_link_libraries(test_backend_trigger_and_sink PRIVATE ${PROJECT_NAME})
-  add_test(
-    NAME backend_trigger_and_sink
-    COMMAND test_backend_trigger_and_sink
-            "${CMAKE_CURRENT_BINARY_DIR}/backend_trigger_and_sink_test"
-  )
 
   add_executable(test_physical_newest_segment_ownership
     tests/test_physical_newest_segment_ownership.cpp
@@ -212,14 +183,6 @@ if(BUILD_TESTING)
     COMMAND test_after_motion_reconstruction_frames
   )
 
-  add_executable(test_d3_seed_vertex_later_ray
-    tests/test_d3_seed_vertex_later_ray.cpp
-  )
-  target_link_libraries(test_d3_seed_vertex_later_ray PRIVATE ${PROJECT_NAME})
-  add_test(
-    NAME d3_seed_vertex_later_ray
-    COMMAND test_d3_seed_vertex_later_ray
-  )
 
   add_executable(test_persistent_object_state
     tests/test_persistent_object_state.cpp

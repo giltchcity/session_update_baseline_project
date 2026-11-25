@@ -10,19 +10,19 @@
 #include <spark_dsg/bounding_box.h>
 #include <spark_dsg/mesh.h>
 
-#include "khronos/backend/change_detection/ray_verificator.h"
 #include "khronos/common/common_types.h"
+#include "session_core/evidence/physical_evidence_store.h"
 
 namespace khronos::session {
 
 class SurfaceEvidence {
  public:
-  using Snapshot = RayVerificator::PhysicalEvidenceSnapshot;
-  using Counts = RayVerificator::SurfaceEvidenceCounts;
+  using Snapshot = PhysicalEvidenceSnapshot;
+  using Counts = SurfaceEvidenceCounts;
 
   struct Config {
-    // Depth tolerance of a measurement on the surface [m] (the change detection's).
-    float depth_tolerance = 0.3f;
+    // Depth tolerance of a measurement on the surface [m].
+    float depth_tolerance = 0.1f;
     // Without an observed-absence test: the share of the surface contradicted that ends a state.
     float min_absent_surface_fraction = 0.2f;
     // Spacing of the surface samples and their match distance [m].
@@ -32,8 +32,6 @@ class SurfaceEvidence {
     // Judged samples for which a look's share stands for its finite counts.
     int min_judged_samples = 30;
     bool real_sensor_noise = true;
-    // The values the change detection is configured with (the same keys).
-    static Config of(const RayVerificator::Config& rays);
   };
 
   explicit SurfaceEvidence(const Config& config);
@@ -43,12 +41,11 @@ class SurfaceEvidence {
   // Only measurements after the state's latest support can establish its subsequent
   // disappearance; earlier free space belongs to an earlier world. prior_log_odds: logit of the
   // measured state's change prior where the round tests one unresolved relation (an inherited
-  // state); 0 otherwise. Without stored frames (offline tools, unit fixtures) the change
-  // detection's mesh rays (`rays`) stand in, decided by their majority.
+  // state); 0 otherwise. Without stored frames there is no measurement: no support, no contradiction.
   Counts countCurrent(size_t physical_id, const spark_dsg::Mesh& mesh,
                       const spark_dsg::BoundingBox& bbox, const Snapshot& snapshot,
                       float map_resolution, uint64_t last_support, uint64_t latest,
-                      const RayVerificator* rays = nullptr, bool* projected = nullptr,
+                      bool* projected = nullptr,
                       int state_slot = 0, uint64_t state_birth = 0, double prior_log_odds = 0.0,
                       uint64_t state_id = 0) const;
 

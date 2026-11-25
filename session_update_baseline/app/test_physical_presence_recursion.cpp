@@ -1,3 +1,4 @@
+#include "session_core/objects/physical_presence.h"
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -14,7 +15,6 @@
 
 #include <Eigen/Core>
 #include <session_core/state/persistent_object_state.h>
-#include <khronos/backend/reconciliation/reconciler.h>
 #include <khronos/backend/update_khronos_objects_functor.h>
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <khronos/utils/khronos_attribute_utils.h>
@@ -77,31 +77,20 @@ std::unique_ptr<ObjectAttrs> makeObject(size_t physical_id,
   return attrs;
 }
 
-khronos::Reconciler makeOptimisticReconciler() {
-  khronos::Reconciler::Config config;
-  config.time_estimates_conservative = false;
-  config.allow_overestimation = true;
-  config.merge_object_meshes = true;
-  return khronos::Reconciler(config);
-}
-
-class ExposedReconciler : public khronos::Reconciler {
- public:
-  explicit ExposedReconciler(const khronos::Reconciler::Config& config)
-      : Reconciler(config) {}
-  using Reconciler::estimatePresenceTimes;
-  using Reconciler::mergeObjectAttributes;
-};
-
-void reconcileWithoutEvidence(Dsg& graph, Stamp stamp) {
-  khronos::Changes changes;
-  for (const auto& [node_id, unused] :
-       graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
+// A round without evidence about the objects' presence, as the session's round writes it: every
+// physical node's presence opens (the state layer ends it) and, with no stored frame to date its
+// start, stands from the start.
+void reconcileWithoutEvidence(Dsg& graph, Stamp /*stamp*/) {
+  for (const auto& [node_id, unused] : graph.getLayer(khronos::DsgLayers::OBJECTS).nodes()) {
     (void)unused;
-    changes.object_changes.emplace_back();
-    changes.object_changes.back().node_id = node_id;
+    auto& attrs = graph.getNode(node_id).attributes<ObjectAttrs>();
+    if (!khronos::session::physicalInstanceId(attrs) || attrs.first_observed_ns.empty() ||
+        attrs.last_observed_ns.empty()) {
+      continue;
+    }
+    khronos::session::openPresence(attrs);
+    attrs.first_observed_ns = {0};
   }
-  makeOptimisticReconciler().reconcile(graph, changes, stamp);
 }
 
 const ObjectAttrs* findPhysicalObject(const Dsg& graph, size_t physical_id) {
@@ -464,45 +453,7 @@ void testTrajectoryOnlySegmentPreservesCanonicalMesh() {
           "trajectory-only I43 did not own observation/current right edge");
 }
 
-void testReconcilerRejectsUnpairedPresenceVectors() {
-  khronos::Reconciler::Config config;
-  ExposedReconciler reconciler(config);
-  ObjectAttrs from;
-  from.first_observed_ns = {1};
-  ObjectAttrs into;
-  into.first_observed_ns = {2};
-  into.last_observed_ns = {3};
-  bool rejected = false;
-  try {
-    reconciler.mergeObjectAttributes(from, into);
-  } catch (const std::invalid_argument&) {
-    rejected = true;
-  }
-  require(rejected,
-          "Reconciler indexed an unpaired source presence vector");
-}
 
-void testPresenceMidpointsDoNotOverflow() {
-  khronos::Reconciler::Config config;
-  ExposedReconciler reconciler(config);
-  constexpr auto kMaxStamp = std::numeric_limits<Stamp>::max();
-  constexpr auto kFirstSeen = kMaxStamp - 12;
-  constexpr auto kLastSeen = kMaxStamp - 8;
-
-  ObjectAttrs attrs;
-  attrs.first_observed_ns = {kFirstSeen};
-  attrs.last_observed_ns = {kLastSeen};
-  khronos::setObservationBounds(attrs, kFirstSeen, kLastSeen);
-  khronos::ObjectChange change;
-  change.first_absent = kMaxStamp - 20;
-  change.last_absent = kMaxStamp - 2;
-  reconciler.estimatePresenceTimes(change, attrs);
-
-  require(attrs.first_observed_ns == std::vector<Stamp>{kMaxStamp - 16},
-          "appearance midpoint overflowed near UINT64_MAX");
-  require(attrs.last_observed_ns == std::vector<Stamp>{kMaxStamp - 5},
-          "disappearance midpoint overflowed near UINT64_MAX");
-}
 
 }  // namespace
 
@@ -517,8 +468,6 @@ int main(int argc, char** argv) {
   testSequentialPhysicalIntervalReduction(output_dir);
   testSameStampAuthorityIsOrderIndependent();
   testTrajectoryOnlySegmentPreservesCanonicalMesh();
-  testReconcilerRejectsUnpairedPresenceVectors();
-  testPresenceMidpointsDoNotOverflow();
   std::cout << "physical_presence_recursion_passed\n";
   return EXIT_SUCCESS;
 }

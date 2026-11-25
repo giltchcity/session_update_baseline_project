@@ -35,7 +35,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * -------------------------------------------------------------------------- */
 
-#include "khronos/backend/change_detection/ray_verificator.h"
+#include "ray_verificator.h"
 
 #include <atomic>
 

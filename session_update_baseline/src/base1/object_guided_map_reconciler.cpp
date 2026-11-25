@@ -16,7 +16,7 @@
 
 #include <hydra/reconstruction/marching_cubes.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
-#include <khronos/backend/change_detection/ray_verificator.h>
+#include "ray_verificator.h"
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 #include <nlohmann/json.hpp>
 #include <spark_dsg/mesh.h>
