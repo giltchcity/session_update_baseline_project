@@ -271,6 +271,9 @@ void testOnlineSurface() {
   // published geometry; a newer observation at another place stays intact. An
   // archived face the old state's readings support goes with them; one no
   // reading falls on stays shown (no evidence either way, as a memory face).
+  // An archived face within the truncation band behind those readings was fused
+  // from them too (a copy fused at grazing incidence lies behind the surface the
+  // readings measured): it goes with them; one beyond the band stays (11-25).
   PresentSurface moving(mapConfig(),integrationConfig(),meshConfig());
   moving.integrate(camera,frame(1000000000ULL,1.f));
   auto old_site=graph();
@@ -284,15 +287,70 @@ void testOnlineSurface() {
     const uint32_t b=static_cast<uint32_t>(mesh.points.size());
     mesh.points.insert(mesh.points.end(),{{20.f,0.f,1.f},{21.f,0.f,1.f},{20.f,1.f,1.f}});
     mesh.faces.push_back({b,b+1,b+2});
+    // 5 cm, 13 cm and 25 cm behind the old state's readings (the window's truncation 15 cm; the
+    // present's own volume keeps two voxels, 10 cm).
+    mesh.points.insert(mesh.points.end(),{{-.2f,0.f,1.05f},{-.16f,0.f,1.05f},{-.2f,.04f,1.05f},
+                                          {.2f,0.f,1.25f},{.24f,0.f,1.25f},{.2f,.04f,1.25f},
+                                          {0.f,.2f,1.13f},{.04f,.2f,1.13f},{0.f,.24f,1.13f}});
+    mesh.faces.push_back({b+3,b+4,b+5});
+    mesh.faces.push_back({b+6,b+7,b+8});
+    mesh.faces.push_back({b+9,b+10,b+11});
   }
   moving.compose(*old_site,2000000000ULL,{{7,2000000000ULL}}, {},false);
   require(!old_site->mesh()->faces.empty(),"new state remains after old contributions are removed");
-  bool unread_kept=false;
+  bool unread_kept=false, beyond_band_kept=false;
   for (const auto& point:old_site->mesh()->points) {
-    require(point.x()>5.f,"no old-state surface survives publication");
+    if (point.z()>1.2f) { beyond_band_kept=true; continue; }
+    require(std::abs(point.z()-1.13f)>1e-4f,"an archived face 13 cm behind the old state's readings, within the window's band, goes");
+    require(point.x()>5.f,"no old-state surface survives publication, nor an archived face fused from its readings");
     unread_kept|=point.x()>=20.f;
   }
   require(unread_kept,"an archived face no reading falls on stays shown while a state restricts frames");
+  require(beyond_band_kept,"an archived face beyond the truncation band of the old state's readings stays");
+
+  // A fill face no reading lands on nor sees through, measured only from in front within the window's
+  // truncation band, lies behind the surface those readings measured. Where a state closed (its surface
+  // within the band), behind an object's pixels it is the band of the remaining object's readings in the
+  // volume the state left and goes; behind background pixels it is the background's and stays; where no
+  // state closed it is the only surface the readings leave there and stays (11-25: copies of objects'
+  // sides held the moved bed cabinet's and sofa table's old sites, Home B; a rug's rim, a sofa's armrest
+  // top and a shelf's lip stay, Flat).
+  for (const bool closed : {true, false})
+  for (const uint16_t id : {uint16_t(7), uint16_t(0)}) {
+    PresentSurface wall(mapConfig(),integrationConfig(),meshConfig());
+    std::vector<uint16_t> ranges(W*H, 0);
+    const auto norms=rayNorm();
+    for (int i=0;i<W*H;++i) ranges[i]=static_cast<uint16_t>(norms[i]*1000.f);
+    wall.integrate(camera,FrameArchive::Frame::pack(1000000000ULL,Eigen::Isometry3d::Identity(),W,ranges,{{W*H,id}}));
+    auto behind=graph();
+    {
+      // 5 cm and 13 cm behind the readings (within the window's 15 cm band), and 20 cm (beyond it).
+      auto& m=*behind->mesh();
+      m.points.insert(m.points.end(),{{-.2f,0.f,1.05f},{-.16f,0.f,1.05f},{-.2f,.04f,1.05f},
+                                      {.2f,0.f,1.13f},{.24f,0.f,1.13f},{.2f,.04f,1.13f},
+                                      {0.f,.2f,1.2f},{.04f,.2f,1.2f},{0.f,.24f,1.2f}});
+      m.faces.push_back({0,1,2});
+      m.faces.push_back({3,4,5});
+      m.faces.push_back({6,7,8});
+    }
+    // A closed state's surface 4 cm behind the first two faces.
+    PresentSurface::Inputs at_closed;
+    if (closed) at_closed.closed_memory={{-.19f,.01f,1.09f},{.21f,.01f,1.17f}};
+    const auto behind_report=nlohmann::json::parse(wall.compose(*behind,1000000000ULL,{},at_closed,false).report_json);
+    bool kept=false, kept_13=false, kept_20=false;
+    for (const auto& point:behind->mesh()->points) {
+      kept|=point==Eigen::Vector3f(-.2f,0.f,1.05f);
+      kept_13|=point==Eigen::Vector3f(.2f,0.f,1.13f);
+      kept_20|=point==Eigen::Vector3f(0.f,.2f,1.2f);
+    }
+    const bool copies=closed && id;
+    require(kept==!copies,copies ? "a fill face only measured from in front by an object within the band, where a state closed, goes"
+                                 : !id ? "a fill face only measured from in front by the background within the band stays"
+                                       : "a fill face only measured from in front by an object, where no state closed, stays");
+    require(kept_13==!copies,"13 cm behind is within the window's band, though beyond the present's two voxels");
+    require(kept_20,"a fill face beyond the window's band stays");
+    require(behind_report["memory"]["fill"]["object_copy"]==(copies ? 2 : 0),"the object's copies are counted");
+  }
 
   // Fill: an archived window face a counted frame measured (the one valid pixel,
   // (1,1) at 1 m) is filled in; one no frame measured stays as shown, as a
@@ -381,33 +439,6 @@ void testOnlineSurface() {
   require(!shows(-.2f,1.08f),"a same-facing shown face within the truncation behind the present gives way");
   require(shows(0.f,1.08f),"an opposite-facing shown face behind the present stays");
   require(shows(.2f,1.2f),"a shown face beyond the truncation stays");
-
-  // A fill face no reading reached (every reading lands in front of it) fills only a place the
-  // present left empty: within one voxel behind the present's layer (where `covered` does not
-  // apply to fill), facing the same way, the layer holds that place and the face goes; facing the
-  // other way, or beyond the truncation of any present layer, it stays (11-25).
-  PresentSurface fill_wall(mapConfig(),integrationConfig(),meshConfig());
-  fill_wall.integrate(camera,frame(1000000000ULL,1.f));
-  auto fill_graph=graph();
-  auto addFill=[&](float x,float z,bool same_facing) {
-    auto& m=*fill_graph->mesh();
-    const uint32_t b=static_cast<uint32_t>(m.points.size());
-    m.points.insert(m.points.end(),{{x,0.f,z},{x+.04f,0.f,z},{x,.04f,z}});
-    if ((wall_normal.z()>0.f)==same_facing) m.faces.push_back({b,b+1,b+2});
-    else m.faces.push_back({b,b+2,b+1});
-  };
-  addFill(-.2f,1.04f,true);   // the present holds this place: goes
-  addFill(0.f,1.04f,false);   // facing the other way: stays
-  addFill(.2f,1.2f,true);     // beyond the truncation: stays
-  const auto fill_report=nlohmann::json::parse(fill_wall.compose(*fill_graph,1000000000ULL,{}, {},false).report_json);
-  auto fill_shows=[&](float x,float z) {
-    for (const auto& point:fill_graph->mesh()->points) if (point==Eigen::Vector3f(x,0.f,z)) return true;
-    return false;
-  };
-  require(fill_report["memory"]["fill"]["present_holds"]==1,"one undecided fill face lies on a place the present holds");
-  require(!fill_shows(-.2f,1.04f),"an undecided fill face within the truncation of a same-facing present layer goes");
-  require(fill_shows(0.f,1.04f),"the same undecided fill face facing the other way stays");
-  require(fill_shows(.2f,1.2f),"an undecided fill face beyond the truncation of any present layer stays");
 }
 
 // States changing over rounds -- appearing, their start moving later and earlier, disappearing,

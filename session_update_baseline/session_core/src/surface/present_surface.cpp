@@ -446,6 +446,7 @@ PresentSurface::PresentSurface(const hydra::VolumetricMap::Config& map,
                                const hydra::MeshIntegratorConfig& mesh)
     : voxel_(map.voxel_size),
       truncation_(wholeObservation(map).truncation_distance),
+      window_truncation_(map.truncation_distance),
       num_threads_(integrator.num_threads),
       tsdf_(wholeObservation(map), integrator, mesh) {}
 
@@ -669,13 +670,26 @@ void PresentSurface::measure(const States& states, size_t index, std::vector<uin
   limit = apply(r, range, runs);
 }
 
-bool PresentSurface::counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit) const {
+bool PresentSurface::counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit,
+                             std::vector<FrameArchive::InstanceRun>* runs) const {
   std::vector<uint16_t> excluded;  // the states are ordered by id: sorted
   const auto& frame = frames_.frame(index);
   for (const auto& [id, state] : states_) {
     if (state.restricts(frame.stamp)) excluded.push_back(id);
   }
-  if (!frame.decodeExcluding(ray_norm_.size(), excluded, range)) return false;
+  if (!runs) {
+    if (!frame.decodeExcluding(ray_norm_.size(), excluded, range)) return false;
+  } else {
+    // As decodeExcluding, keeping the frame's instance runs.
+    if (!frame.decode(ray_norm_.size(), range, *runs)) return false;
+    uint32_t begin = 0;
+    for (const auto& run : *runs) {
+      if (run.id && std::binary_search(excluded.begin(), excluded.end(), run.id)) {
+        std::fill(range.begin() + begin, range.begin() + run.end, 0);
+      }
+      begin = run.end;
+    }
+  }
   if (limit) CHECK(frame.keptLimit(range.size(), *limit));
   return true;
 }
@@ -1645,6 +1659,16 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   }
   const double sigma_s = since();
 
+  // Where the other present layer crosses the ray from camera c to tested element k (at range q),
+  // relative to the element.
+  auto rivalCrossing = [&](uint32_t k, const FrameCam& c, float q) {
+    float crossing = kInf;
+    if (rival[k]) {
+      const float cosine = ((tested_centroid[k] - c.t) / q).dot(rival_normal[k]);
+      if (cosine != 0.f) crossing = (rival_point[k] - tested_centroid[k]).dot(rival_normal[k]) / cosine;
+    }
+    return crossing;
+  };
   // One frame's vote on tested element k, read from its counted range `rng` and free limit
   // `limit` (null: none): +1 support, -1 free, 0 none.
   auto voteOn = [&](uint32_t k, const FrameCam& c, const uint16_t* rng, const float* limit) {
@@ -1657,14 +1681,43 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, q) / kRangeBin));
     const float tau = std::max(h, sigma[bin]);
     const float r = d * 1e-3f - q;
-    // Where the other present layer crosses this ray, relative to the element.
-    float crossing = kInf;
-    if (rival[k]) {
-      const float cosine = ((tested_centroid[k] - c.t) / q).dot(rival_normal[k]);
-      if (cosine != 0.f) crossing = (rival_point[k] - tested_centroid[k]).dot(rival_normal[k]) / cosine;
-    }
+    const float crossing = rivalCrossing(k, c, q);
     if (std::abs(r) <= tau && std::abs(r) <= std::abs(r - crossing)) return 1;
     return r > 0.f && !(limit && q >= limit[pix] - T) ? -1 : 0;
+  };
+  // The band a fill face was fused in: the active window's, whose surfaces the fill is.
+  const float T_window = static_cast<float>(window_truncation_);
+  // Whether fill element k lies on a surface fused from a frame's reading (`rng`): within the
+  // reading's truncation band behind its end, or on it, and nearer to it than the other present layer.
+  auto fusedFrom = [&](uint32_t k, const FrameCam& c, const uint16_t* rng) {
+    int u, v;
+    float q;
+    if (!project(tested_centroid[k], c, u, v, q)) return false;
+    const uint16_t d = rng[static_cast<size_t>(v) * W + u];
+    if (!d) return false;
+    const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, q) / kRangeBin));
+    const float tau = std::max(h, sigma[bin]);
+    const float r = d * 1e-3f - q;
+    return r >= -T_window && r <= tau && std::abs(r) <= std::abs(r - rivalCrossing(k, c, q));
+  };
+  // Whether a frame's reading towards fill element k ends within the window's truncation band in
+  // front of it on a pixel of an object's identity (`runs`, the frame's instance runs): the element
+  // lies behind that object's measured surface, where the window fused the band of its readings.
+  auto objectFront = [&](uint32_t k, const FrameCam& c, const uint16_t* rng,
+                         const std::vector<FrameArchive::InstanceRun>& runs) {
+    int u, v;
+    float q;
+    if (!project(tested_centroid[k], c, u, v, q)) return false;
+    const uint32_t pix = static_cast<uint32_t>(v) * W + u;
+    const uint16_t d = rng[pix];
+    if (!d) return false;
+    const size_t bin = std::min(kNumBins - 1, static_cast<size_t>(std::max(0.f, q) / kRangeBin));
+    const float tau = std::max(h, sigma[bin]);
+    const float r = d * 1e-3f - q;
+    if (!(r < -tau && r >= -T_window)) return false;
+    const auto run = std::upper_bound(runs.begin(), runs.end(), pix,
+                                      [](uint32_t p, const FrameArchive::InstanceRun& x) { return p < x.end; });
+    return run != runs.end() && run->id != 0;
   };
   // Whether a frame reads memory object point j (INSIDE candidate) from its counted range.
   auto readsPoint = [&](uint32_t j, const FrameCam& c, const uint16_t* rng) {
@@ -1689,6 +1742,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     parallelFor(last - first, num_threads_, [&](size_t w, size_t b, size_t e) {
       std::vector<uint16_t> frame_rng;
       std::vector<float> free_limit;
+      std::vector<FrameArchive::InstanceRun> frame_runs;
       std::vector<uint32_t> seen_elements, seen_points;
       for (size_t i = first + b; i < first + e; ++i) {
         const FrameCam c = frameCam(frames_.frame(i).world_T_sensor);
@@ -1697,7 +1751,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
         element_cells.forEachInView(c, K, [&](uint32_t j) { seen_elements.push_back(j); });
         point_cells.forEachInView(c, K, [&](uint32_t j) { seen_points.push_back(j); });
         if (seen_elements.empty() && seen_points.empty()) continue;
-        if (!counted(i, frame_rng, &free_limit)) {
+        if (!counted(i, frame_rng, &free_limit, &frame_runs)) {
           LOG(ERROR) << "[PresentSurface] kept frame " << frames_.frame(i).stamp << " cannot be decoded.";
           continue;
         }
@@ -1708,6 +1762,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
           const int vote = voteOn(elements[j], c, frame_rng.data(), limit);
           worker_ev[w][j].support += vote > 0;
           worker_ev[w][j].free += vote < 0;
+          worker_ev[w][j].object_front += objectFront(elements[j], c, frame_rng.data(), frame_runs);
         }
       }
     }, 4);
@@ -1715,6 +1770,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       for (size_t j = 0; j < elements.size(); ++j) {
         tested_ev[elements[j]].support += worker_ev[w][j].support;
         tested_ev[elements[j]].free += worker_ev[w][j].free;
+        tested_ev[elements[j]].object_front += worker_ev[w][j].object_front;
       }
       for (size_t j = 0; j < points.size(); ++j) reads[points[j]] += worker_reads[w][j];
     }
@@ -1735,10 +1791,11 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     parallelFor(moved_.size(), num_threads_, [&](size_t w, size_t b, size_t e) {
       std::vector<uint16_t> rng_now, rng_then;
       std::vector<float> limit_now, limit_then;
+      std::vector<FrameArchive::InstanceRun> runs;
       std::vector<uint8_t> changed(n, 0);
       for (size_t m = b; m < e; ++m) {
         const Moved& frame = moved_[m];
-        if (!counted(frame.index, rng_now, &limit_now)) continue;
+        if (!counted(frame.index, rng_now, &limit_now, &runs)) continue;
         rng_then = rng_now;
         limit_then = limit_now;
         if (limit_then.empty()) limit_then.assign(n, kInf);
@@ -1757,6 +1814,8 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
           const int then = voteOn(elements[j], c, rng_then.data(), limit_then.data());
           worker_ev[w][j].support += (now > 0) - (then > 0);
           worker_ev[w][j].free += (now < 0) - (then < 0);
+          worker_ev[w][j].object_front += static_cast<int>(objectFront(elements[j], c, rng_now.data(), runs)) -
+                                          static_cast<int>(objectFront(elements[j], c, rng_then.data(), runs));
         }, &frame.window);
         point_cells.forEachInView(c, K, [&](uint32_t j) {
           worker_reads[w][j] += readsPoint(points[j], c, rng_now.data()) - readsPoint(points[j], c, rng_then.data());
@@ -1768,6 +1827,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
       for (size_t j = 0; j < elements.size(); ++j) {
         tested_ev[elements[j]].support += worker_ev[w][j].support;
         tested_ev[elements[j]].free += worker_ev[w][j].free;
+        tested_ev[elements[j]].object_front += worker_ev[w][j].object_front;
       }
       for (size_t j = 0; j < points.size(); ++j) reads[points[j]] += worker_reads[w][j];
     }
@@ -1819,18 +1879,16 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     if (ev.support != ev.free) return ev.support > ev.free || (!element_ends && k < tested.size()) ? 1 : 0;
     return covered[k] ? 0 : -1;
   };
-  // A fill face without evidence either way fills a place the present left empty: it stays shown,
-  // as a memory face (11-01: a wall the window kept, seen only edge-on, which the present had not
-  // built, was hidden until later frames voted on it, TESSE apartment). Two such faces go:
-  // - one a reading the valid domains exclude supports: it is the surface of a state that has ended
-  //   (the old site of a moved object), whose readings the valid domains take away, and it goes with
-  //   them. Read from every frame a state restricts, its excluded pixels only.
-  // - one whose place the present holds: the present's nearest layer within the truncation faces
-  //   the same way, and the volume holds one surface there (the rule `covered` applies behind a
-  //   layer, where no reading can reach; a face no reading reached is that layer's on either side).
-  //   (11-25: the window's copy of an object's side, 2-7 cm past the object's present mesh and only
-  //   ever read from in front at grazing incidence, delayed a moved cabinet's old-site clearance by
-  //   11 s, Home B.)
+  // A fill face without evidence either way stays shown, as a memory face (11-01: a wall the
+  // window kept, seen only edge-on, was hidden until later frames voted on it, TESSE apartment),
+  // unless it was fused from a reading the valid domains exclude: it is then the surface of a state
+  // that has ended (the old site of a moved object), whose readings the valid domains take away, and
+  // it goes with them. Read from every frame a state restricts, its excluded pixels only. A reading
+  // is fused into the voxels of its truncation band (the active window's, where the fill was fused),
+  // so a face lies on a surface fused from it when it lies within that band behind the reading's end
+  // or on it; a copy fused from readings at grazing incidence lies centimetres behind the surface they
+  // measured, never on it. A face the band does not reach, or that an other present layer stands
+  // nearer to the reading, was not fused from it.
   std::vector<uint32_t> undecided_fill;
   for (size_t k = tested.size(); k < tested_centroid.size(); ++k) {
     if (verdict(k) == -1) undecided_fill.push_back(static_cast<uint32_t>(k));
@@ -1869,7 +1927,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
           begin = run.end;
         }
         std::fill(range.begin() + begin, range.end(), 0);
-        for (const uint32_t j : seen) worker_support[w][j] |= voteOn(undecided_fill[j], c, range.data(), nullptr) > 0;
+        for (const uint32_t j : seen) worker_support[w][j] |= fusedFrom(undecided_fill[j], c, range.data());
       }
     }, 4);
     for (const auto& support : worker_support) {
@@ -1877,36 +1935,48 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
     }
     ended_decoded = decoded.load();
   }
-  std::vector<uint8_t> present_holds(tested_centroid.size(), 0);
+  // Where a state closed (the state layer's closed states, `closed_memory`), the window's band of the
+  // remaining objects' readings reaches into the volume it left: a fill face there that no reading met
+  // nor saw through, measured only from in front by an object within the band, is that band, not a
+  // surface any reading showed, and goes with the closed state (11-25: copies of objects' sides held the
+  // moved bed cabinet's and sofa table's old sites, Home B). Elsewhere such a face is the only surface
+  // the readings leave there, an object's own surface they could not reach, and stays (a rug's rim, a
+  // sofa's armrest top, Flat).
+  std::vector<uint8_t> at_closed(tested_centroid.size(), 0);
   {
-    std::vector<uint32_t> ask;
-    for (const uint32_t k : undecided_fill) {
-      if (!ended_support[k]) ask.push_back(k);
+    std::vector<uint32_t> copies;
+    for (size_t k = tested.size(); k < tested_centroid.size(); ++k) {
+      if (verdict(k) == -1 && tested_ev[k].support == 0 && tested_ev[k].free == 0 && tested_ev[k].object_front > 0) {
+        copies.push_back(static_cast<uint32_t>(k));
+      }
     }
-    if (!ask.empty() && !Fp.empty()) {
-      const TriangleGrid present_grid(Vp, Fp, nullptr, 4.f * v_f);
-      parallelFor(ask.size(), num_threads_, [&](size_t, size_t b, size_t e) {
+    if (!copies.empty() && !inputs.closed_memory.empty()) {
+      const hydra::PointNeighborSearch search(inputs.closed_memory);
+      const float reach_squared = T_window * T_window;
+      parallelFor(copies.size(), num_threads_, [&](size_t, size_t b, size_t e) {
         for (size_t j = b; j < e; ++j) {
-          const uint32_t k = ask[j];
-          float d;
-          Eigen::Vector3f point;
-          uint32_t face;
-          present_holds[k] = present_grid.closest(tested_centroid[k], T, d, point, face) &&
-                             tested_normal[k].dot(face_normal[face]) > 0.f;
+          float distance_squared = 0.f;
+          size_t index = 0;
+          at_closed[copies[j]] = search.search(tested_centroid[copies[j]], distance_squared, index) &&
+                                 distance_squared <= reach_squared;
         }
       });
     }
   }
-  size_t fill_ended = 0, fill_present = 0;
+  size_t fill_ended = 0, fill_object = 0;
   std::vector<uint8_t> fill_kept(fill.size(), 0);
   for (size_t k = 0; k < tested_centroid.size(); ++k) {
     const int v = verdict(k);
     const bool outvoted = tested_ev[k].free > tested_ev[k].support;
     if (k >= tested.size()) {
       const size_t j = k - tested.size();
-      fill_kept[j] = v == 1 || (v == -1 && !ended_support[k] && !present_holds[k]);
+      // Never read on nor seen through, only measured from in front by an object within the band, where
+      // a state closed: the band of the remaining objects' readings in the volume it left (above).
+      const bool object_copy = tested_ev[k].support == 0 && tested_ev[k].free == 0 && tested_ev[k].object_front > 0 &&
+                               at_closed[k];
+      fill_kept[j] = v == 1 || (v == -1 && !ended_support[k] && !object_copy);
       if (v == 0) ++(outvoted ? fill_outvoted : fill_covered);
-      if (v == -1) ++(ended_support[k] ? fill_ended : present_holds[k] ? fill_present : fill_unreached);
+      if (v == -1) ++(ended_support[k] ? fill_ended : object_copy ? fill_object : fill_unreached);
       continue;
     }
     if (v != 0) continue;
@@ -1937,8 +2007,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
   }
   report << ",\"fill\":{\"faces\":" << fill.size() << ",\"outvoted\":" << fill_outvoted
          << ",\"covered\":" << fill_covered << ",\"unreached\":" << fill_unreached
-         << ",\"ended\":" << fill_ended << ",\"ended_frames_decoded\":" << ended_decoded
-         << ",\"present_holds\":" << fill_present
+         << ",\"ended\":" << fill_ended << ",\"object_copy\":" << fill_object << ",\"ended_frames_decoded\":" << ended_decoded
          << ",\"closed_state\":" << fill_closed
          << ",\"kept\":" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "}";
   report << "}";
@@ -2107,8 +2176,7 @@ PresentSurface::Result PresentSurface::compose(spark_dsg::DynamicSceneGraph& dsg
             << " memory_faces_kept=" << memory_faces_kept << "/" << memory_faces_total
             << " outvoted=" << shown_outvoted << " covered=" << shown_covered
             << " fill_kept=" << std::count(fill_kept.begin(), fill_kept.end(), 1) << "/"
-            << fill.size() << " fill_ended=" << fill_ended << " fill_present=" << fill_present
-            << " inside_retired=" << num_retired
+            << fill.size() << " fill_ended=" << fill_ended << " fill_object=" << fill_object << " inside_retired=" << num_retired
             << " guarded_objects=" << guarded << " reused(identities/rivals)=" << identities_reused << "/"
             << rivals_reused << " read(new_elements/decoded_fresh/decoded_history/moved)="
             << new_elements.size() << "/" << fresh_decoded << "/" << history_decoded << "/" << num_moved

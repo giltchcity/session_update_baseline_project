@@ -213,7 +213,8 @@ class PresentSurface {
    * measured with, kept from its integration or its last move (it changes only
    * when it moves). False if the frame cannot be decoded.
    */
-  bool counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit) const;
+  bool counted(size_t index, std::vector<uint16_t>& range, std::vector<float>* limit,
+               std::vector<FrameArchive::InstanceRun>* runs = nullptr) const;
   /** Record the endpoints of the frames kept since the last call. */
   void recordEndpoints();
   /** Bring the TSDF to `next`: move every kept frame whose domain differs to its new domain. */
@@ -221,6 +222,9 @@ class PresentSurface {
 
   const double voxel_;       // shared map voxel (background, objects, memory)
   const double truncation_;  // two voxels
+  // The active window's truncation: the band its readings were fused into, so the band of the
+  // window's surfaces this composition fills in with.
+  const double window_truncation_;
   const int num_threads_;
   mutable std::mutex mutex_;
   // Frames packed since the round last took them (in arrival order), with their own lock.
@@ -241,6 +245,9 @@ class PresentSurface {
   // vertices' normals (position g: at[g] .. at[g + 1]).
   struct Votes {
     int32_t support = 0, free = 0;
+    // Readings that end within the truncation band in front of the element on a pixel of an
+    // object's identity: the element lies behind an object's measured surface.
+    int32_t object_front = 0;
   };
   std::vector<std::pair<uint64_t, Votes>> votes_;
   std::vector<std::pair<uint64_t, int32_t>> read_points_;
