@@ -2,7 +2,7 @@
 // the present surface with the memory, the dated history and the saved session state.
 #include "session_update_baseline/runtime/session_backend.h"
 
-#include "khronos/active_window/online_front.h"
+#include "session_core/frontend/online_front.h"
 #include "session_core/adapters/physical_object_access.h"
 #include "session_core/state/mechanism_ablation.h"
 #include "session_core/surface/closed_object_background.h"

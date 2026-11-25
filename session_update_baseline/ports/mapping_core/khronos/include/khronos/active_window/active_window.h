@@ -54,7 +54,7 @@
 #include <hydra/reconstruction/projective_integrator.h>
 
 #include "khronos/active_window/data/frame_data.h"
-#include "khronos/active_window/online_front.h"
+#include "session_core/frontend/online_front.h"
 #include "khronos/active_window/data/frame_data_buffer.h"
 #include "khronos/active_window/data/reconstruction_types.h"
 #include "khronos/active_window/integration/tracking_integrator.h"

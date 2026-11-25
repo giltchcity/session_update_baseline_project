@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-#include "khronos/backend/latest_only_worker.h"
+#include "session_core/runtime/latest_only_worker.h"
 
 int main() {
   std::mutex gate_mutex;

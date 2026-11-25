@@ -40,7 +40,7 @@
 #include <algorithm>
 #include <cmath>
 
-#include "khronos/active_window/object_extraction/move_trajectories.h"
+#include "session_core/objects/move_trajectories.h"
 
 #include <cstdint>
 

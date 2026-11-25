@@ -1,6 +1,8 @@
 # Project algorithm implementations, separate from the Khronos source target.
 # Member adapters preserve the existing ABI; objects enter the final mapper once.
 add_library(session_core OBJECT
+  src/frontend/online_front.cpp
+  src/runtime/latest_only_worker.cpp
   src/objects/physical_objects.cpp
   src/objects/physical_presence.cpp
   src/objects/static_surface.cpp

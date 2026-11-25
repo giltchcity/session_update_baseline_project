@@ -2,7 +2,7 @@
 // visit it was confirmed in and in a later one; a real object that appears on it in a later visit is one, also when it is
 // first named as the surface under it; and it is one again where it is moved to, while its old place shows the surface.
 // A first name seen for a few looks gives way to the object its surface is seen as for longer.
-#include "khronos/active_window/online_front.h"
+#include "session_core/frontend/online_front.h"
 
 #include <unistd.h>
 

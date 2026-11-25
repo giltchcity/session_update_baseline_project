@@ -1,4 +1,4 @@
-#include "khronos/active_window/online_front.h"
+#include "session_core/frontend/online_front.h"
 
 #include <algorithm>
 #include <cmath>

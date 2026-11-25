@@ -31,7 +31,6 @@ include(GNUInstallDirs)
 
 add_library(${PROJECT_NAME}
         src/active_window/active_window.cpp
-        src/active_window/online_front.cpp
         src/active_window/data/frame_data_buffer.cpp
         src/active_window/data/track.cpp
         src/active_window/integration/object_integrator.cpp
@@ -41,7 +40,6 @@ add_library(${PROJECT_NAME}
         src/active_window/object_extraction/mesh_object_extractor.cpp
         src/active_window/object_extraction/object_worker_pool.cpp
         src/active_window/tracking/external_tracker.cpp
-        src/backend/latest_only_worker.cpp
         src/backend/update_khronos_objects_functor.cpp
         src/spatio_temporal_map/spatio_temporal_map.cpp
         src/spatio_temporal_map/piece_history.cpp

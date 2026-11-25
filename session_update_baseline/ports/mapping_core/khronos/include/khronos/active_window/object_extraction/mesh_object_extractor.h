@@ -47,7 +47,7 @@
 #include <hydra/reconstruction/mesh_integrator.h>
 
 #include "khronos/active_window/integration/object_integrator.h"
-#include "khronos/active_window/object_extraction/move_trajectories.h"
+#include "session_core/objects/move_trajectories.h"
 #include "khronos/active_window/object_extraction/object_extractor.h"
 
 namespace khronos {

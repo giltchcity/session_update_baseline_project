@@ -16,8 +16,8 @@
 #include <hydra/common/global_info.h>
 #include <hydra/common/shared_module_state.h>
 #include <hydra/utils/nearest_neighbor_utilities.h>
-#include <khronos/active_window/object_extraction/move_trajectories.h>
-#include <khronos/backend/latest_only_worker.h>
+#include "session_core/objects/move_trajectories.h"
+#include "session_core/runtime/latest_only_worker.h"
 #include <khronos/spatio_temporal_map/spatio_temporal_map.h>
 
 #include "session_core/evidence/physical_evidence_store.h"
