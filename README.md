@@ -1,6 +1,6 @@
 # Session Update Baseline：跨会话动态建图
 
-本项目在 Khronos 上实现持续的 metric-semantic 4D mapping。Khronos 提供单次 session 的输入处理、跟踪、TSDF、网格生成和 D1/D2；项目扩展维护稳定物理身份、状态有效期、观测证据、旧表面更新及跨进程接续。数学统一的对象是这些扩展共享的状态与证据，工程实现直接复用已有建图基础。
+本项目实现持续的 metric-semantic 4D mapping。标准底座是 Hydra（输入、TSDF 积分、网格提取、前端与后端场景图）和 spark_dsg；活动窗口里的运动检测、实例聚类、短期跟踪和物体提取沿用 Khronos 的实现并作了改动（第 2 节）。稳定物理身份、状态有效期、观测证据、存在区间、表面组合、4D 地图与跨进程接续由本项目的会话层完成；Khronos 的变化检测、射线验证、reconciler、网格合并与位姿优化已不在系统中（2026-11-25）。数学统一的对象是会话层共享的状态与证据。
 
 活动仓库：`/home/jixian/Desktop/FT/session_update_baseline_project`。源码位于 `session_update_baseline/`；`/home/jixian/Desktop/FT/session_update_baseline` 是该目录的符号链接。当前分支 `dev`，算法恢复基准为 `48a3033b7ef6203f84ef68b7b2a8c97a3eaa8799`。本文对应恢复后的实现与实际接入边界。
 
@@ -17,13 +17,13 @@ D1 是持续可见的运动，D2 是同一运行内的隐藏变化，D3 是跨 s
 P_k=\operatorname{Save}\!\left[
 \operatorname{Surface}\!\left(
 \operatorname{Drain}\!\left[
-\operatorname{Fold}_{Y_k}(\operatorname{Khronos}+\operatorname{IdentityEvidence},
+\operatorname{Fold}_{Y_k}(\operatorname{Frontend}+\operatorname{Session},
                          \operatorname{Load}(P_{k-1}))
 \right],Y_k\right)\right].
 \tag{1}
 \]
 
-式中 `Khronos + IdentityEvidence` 表示已有在线执行链在确定的回调点组合项目扩展。`Drain` 排空处理队列、异步变化检测和最后到达的物体片段；`Surface` 用最终状态限定观测，再更新会话末表面；`Save` 提交下一进程读取的状态。
+式中 `Frontend` 是活动窗口（Hydra 的积分与网格，沿用自 Khronos 的运动检测、实例聚类、跟踪与物体提取），`Session` 是会话层每 N 次后端更新执行的一轮：状态判定、存在区间、表面组合与快照。`Drain` 排空处理队列、最后一轮和最后到达的物体片段；`Surface` 用最终状态限定观测，再更新会话末表面；`Save` 提交下一进程读取的状态。
 
 初值 \(P_0=\varnothing\)，同一运行入口完成 \(P_0\to P_A\to P_B\to P_C\)。下一会话读紧邻前序状态；旧 session 的完整输入视频和整条快照序列留在原产物中。
 
@@ -185,51 +185,49 @@ D1（P16/P17）按用户要求暂缓：评测数据中 D1 只在 Bonn 触发 5 �
 (j) 表面带（P24，2026-10-06 借用收尾）：5 cm 取 Panoptic Mapping（3926396）的一体素表面一致约定 `error_threshold: -1`（负值为体素倍数，flat_groundtruth.yaml:103；判据 tsdf_registrator.cpp:142-145：\(|d|\le\) 一体素为一致，\(d\le-\)一体素为冲突），在真实数据地图体素上取值（room18_instance_5cm.yaml:59，0.05 m）；P30 的帧对一致容差 0.05 m 同源。局限：合成数据地图体素为 10 cm，5 cm 在那里是半体素。以下推导保留为记录，不再继续：离线，同表面律取传感器噪声卷积表面量化 \(\delta=n+u\)（\(n\sim N(0,s^2)\)，\(u\sim U(-h,h)\)，\(h\) 为物体重建分辨率之半），另一表面取截断指数，带取每样本变化后 KL 最大的阈值：合成 \(s=0.97\) cm、带 4.5 cm（5 cm 的来历就是 5 cm 物体分辨率的量化），真实 B \(s=2.87\) cm、带 7.5 cm，7 个 GT 核实关闭的 KL 全部提高。在线版（29d1a7a、9951b32）已撤回（2c16f90）：真实 A 会话开头带只有 1.2–2.2 cm——在位残差至少三层（重建核心毫米级、配准尾巴 2–3 cm、身后另一表面数十厘米），两分量模型把第二层当成“另一表面”；且带在会话中移动，在位统计却在旧带下学成，冷启动门随之失效。下一步是三层残差律、每会话固定一个带（由上一会话携带，首会话由本会话前段确定）。贴面物体（真实 inst 20，桌上平放的笔记本，拿走后读数落在桌面 1–6 cm）的单样本证据天然弱，统一形式是整次观测的平移证据。
 
 
-## 2. 源码归属与 Khronos 边界
+## 2. 源码归属与系统边界
 
 ```text
 session_update_baseline/
-  session_core/
-    include/                 项目状态、证据、几何与运行接口
-    src/state/               持久物理身份和片段状态
-    src/evidence/            实测物理证据与传感器统计
-    src/surface/             会话末几何更新、帧归档、空间查询
-    src/adapters/            物理射线查询、物体合并、静态选帧、D3 编排
-    src/runtime/             SessionBackend、状态指纹、运行支持
-  ports/mapping_core/        复用的 Khronos 与 ROS 接入
+  session_core/              本项目的会话层（编进建图库的 OBJECT 目标）
+    src/runtime/             SessionBackend：后端主循环、轮次、快照与 4D 地图、终结与保存；轮次工作线程
+    src/state/               持久物理身份、状态片段、观测缺席检验（式 7）
+    src/evidence/            像素证据库、状态证据计数、存在起点
+    src/objects/             物理身份归并、静态选帧、存在区间、D1 移动轨迹
+    src/surface/             在线表面：本层 TSDF、记忆与补面的组合、帧归档、空间查询
+    src/frontend/            在线前端（由语义给身份、身份别名）
+  ports/mapping_core/khronos      活动窗口（沿用 Khronos 并改动）、4D 地图容器、属性工具
+  ports/mapping_core/khronos_ros  ROS 管线外壳：节点、输入、实验管理
   ports/panoptic_core/       已移植的通用 predicate
-  app/                      生产程序和检查程序
-  scripts/                  构建、唯一 runner、数据协议、唯一查看器
-  configs/                  运行配置
-  src/base1/                历史诊断工具
-  vendor/                   来源快照
+  app/                       生产程序和检查程序
+  scripts/                   构建、唯一 runner、数据协议、唯一查看器
+  configs/                   运行配置
+  src/base1/                 历史诊断工具（自带一份 Khronos 射线验证器，只编进该工具）
+  vendor/                    Khronos 官方与 Panoptic Mapping 的原样源码，只供基线对比，不参与本系统编译
 ```
 
-`session_core` 是独立 CMake OBJECT 目标，对象文件链接进现有 mapper 库。算法函数体集中在该目录，兼容原有 namespace、成员声明和数据类型。Khronos 头文件保留项目所需的声明和状态成员；适配接入负责传递已有几何、证据及时间。
-
-| 职责 | 使用的实现 |
+| 职责 | 实现 |
 |---|---|
-| 输入、短期跟踪、活动窗口、在线 TSDF、对象提取 | Khronos 及现有适配 |
-| 原生射线变化检测、reconciler、4D map | Khronos 及已验证的既有改进 |
-| stable physical ID、片段有效期、继承状态裁决 | `session_core/src/state/` 与 `adapters/` |
-| 真实像素证据、覆盖与缺失统计 | `session_core/src/evidence/` 与 `adapters/physical_ray_queries.cpp` |
-| 在线表面更新 | `session_core/src/surface/present_surface.cpp` |
-| 恢复、终结、保存、接续 | `session_core/src/runtime/` 与 `adapters/backend_session.cpp` |
+| 输入、TSDF 积分、网格提取、前端场景图、后端场景图与网格增量 | Hydra（标准底座） |
+| 运动检测、实例聚类、短期跟踪、物体提取 | 活动窗口：沿用 Khronos 并改动（`ports/mapping_core/khronos/src/active_window`） |
+| 轮次调度、快照、4D 地图写入与保存、终结 | `session_core/src/runtime`（SessionBackend 直接建在 Hydra 的 BackendModule 上） |
+| 4D 地图存储 | Khronos 的 `SpatioTemporalMap` 容器（2090 行中 1714 行已改）加本项目的片段历史 `piece_history` |
+| 稳定物理身份、状态片段、继承状态裁决、观测缺席检验 | `session_core/src/state/` |
+| 像素证据、状态证据计数、存在起点 | `session_core/src/evidence/`、`src/objects/` |
+| 在线表面组合 | `session_core/src/surface/present_surface.cpp` |
 
-原生 `Backend` 默认关闭项目会话扩展；项目 runner 在空状态和继承状态下均使用 `SessionBackend`。输入为空时开始新地图，输入有效时恢复前序地图。已有 D1/D2 改进按功能保留。
+每轮（`SessionBackend::runRound`）的顺序：身份别名合并 → 每个 current 状态面对本轮像素的判定（`decideStates`：证据计数、缺席检验、终局排空、存在起点）→ 每个物理身份归并为一个节点，组合本轮表面（`composeRound`）→ 写入快照 → 本会话开始的状态从其起点显示（`showStatesFromStart`）。位姿是给定的，后端不做 RPGO 优化。
+
+2026-11-25 从系统中删除：Khronos 的 Backend、变化检测（射线验证器、物体与背景射线检测、时间估计器）、Reconciler、网格合并、变化记录及其 ROS 转换，以及只测它们的测试。删除前后在 TESSE 公寓上逐类核对：所有会话判定日志、每轮表面报告与官方 4D 指标完全相同（`wt_takeover_runs/own_round_20261125/equiv_tesse_apt.sh`）。仍在的 Khronos 来源代码：活动窗口、`SpatioTemporalMap` 容器、属性工具，以及只维护 Hydra 私有工作图、不进存档的 `UpdateKhronosObjectsFunctor`（运行配置按名字引用它）。
 
 活动窗口里对 Khronos 部件的改动（2026-10-21/22）：
 - 网格提取用 Hydra 默认的权重下限。面留不留由自由空间刻除和式 (10) 决定，不由随帧率、分辨率和距离缩放的权重门槛决定。
-- 跟踪器在观测当帧，把每个运动块的点均值、包围盒，以及按地图体素归并的点（只在保存可视化细节时）记进观测。轨迹、位移、已停物体的运动历史、动态轨迹的关联都读这一个测量；帧缓存只服务静态重建。只有轨迹、没有面的非物理物体不进变化检测，存在区间就是被观测到的时段。
+- 跟踪器在观测当帧，把每个运动块的点均值、包围盒，以及按地图体素归并的点（只在保存可视化细节时）记进观测。轨迹、位移、已停物体的运动历史、动态轨迹的关联都读这一个测量；帧缓存只服务静态重建。只有轨迹、没有面的非物理物体存在区间就是被观测到的时段。
 - 跟踪积分器：这一帧测到点的体素就是被占据的，在 `temporal_buffer` 内不能被标成 ever-free；已是 ever-free 的体素被点连续占据（间隔不超过 `temporal_buffer`）满 `temporal_buffer`，就撤销 ever-free。这是 Dynablox 的复位规则，Khronos 移植时丢了；占据从点读，因为运动像素不进 TSDF。`temporal_buffer` 与占据阈值用官方默认值。
 - 运动检测的最小/最大块按立体角计（官方 uHumans2 的 500 px 对应 2.8935e-3 sr），每帧按相机的 fx·fy 换算成像素。
 - `InstanceForwarding` 判"运动块大部分是静态类"时，静态类按标签表定义：既不是动态、也不是无效的标签。标签 0 在房间标签表里是墙。
 
-源码边界固定如下：新增项目算法写入 `session_core/`；项目内 `ports/mapping_core/khronos` 保留基础实现、原有有效适配及必要的接口声明/调用。外部 `/home/jixian/ros2_ws/src/khronos` 位于本仓库之外，作为源码参考；生产链接使用本项目 canonical 安装。外部 baseline 的历史修改保留原状，本次整理只读核查。具体文件及哈希见 `reports/rewrite_start_boundary_20260930.json`。
-
-当前状态作为 **rewrite 开始点**：算法已按 `48a3033` 恢复，项目函数体已集中，A→B 短程运行已验证。后续重写从此检查点演进项目算法，Khronos 基础按上述边界复用。
-
-上游比对使用官方 Git 对象 `MIT-SPARK/Khronos@63faadde6ed92220e78fb2f6ca86dcc54bb5cf9e`，直接读取该提交内容。最初 64 项 TODO 清理涉及其中 20 个原生函数，已恢复其实现；项目 TODO 的七个源文件/头文件也已从 `48a3033` 恢复，并保留新目录布局。精确清单见 `reports/khronos_upstream_boundary_20260930.json` 和 `reports/todo_restore_20260930.json`。
+上游比对使用官方 Git 对象 `MIT-SPARK/Khronos@63faadde6ed92220e78fb2f6ca86dcc54bb5cf9e`（`vendor/khronos_official_63faadde`）。
 
 ## 3. 身份、状态与时间
 
@@ -266,7 +264,7 @@ J=[C^*>S]\lor[D\land S=0].
 
 终结按相同规则处理候选和本会话子状态，再把最后的状态物化进 DSG。几何合并执行当前基准的网格拼接；实体时间片段与几何存储分别保持各自含义。
 
-源码：`session_core/src/state/persistent_object_state.cpp`、`src/adapters/physical_object_merge.cpp`、`src/adapters/backend_session.cpp`。
+源码：`session_core/src/state/persistent_object_state.cpp`、`src/objects/physical_objects.cpp`、`src/runtime/session_rounds.cpp`。
 
 ### 3.1 状态机制与统一模型的逐项对应
 
@@ -363,8 +361,8 @@ g=\Bigl[\max\Bigl(\log\frac{q_A}{1-q_A}+L_t^{\rm pre},\ L_t\Bigr)>\log99\Bigr].
 | O10k | `ok_lab=false` 使标签错误对缺席似然比中性，仍记录标签统计；真实分割漏标常见，不能因标签变背景就清物体。恢复标签作用必须先建立混淆模型。 |
 | O10l | `sensor_statistics.txt` 保存总体误差分布，避免 B 新进程把已校准传感器当成未知设备。 |
 | O10m | 零判定轮既不评分也不学习，先评分再学习避免用当前异常校准自己。当前历史/可靠性提交条件实际是 `identified_in_place`（本身份命中≥3且多于穿透），不是显式的 `!absence_coverage_sufficient`；按源码保留这一差别。 （现码：帧与观测在位为本身份多于看穿，常数 3 已去掉，aea844a）|
-| O11 | 原生射线源只使用顶点观测区间内的位姿；稀疏代理可能无源，O05 的真实像素复核补足跨会话验证。 |
-| O12 | 径向距离、深度带、Middle 策略及空间块属于代理近似的配置；不能直接充当真实深度噪声或改变物理证据。 |
+| O11 | 原生射线索引已删除（2026-11-25）：状态证据只来自存储的像素，没有存储帧时没有测量。 |
+| O12 | 深度带（`change_detection/ray_verificator/depth_tolerance`）是像素证据的匹配带；原射线代理的径向距离、Middle 策略与空间块已随射线索引删除。 |
 | O13 | 1mm 量化和 RLE 保留帧、身份与测距的对应，给 O02 的量化容差明确单位；压缩不是另一个观测。 |
 
 **在位模型的定义值与留出数据（2026-10-06）。** 在位模型里的 3、1/12、2 不是可调参数，而是定义值：
@@ -405,7 +403,7 @@ g=\Bigl[\max\Bigl(\log\frac{q_A}{1-q_A}+L_t^{\rm pre},\ L_t\Bigr)>\log99\Bigr].
 
 \(\widetilde q\) 是体素沿采样射线的投影距离。\(\lambda\) 先查当前物体三角面，缺少合格命中时使用实测端点体素首交。式 (8) 保留观测表面的局部带和当前物体之前的自由空间。\(\lambda\) 在状态开始（或结束）的那一轮按它当时的表面算一次；同一状态之后表面长大，不再回头改早于 \(t_\ell\) 的帧（2026-10-28：真实 A/C 物体 F1、D2、D3 不变，G1 +0.01/−0.02；真实 C 状态重融 202 s → 38 s）。
 
-合法贡献按快照时间进入持久化的原生 Hydra `VolumetricMap`。背景、物体统一为 5 cm；融合、插值和提面复用 Khronos 的 `ProjectiveIntegrator`、`MeshIntegrator`，不保留 O3D 融合实现。记原生积分器计算的距离、权重为 \(d_t,w_t\)，更新为
+合法贡献按快照时间进入持久化的原生 Hydra `VolumetricMap`。背景、物体统一为 5 cm；融合、插值和提面复用 Hydra 的 `ProjectiveIntegrator`、`MeshIntegrator`，不保留 O3D 融合实现。记原生积分器计算的距离、权重为 \(d_t,w_t\)，更新为
 
 \[
 F^+(x)=\frac{W(x)F(x)+w_t(x)d_t(x)}{W(x)+w_t(x)},\qquad
@@ -419,7 +417,7 @@ W^+(x)=\min\{W(x)+w_t(x),W_{\max}\}.
 
 这里的 \(\sigma\) 是“读数相对它之前的重建表面”的条件残差尺度：只统计前向、深度有效且位于既有截断域内的绝对残差。当前表面也由这些深度构建，因此它不是已分离出来的独立传感器噪声；同一像素对应多个顶点时，直方图条目也不是独立测量数。R08 的半体素下界保护粗网格表面，max 保留两种误差保护作用，但尚不是卷积后验。推广 P37–P42 时须保留这种相关性和选择条件，不能直接把现有 \(\sigma\) 再与网格误差独立相加，或把它充当 P05–P08 的新片段可信度。源码、谱系及不可辨识反例见 `reports/rewrite_goal/C3_joint_calibration_contract_20261004.json`。
 
-源码：`session_core/src/surface/present_surface.cpp`、`present_tsdf.cpp`、`triangle_grid.cpp`、`frame_archive.cpp`。会话末重融的每一步都在每轮执行：原生 TSDF（截断两体素，与 Khronos 物体重建和原会话末重融同规则）提面；补洞用本轮快照里后端归档的窗口背景（原会话末的“有帧测到才补”；5 cm 下单一体积只容一层，故不再限于重融未积分处）；补洞面与跨会话记忆的背景面按同一个式 (10) 判定，零证据时记忆保持显示、补洞面不显示；物体面随物体状态，不逐面投票（与 Khronos 一致）；关闭状态的旧址：记忆面在组合时随状态原子退出，补洞面由后端同一条旧址规则在组合之前处理（只删测到时间不晚于该状态最后支持的顶点，状态离开后测到的替换表面保留）。会话结束只排空输入和保存，没有独立重融或补洞路径。`refusion_replay` 保留为测试入口，调用同一在线实现。
+源码：`session_core/src/surface/present_surface.cpp`、`present_tsdf.cpp`、`triangle_grid.cpp`、`frame_archive.cpp`。会话末重融的每一步都在每轮执行：原生 TSDF（截断两体素，与 Khronos 物体重建和原会话末重融同规则）提面；补洞用本轮快照里后端归档的窗口背景（原会话末的“有帧测到才补”；5 cm 下单一体积只容一层，故不再限于重融未积分处）；补洞面与跨会话记忆的背景面按同一个式 (10) 判定，零证据时两者都保持显示，补洞面另有两种例外：本层 TSDF 截断内有同朝向的表面时它是那一层的重复，退出（一处一层，2026-11-25）；被已结束状态剔除的读数支持时它是旧址，随状态退出；物体面随物体状态，不逐面投票（与 Khronos 一致）；关闭状态的旧址：记忆面与补洞面都在组合时随状态原子退出（`closedStateBackground`：只取测到时间不晚于该状态最后支持的顶点，状态离开后测到的替换表面保留）。会话结束只排空输入和保存，没有独立重融或补洞路径。`refusion_replay` 保留为测试入口，调用同一在线实现。
 
 ## 6. 旧表面延拓与一次装配
 
@@ -456,7 +454,7 @@ K_{\rm obs}(\operatorname{center}f),&f\ \text{属于背景（补洞；旧址已�
 \tag{12}
 \]
 
-物体要求 current 存在且该状态始于本会话之前，物体面随状态整体去留，不逐面投票（Khronos 同样把物体与背景分开）；记忆背景面在关闭状态的旧表面上随该状态退出（closed）；补洞面的旧址由后端 `markClosedObjectBackground` 在组合前按同一半径、并以测到时间不晚于状态最后支持为条件删除。旧图只有推理几何时，恢复基准的后备路径对其中 memory 顶点执行内部判定，再与新表面装配。
+物体要求 current 存在且该状态始于本会话之前，物体面随状态整体去留，不逐面投票（Khronos 同样把物体与背景分开）；记忆背景面在关闭状态的旧表面上随该状态退出（closed）；补洞面的旧址在组合中由 `closedStateBackground` 按同一半径、并以测到时间不晚于状态最后支持为条件退出。旧图只有推理几何时，恢复基准的后备路径对其中 memory 顶点执行内部判定，再与新表面装配。
 
 当前几何由原生 TSDF 表面与保留旧面装配，身份决定输出槽；属性按来源保存，新增顶点从同槽原几何取属性并截时。物体输出槽为空时保留输入槽，背景直接提交。
 
@@ -520,11 +518,11 @@ M1 对“旧状态是否结束”和“该旧表面是否仍有真实几何”�
 
 ### 7.1 推理顺序、原生接入与持久化的逐项对应
 
-工程契约决定 M1 看到了哪些数据、M2 恢复了哪些状态、M3 何时提交动作。它们是统一推断的实现条件；数组越界保护、文件完整性、消息 ACK、精确身份键不应改成概率。Khronos 原生算法及外部代码保持只读。
+工程契约决定 M1 看到了哪些数据、M2 恢复了哪些状态、M3 何时提交动作。它们是统一推断的实现条件；数组越界保护、文件完整性、消息 ACK、精确身份键不应改成概率。外部代码（Hydra 等依赖，`vendor/` 中的原样源码）保持只读。
 
 | 机制 | 模型位置与执行含义 |
 |---|---|
-| B01 | M1：先冻结一份证据快照，再在 Reconciler 改网格前验证所有 current/会话片段，防止索引与表面不对应。 |
+| B01 | M1：先冻结一份证据快照，再验证所有 current/会话片段；一轮里不再有改网格的 reconciler 步骤（2026-11-25）。 |
 | B02 | M1/M3：每个访问片段独立得到证据和存在区间后才按物理身份归并，避免合并先把不同位置证据混在一起；有 registry 时由其几何覆盖遗留 winner-takes-all。 |
 | B03 | M3：最后片段摄入后再验证、终结、清背景、物化，只保存一个终态；补偿终局新位置来得晚而没参与判断。 |
 | B04a | M1 的候选关联：粗背景体素对角线 \(\sqrt3v_{bg}\) 只找旧物体背景副本，覆盖独立网格 5–11cm 的差异，不授权删除。 |
@@ -537,13 +535,13 @@ M1 对“旧状态是否结束”和“该旧表面是否仍有真实几何”�
 | B07 | M1 的两种表示：静态家具同时进入全局背景与 private mesh，动态内容被排除；B04c 补偿身份结束后背景副本仍在的情况（2f8847f）。 |
 | B08 | M2 的两种状态表示：chain 保留推理 current，shown 保留展示表面；同一物理状态的推理摘要与表面估计分别接续，不在下一轮把整理几何误作原始观察（9c1a7c9→6b8e5c3）。 |
 | B09 | M3 的提交范围：终态变化检测后只替换同戳的最终图副本，前序快照保留；失败保存已有地图（b8b299a）。 |
-| RC01 | M2 的存在时间：物理身份无缺席证据时从首次直接观测起开放；有证据的中点是区间估计，另存传感器边界。registry 关闭与原生 presence 的已知边界须在验收核对。 |
-| RC02 | M1/M3 的遗留对应近似：不相交包围盒只取较新 private mesh，重叠可积累；当前 registry 进一步按状态约束。不能无视调用路径同时改原生 Reconciler。 |
-| RC03 | M1 的覆盖分母：真实覆盖但身份未决计入置信度分母，时间方向决定窗口；未决不等于没有覆盖或明确缺席。 |
+| RC01 | M2 的存在时间：起点由本层的观测缺席检验反向运行给出（`SurfaceEvidence::presenceStart`：首次测到该身份之前，逐轮观察的看穿比例、物体自己的在位 Beta、Page 统计量、99:1 提交）；提交时取那段"看空"的最后一次测量与首次测到的中点，否则从开始就在。终点只由状态层给出。 |
+| RC02 | M1/M3 的遗留对应近似：不相交包围盒只取较新 private mesh，重叠可积累；当前 registry 进一步按状态约束。原生 Reconciler 已删除（2026-11-25）。 |
+| RC03 | （已删除）原时间估计器的覆盖分母；存在起点改用 RC01 的缺席检验，读数没到达查询点的帧不算观测（2026-11-25）。 |
 | RC04 | M1：物理片段每轮对最新不可变证据重算，先各自检测再折叠；D3 是恢复状态之后执行同一 D2。 |
-| RC05 | M3 的安全执行：背景索引与网格/changes 长度同时校验，防止擦除后的陈旧索引中止会话。 |
+| RC05 | （已删除）背景索引与 changes 长度的校验属于已删除的网格合并（2026-11-25）。 |
 | I01 | M1 的条件输入：跨会话稳定物理 ID、语义/物体背景映射和人工目录已冻结；类别先验可以推广，不能通过改目录/播放器重标物体改变答案。 |
-| U01 | 原生活动窗口、跟踪 D1、在线 TSDF、射线 D2、Reconciler 与 4D 存储提供测量处理、状态提案与执行基础；项目在固定接入点推理同一物理状态，未重新推导或改写原生算法。 |
+| U01 | Hydra 提供输入、TSDF 积分、网格提取与前后端场景图；活动窗口（沿用 Khronos 并改动）提供运动检测、实例聚类、短期跟踪 D1 与物体提取；轮次、D2/D3 状态判定、存在区间、表面组合与 4D 存储都由会话层完成（2026-11-25 起射线 D2、Reconciler、网格合并与位姿优化不在系统中）。 |
 | E01 | M2/M3 的无损编码：`.zpk` 每 10 快照关键帧和增量压缩保留时间线；反向查询保留首见等于查询时刻的顶点，序列化不增加衰减。 |
 | E02 | M3 的保存完成条件：5 秒窗口、最多一分钟等待保存 ACK，失败有退出状态而不 abort；这些是运行超时，不是持久性先验。 |
 | E03 | M1 的帧完整性：/tf 就绪及 DDS 1ms 初始心跳、10ms 心跳、1ms NACK 恢复，配合逐帧 ACK 防止掉帧；保持冻结播放协议。 |
