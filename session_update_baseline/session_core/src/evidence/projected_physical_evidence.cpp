@@ -856,11 +856,19 @@ session::SurfaceEvidence::PresenceStart session::SurfaceEvidence::presenceStart(
     if (record->queries.empty()) return result;
     // The looks before the first observation, in time order: the latest verdict of every sample
     // judged in the round (as summarizeLook) with the round's latest measurement. On the surface
-    // whatever the label, seen through at a judged incidence, otherwise no verdict.
-    std::vector<int8_t> verdict(record->queries.size());
-    TimeStamp begin = 0;
+    // whatever the label, seen through at a judged incidence, otherwise no verdict. The rounds
+    // group the stored frames into looks, and the first observation ends the last one: the frames
+    // of the round in which the object is first observed that precede the observation looked at
+    // the site before it.
+    std::vector<TimeStamp> look_ends;
     for (const TimeStamp end : round_ends) {
       if (end >= first_seen) break;
+      look_ends.push_back(end);
+    }
+    if (look_ends.empty() || look_ends.back() < first_seen - 1) look_ends.push_back(first_seen - 1);
+    std::vector<int8_t> verdict(record->queries.size());
+    TimeStamp begin = 0;
+    for (const TimeStamp end : look_ends) {
       std::fill(verdict.begin(), verdict.end(), 0);
       PresenceRecord::Look look;
       for (const auto stamp : evidence_snapshot->timestamps(begin, end)) {

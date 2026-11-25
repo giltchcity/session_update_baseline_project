@@ -65,7 +65,8 @@ class SurfaceEvidence {
   // When an identity began to be present: the observed-absence test (eq. 7) run backwards over the
   // rounds before its first observation. The same samples of its surface, the same measurement (a
   // sample on the surface whatever the label, seen through at a judged incidence, otherwise no
-  // verdict), one look per round, Page's statistic with each sample speaking once, committed at 99:1.
+  // verdict), one look per round (the last one ends at the first observation, so the frames of that
+  // round before it count), Page's statistic with each sample speaking once, committed at 99:1.
   // What the identity's own frames from its first observation on teach, as the absence test learns it
   // for a state, decides what counts: a sample those frames see through while they identify the
   // object in place is no evidence, and the present model is the object's own in-place looks shrunk

@@ -497,10 +497,12 @@ void testCurrentStateRejectsPreArrivalAbsence(const hydra::Sensor::ConstPtr& cam
 void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& camera) {
   // The object is first seen at kT2. Mode 2: a frame at kT1 sees through its site, so its presence
   // starts halfway between; mode 0: that site is outside the frame; mode 1: the only frame is the
-  // observation's own time, no earlier evidence. Its presence is never ended here: the state layer
-  // ends an identity's presence when its last state closes.
-  for (int mode=0; mode<3; ++mode) {
-    const bool outside=mode==0, missing=mode==1;
+  // observation's own time, no earlier evidence; mode 3: as mode 2, but the frame at kT1 belongs to
+  // the round in which the object is first observed (the rounds end at kT1-1 and kT2), so the look
+  // that sees the site empty is the part of that round before the observation. Its presence is
+  // never ended here: the state layer ends an identity's presence when its last state closes.
+  for (int mode=0; mode<4; ++mode) {
+    const bool outside=mode==0, missing=mode==1, same_round=mode==3;
     auto graph=makeRayGraph(kT2, outside?Point(6,0,2):Point(0,0,2));
     auto object=std::make_unique<khronos::KhronosObjectAttributes>();
     object->mesh=spark_dsg::Mesh(false,true,false,true);
@@ -519,10 +521,11 @@ void testPhysicalReducerRequiresActualCoverage(const hydra::Sensor::ConstPtr& ca
     auto& object_attrs=static_cast<khronos::KhronosObjectAttributes&>(*attrs);
     // One look ends at kT1, the next at the observation kT2 (the rounds of the session).
     const auto first_seen=khronos::session::openPresence(object_attrs);
-    const auto dated=khronos::session::presenceStart(evidence,store->snapshot(),{kT1,kT2},49,object_attrs,first_seen,kT2);
+    const std::vector<uint64_t> rounds=same_round ? std::vector<uint64_t>{kT1-1,kT2} : std::vector<uint64_t>{kT1,kT2};
+    const auto dated=khronos::session::presenceStart(evidence,store->snapshot(),rounds,49,object_attrs,first_seen,kT2);
     if (dated) object_attrs.first_observed_ns={*dated};
     const auto start=object_attrs.first_observed_ns.front();
-    require(mode==2 ? start==kT1+(kT2-kT1)/2 : start==0,
+    require(mode>=2 ? start==kT1+(kT2-kT1)/2 : start==0,
       "the presence start must reject unavailable pixels and accept actual earlier free space; mode="+std::to_string(mode));
     require(object_attrs.last_observed_ns==std::vector<uint64_t>{std::numeric_limits<uint64_t>::max()},
       "no evidence ends a physical object's presence on its own; mode="+std::to_string(mode));
